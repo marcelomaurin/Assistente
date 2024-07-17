@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="assistente.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="6"/>
+        <CursorPos X="58" Y="13"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmmain"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="46"/>
+        <CursorPos X="52" Y="61"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="toolsfalar/toolsfalar.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmToolsfalar"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="75"/>
+        <CursorPos Y="108"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="toolsouvir/toolsouvir.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmToolsOuvir"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="ToolsOuvir"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="64"/>
+        <CursorPos Y="77"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="chatgpt.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="244"/>
+        <CursorPos X="22" Y="252"/>
+        <UsageCount Value="34"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="funcoes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="55"/>
+        <CursorPos X="76" Y="78"/>
+        <UsageCount Value="28"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../.lazarus/onlinepackagemanager/packages/lnet/lib/lnet.pp"/>
+        <UnitName Value="lNet"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="841"/>
+        <CursorPos Y="857"/>
+        <UsageCount Value="13"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../.lazarus/onlinepackagemanager/packages/gifanim/gifanim.pas"/>
+        <UnitName Value="GifAnim"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="882"/>
+        <CursorPos Y="896"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/share/lazarus/3.0.0/lcl/include/customnotebook.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="909"/>
+        <CursorPos X="20" Y="923"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/share/lazarus/3.0.0/lcl/comctrls.pp"/>
+        <UnitName Value="ComCtrls"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/share/lazarus/3.0.0/components/lazutils/lazloggerbase.pas"/>
+        <UnitName Value="LazLoggerBase"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="704"/>
+        <CursorPos Y="718"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmToolsver"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="53"/>
+        <CursorPos X="3" Y="55"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="toolsVer/toolsver.lfm"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="33" Y="10"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="164" TopLine="137"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="167" TopLine="140"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="168" TopLine="141"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="170" TopLine="143"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="178" TopLine="162"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="180" TopLine="162"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="267" TopLine="251"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="268" TopLine="251"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="86" TopLine="58"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="87" TopLine="59"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsfalar/toolsfalar.pas"/>
+        <Caret Line="101" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsfalar/toolsfalar.pas"/>
+        <Caret Line="102" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsfalar/toolsfalar.pas"/>
+        <Caret Line="103" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsfalar/toolsfalar.pas"/>
+        <Caret Line="105" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsouvir/toolsouvir.pas"/>
+        <Caret Line="71" TopLine="37"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsouvir/toolsouvir.pas"/>
+        <Caret Line="77" TopLine="64"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="32" Column="26" TopLine="15"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="15" Column="15"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="56" Column="24" TopLine="45"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="45" Column="16" TopLine="22"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="115" Column="23" TopLine="87"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="109" Column="46" TopLine="87"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="66" Column="19" TopLine="59"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="9" Column="64" TopLine="16"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="57" Column="3" TopLine="40"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret TopLine="43"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="94" TopLine="61"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="67" TopLine="55"/>
+      </Position>
+      <Position>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <Caret Line="22" Column="61"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

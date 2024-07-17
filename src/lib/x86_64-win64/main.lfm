@@ -1,0 +1,83 @@
+object frmmain: Tfrmmain
+  Left = 558
+  Height = 718
+  Top = 82
+  Width = 466
+  Caption = 'Assistente'
+  ClientHeight = 718
+  ClientWidth = 466
+  DesignTimePPI = 120
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '2.2.6.0'
+  object btIniciar: TButton
+    Left = 100
+    Height = 60
+    Top = 640
+    Width = 244
+    Caption = 'Iniciar'
+    OnClick = btIniciarClick
+    TabOrder = 0
+  end
+  object PageControl1: TPageControl
+    Left = 0
+    Height = 620
+    Top = 0
+    Width = 466
+    ActivePage = TabSheet1
+    Align = alTop
+    TabIndex = 0
+    TabOrder = 1
+    object TabSheet1: TTabSheet
+      Caption = 'Animação'
+      ClientHeight = 587
+      ClientWidth = 458
+      object GifAnim1: TGifAnim
+        Left = -70
+        Height = 498
+        Top = -20
+        Width = 498
+        AutoSize = False
+        Animate = False
+        FileName = 'C:\Users\marcelo.maurin\Desktop\projetos\Assistente\img\robo8.gif'
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Configuração'
+      ClientHeight = 587
+      ClientWidth = 458
+      object Label1: TLabel
+        Left = 5
+        Height = 20
+        Top = 14
+        Width = 99
+        Caption = 'Chatgpt Token:'
+        ParentColor = False
+      end
+      object edTokenGPT: TEdit
+        Left = 6
+        Height = 28
+        Top = 40
+        Width = 384
+        TabOrder = 0
+        Text = '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'
+      end
+      object Label2: TLabel
+        Left = 5
+        Height = 20
+        Top = 90
+        Width = 37
+        Caption = 'Frase:'
+        ParentColor = False
+      end
+      object edFrase: TEdit
+        Left = 6
+        Height = 28
+        Top = 110
+        Width = 274
+        TabOrder = 1
+        Text = 'meu docinho'
+      end
+    end
+  end
+end
