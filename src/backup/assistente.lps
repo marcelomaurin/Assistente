@@ -70,6 +70,20 @@
         <Loaded Value="True"/>
       </Unit>
       <Unit>
+        <Filename Value="toolsVer/toolsver.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmToolsver"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="53"/>
+        <CursorPos X="63" Y="65"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="../../../.lazarus/onlinepackagemanager/packages/lnet/lib/lnet.pp"/>
         <UnitName Value="lNet"/>
         <EditorIndex Value="-1"/>
@@ -107,20 +121,6 @@
         <UsageCount Value="10"/>
       </Unit>
       <Unit>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmToolsver"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="53"/>
-        <CursorPos X="3" Y="55"/>
-        <UsageCount Value="21"/>
-        <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
-      </Unit>
-      <Unit>
         <Filename Value="toolsVer/toolsver.lfm"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="33" Y="10"/>
@@ -128,127 +128,10 @@
         <DefaultSyntaxHighlighter Value="LFM"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="164" TopLine="137"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="167" TopLine="140"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="168" TopLine="141"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="170" TopLine="143"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="178" TopLine="162"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="180" TopLine="162"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="267" TopLine="251"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="268" TopLine="251"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="86" TopLine="58"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="87" TopLine="59"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsfalar/toolsfalar.pas"/>
-        <Caret Line="101" TopLine="81"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsfalar/toolsfalar.pas"/>
-        <Caret Line="102" TopLine="81"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsfalar/toolsfalar.pas"/>
-        <Caret Line="103" TopLine="81"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsfalar/toolsfalar.pas"/>
-        <Caret Line="105" TopLine="81"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsouvir/toolsouvir.pas"/>
-        <Caret Line="71" TopLine="37"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsouvir/toolsouvir.pas"/>
-        <Caret Line="77" TopLine="64"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="32" Column="26" TopLine="15"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="15" Column="15"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="56" Column="24" TopLine="45"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="45" Column="16" TopLine="22"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="115" Column="23" TopLine="87"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="109" Column="46" TopLine="87"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="66" Column="19" TopLine="59"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="9" Column="64" TopLine="16"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="57" Column="3" TopLine="40"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret TopLine="43"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="94" TopLine="61"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="67" TopLine="55"/>
-      </Position>
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="22" Column="61"/>
-      </Position>
-    </JumpHistory>
+    <General>
+      <ActiveWindowIndexAtStart Value="-1"/>
+    </General>
+    <JumpHistory HistoryIndex="-1"/>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>
