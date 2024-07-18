@@ -20,7 +20,6 @@ begin
   Application.Scaled:=True;
   Application.Initialize;
   Application.CreateForm(Tfrmmain, frmmain);
-  Application.CreateForm(TfrmToolsver, frmToolsver);
   Application.Run;
 end.
 

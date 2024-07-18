@@ -1,21 +1,21 @@
 object frmmain: Tfrmmain
   Left = 818
   Height = 571
-  Top = 285
+  Top = 244
   Width = 343
   Caption = 'Assistente'
   ClientHeight = 571
   ClientWidth = 343
   OnCreate = FormCreate
-  LCLVersion = '3.2.0.0'
+  LCLVersion = '2.2.0.4'
   object btIniciar: TButton
     Left = 80
     Height = 48
     Top = 512
     Width = 195
     Caption = 'Iniciar'
-    TabOrder = 0
     OnClick = btIniciarClick
+    TabOrder = 0
   end
   object PageControl1: TPageControl
     Left = 0
@@ -57,13 +57,12 @@ object frmmain: Tfrmmain
         Top = 32
         Width = 307
         TabOrder = 0
-        Text = ''
       end
       object Label2: TLabel
         Left = 4
         Height = 17
         Top = 72
-        Width = 39
+        Width = 40
         Caption = 'Frase:'
       end
       object edFrase: TEdit

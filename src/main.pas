@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  ComCtrls, GifAnim, toolsfalar, toolsouvir, chatgpt , toolsver;
+  ComCtrls,  GifAnim, toolsfalar, toolsouvir, chatgpt , toolsver, setmain;
 
 type
 
@@ -30,8 +30,6 @@ type
     pergunta : string;
     procedure NewContext();
     procedure FazPergunta();
-
-
   end;
 
 var
@@ -45,6 +43,9 @@ implementation
 
 procedure Tfrmmain.FormCreate(Sender: TObject);
 begin
+   FSetMain := TSetMain.create();
+   FSetMain.CarregaContexto();
+   edTokenGPT.text := FSetMain.CHATGPT;
    frmToolsfalar := TfrmToolsfalar.Create(self);
    frmToolsOuvir := TfrmToolsOuvir.create(self);
    frmToolsVer := TfrmToolsver.create(self);
@@ -55,6 +56,9 @@ end;
 
 procedure Tfrmmain.btIniciarClick(Sender: TObject);
 begin
+  FSetMain.CHATGPT := edTokenGPT.text;
+  FSetMain.SalvaContexto(false);
+
   GifAnim1.visible:= true;
   GifAnim1.Animate:=true;
   frmToolsOuvir.frase := edFrase.text;

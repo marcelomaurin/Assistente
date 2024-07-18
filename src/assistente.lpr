@@ -10,7 +10,7 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lnetvisual, main, chatgpt, funcoes, ToolsOuvir, toolsver
+  Forms, lnetvisual, main, chatgpt, funcoes, setmain, ToolsOuvir, toolsver
   { you can add units after this };
 
 {$R *.res}
