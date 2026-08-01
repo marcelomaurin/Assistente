@@ -5,7 +5,7 @@ unit frmconfig;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls, chatgpt;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls, chatgpt, aivoicesynthesizer;
 
 type
 
@@ -14,6 +14,7 @@ type
   TfrmConfig = class(TForm)
     pcConfig: TPageControl;
     tsIA: TTabSheet;
+    tsOutputVoice: TTabSheet;
     tsVoz: TTabSheet;
     tsVisao: TTabSheet;
     tsBanco: TTabSheet;
@@ -27,8 +28,21 @@ type
     edTokenGPT: TEdit;
     lblURL: TLabel;
     edURL: TEdit;
+
+    // Aba Output Voice (TAIVoiceSynthesizer)
+    lblSynthEngine: TLabel;
+    cbSynthEngine: TComboBox;
+    lblSynthVoice: TLabel;
+    cbSynthVoice: TComboBox;
+    lblSynthVolume: TLabel;
+    tbSynthVolume: TTrackBar;
+    lblSynthVolumeVal: TLabel;
+    lblSynthRate: TLabel;
+    tbSynthRate: TTrackBar;
+    lblSynthRateVal: TLabel;
+    chkSynthAsync: TCheckBox;
     
-    // Aba Voz
+    // Aba Voz (Rede / Ativação)
     lblFrase: TLabel;
     edFrase: TEdit;
     lblSynth: TLabel;
@@ -71,6 +85,9 @@ type
     btCancelar: TButton;
 
     procedure cbProviderChange(Sender: TObject);
+    procedure cbSynthEngineChange(Sender: TObject);
+    procedure tbSynthVolumeChange(Sender: TObject);
+    procedure tbSynthRateChange(Sender: TObject);
     procedure btSalvarClick(Sender: TObject);
     procedure btCancelarClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -78,6 +95,7 @@ type
     FLoading: Boolean;
   public
     procedure CarregaModelosDoProvedor;
+    procedure CarregaVozesDoSintetizador;
   end;
 
 var
@@ -114,6 +132,37 @@ begin
     cbModel.ItemIndex := 0;
 end;
 
+procedure TfrmConfig.CarregaVozesDoSintetizador;
+var
+  DummySynth: TAIVoiceSynthesizer;
+  EngineIdx: Integer;
+  VozAtual: string;
+begin
+  VozAtual := cbSynthVoice.Text;
+  DummySynth := TAIVoiceSynthesizer.Create(nil);
+  try
+    EngineIdx := cbSynthEngine.ItemIndex;
+    case EngineIdx of
+      0: DummySynth.Engine := seSystemDefault;
+      1: DummySynth.Engine := seSAPI;
+      2: DummySynth.Engine := seEspeak;
+      3: DummySynth.Engine := seOpenAI;
+    else
+      DummySynth.Engine := seSystemDefault;
+    end;
+
+    cbSynthVoice.Items.Clear;
+    DummySynth.GetAvailableVoices(cbSynthVoice.Items);
+
+    if (Trim(VozAtual) <> '') then
+      cbSynthVoice.Text := VozAtual
+    else if cbSynthVoice.Items.Count > 0 then
+      cbSynthVoice.ItemIndex := 0;
+  finally
+    DummySynth.Free;
+  end;
+end;
+
 procedure TfrmConfig.cbProviderChange(Sender: TObject);
 var
   Prov: TAIProvider;
@@ -123,6 +172,22 @@ begin
   Prov := GetAIProviderFromIndex(cbProvider.ItemIndex);
   CarregaModelosDoProvedor;
   edURL.Text := GetDefaultEndpointForProvider(Prov);
+end;
+
+procedure TfrmConfig.cbSynthEngineChange(Sender: TObject);
+begin
+  if FLoading then Exit;
+  CarregaVozesDoSintetizador;
+end;
+
+procedure TfrmConfig.tbSynthVolumeChange(Sender: TObject);
+begin
+  lblSynthVolumeVal.Caption := IntToStr(tbSynthVolume.Position) + '%';
+end;
+
+procedure TfrmConfig.tbSynthRateChange(Sender: TObject);
+begin
+  lblSynthRateVal.Caption := IntToStr(tbSynthRate.Position);
 end;
 
 procedure TfrmConfig.btSalvarClick(Sender: TObject);

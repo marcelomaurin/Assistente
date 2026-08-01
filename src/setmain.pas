@@ -76,6 +76,13 @@ type
         FVerIP : String;
         FVerPort : integer;
 
+        // Configurações do Output Voice (TAIVoiceSynthesizer)
+        FSynthEngine : integer; // 0=seSystemDefault, 1=seSAPI, 2=seEspeak, 3=seOpenAI
+        FSynthVoice : String;
+        FSynthVolume : integer;
+        FSynthRate : integer;
+        FSynthAsync : boolean;
+
         //filename : String;
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
@@ -138,6 +145,12 @@ type
         property VoiceRecogPort : integer read FVoiceRecogPort write FVoiceRecogPort;
         property VerIP : String read FVerIP write FVerIP;
         property VerPort : integer read FVerPort write FVerPort;
+
+        property SynthEngine : integer read FSynthEngine write FSynthEngine;
+        property SynthVoice : String read FSynthVoice write FSynthVoice;
+        property SynthVolume : integer read FSynthVolume write FSynthVolume;
+        property SynthRate : integer read FSynthRate write FSynthRate;
+        property SynthAsync : boolean read FSynthAsync write FSynthAsync;
   end;
 
   var
@@ -195,6 +208,12 @@ begin
     FVoiceRecogPort := 8097;
     FVerIP := '127.0.0.1';
     FVerPort := 8097;
+
+    FSynthEngine := 0; // seSystemDefault
+    FSynthVoice := '';
+    FSynthVolume := 100;
+    FSynthRate := 0;
+    FSynthAsync := true;
 
 end;
 
@@ -414,6 +433,27 @@ begin
       FVerPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
     end;
 
+    if  BuscaChave(arquivo,'SYNTHENGINE:',posicao) then
+    begin
+      FSynthEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    end;
+    if  BuscaChave(arquivo,'SYNTHVOICE:',posicao) then
+    begin
+      FSynthVoice := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'SYNTHVOLUME:',posicao) then
+    begin
+      FSynthVolume := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 100);
+    end;
+    if  BuscaChave(arquivo,'SYNTHRATE:',posicao) then
+    begin
+      FSynthRate := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    end;
+    if  BuscaChave(arquivo,'SYNTHASYNC:',posicao) then
+    begin
+      FSynthAsync := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
+    end;
+
 end;
 
 
@@ -515,6 +555,12 @@ begin
   arquivo.Append('VOICERECOGPORT:'+inttostr(FVoiceRecogPort));
   arquivo.Append('VERIP:'+FVerIP);
   arquivo.Append('VERPORT:'+inttostr(FVerPort));
+
+  arquivo.Append('SYNTHENGINE:'+inttostr(FSynthEngine));
+  arquivo.Append('SYNTHVOICE:'+FSynthVoice);
+  arquivo.Append('SYNTHVOLUME:'+inttostr(FSynthVolume));
+  arquivo.Append('SYNTHRATE:'+inttostr(FSynthRate));
+  arquivo.Append('SYNTHASYNC:'+iif(FSynthAsync, '1', '0'));
 
   arquivo.SaveToFile(fpath+filename);
 end;

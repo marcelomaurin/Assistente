@@ -208,8 +208,23 @@ begin
 
   if Assigned(FVoiceRecog) then
     FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
+
   if Assigned(FVoiceSynth) then
+  begin
     FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
+    case FSetMain.SynthEngine of
+      0: FVoiceSynth.Engine := seSystemDefault;
+      1: FVoiceSynth.Engine := seSAPI;
+      2: FVoiceSynth.Engine := seEspeak;
+      3: FVoiceSynth.Engine := seOpenAI;
+    else
+      FVoiceSynth.Engine := seSystemDefault;
+    end;
+    FVoiceSynth.VoiceName := FSetMain.SynthVoice;
+    FVoiceSynth.Volume := FSetMain.SynthVolume;
+    FVoiceSynth.Rate := FSetMain.SynthRate;
+    FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+  end;
 end;
 
 procedure Tfrmmain.btAbrirConfigClick(Sender: TObject);
@@ -227,6 +242,20 @@ begin
       FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
     FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
     FormCfg.edURL.Text := FSetMain.ChatGPTURL;
+
+    // Aba Output Voice
+    FormCfg.cbSynthEngine.ItemIndex := FSetMain.SynthEngine;
+    if (FormCfg.cbSynthEngine.ItemIndex < 0) or (FormCfg.cbSynthEngine.ItemIndex >= FormCfg.cbSynthEngine.Items.Count) then
+      FormCfg.cbSynthEngine.ItemIndex := 0;
+    FormCfg.CarregaVozesDoSintetizador;
+    if Trim(FSetMain.SynthVoice) <> '' then
+      FormCfg.cbSynthVoice.Text := FSetMain.SynthVoice;
+    FormCfg.tbSynthVolume.Position := FSetMain.SynthVolume;
+    FormCfg.tbSynthVolumeChange(Self);
+    FormCfg.tbSynthRate.Position := FSetMain.SynthRate;
+    FormCfg.tbSynthRateChange(Self);
+    FormCfg.chkSynthAsync.Checked := FSetMain.SynthAsync;
+
     FormCfg.edFrase.Text := FSetMain.Frase;
     FormCfg.edSynthIP.Text := FSetMain.VoiceSynthIP;
     FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
@@ -251,6 +280,14 @@ begin
       FSetMain.ChatGPTModel := FormCfg.cbModel.Text;
       FSetMain.CHATGPT := FormCfg.edTokenGPT.Text;
       FSetMain.ChatGPTURL := FormCfg.edURL.Text;
+
+      // Aba Output Voice
+      FSetMain.SynthEngine := FormCfg.cbSynthEngine.ItemIndex;
+      FSetMain.SynthVoice := FormCfg.cbSynthVoice.Text;
+      FSetMain.SynthVolume := FormCfg.tbSynthVolume.Position;
+      FSetMain.SynthRate := FormCfg.tbSynthRate.Position;
+      FSetMain.SynthAsync := FormCfg.chkSynthAsync.Checked;
+
       FSetMain.Frase := FormCfg.edFrase.Text;
       FSetMain.VoiceSynthIP := FormCfg.edSynthIP.Text;
       FSetMain.VoiceSynthPort := StrToIntDef(FormCfg.edSynthPort.Text, 8096);
@@ -270,7 +307,6 @@ begin
       FSetMain.SchemaPost := FormCfg.edPostSchema.Text;
 
       FSetMain.SalvaContexto(false);
-
       AplicaConfigChatGPT();
     end;
   finally
