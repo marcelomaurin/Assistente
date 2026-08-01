@@ -5,8 +5,8 @@ unit toolsfalar;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, lNetComponents, Forms, Controls, Graphics,
-  Dialogs, StdCtrls, ExtCtrls, lNet;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics,
+  Dialogs, StdCtrls, ExtCtrls, aiconn, aivoicesynthesizer;
 
 type
 
@@ -22,23 +22,22 @@ type
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
-    LTCPComponent1: TLTCPComponent;
     Shape1: TShape;
     procedure btConectClick(Sender: TObject);
     procedure btDisconectClick(Sender: TObject);
     procedure btFalarClick(Sender: TObject);
     procedure edPortChange(Sender: TObject);
-    procedure LTCPComponent1Connect(aSocket: TLSocket);
-    procedure LTCPComponent1Disconnect(aSocket: TLSocket);
-    procedure LTCPComponent1Error(const msg: string; aSocket: TLSocket);
-    procedure LTCPComponent1Receive(aSocket: TLSocket);
+    procedure FormDestroy(Sender: TObject);
   private
-    { private declarations }
+    FConn: TAIConnClient;
+    FVoiceSynth: TAIVoiceSynthesizer;
+    procedure ConnDataReceived(Sender: TObject; const AData: string);
   public
-    { public declarations }
+    constructor Create(AOwner: TComponent); override;
     procedure Falar();
     procedure Conectar();
     procedure Disconectar();
+    property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
   end;
 
 var
@@ -48,7 +47,18 @@ implementation
 
 {$R *.lfm}
 
-{ TfrmMain }
+constructor TfrmToolsfalar.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FConn := TAIConnClient.Create(Self);
+  FConn.OnDataReceived := @ConnDataReceived;
+  FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
+  FVoiceSynth.Engine := seSystemDefault;
+end;
+
+procedure TfrmToolsfalar.FormDestroy(Sender: TObject);
+begin
+end;
 
 procedure TfrmToolsfalar.btConectClick(Sender: TObject);
 begin
@@ -67,55 +77,37 @@ end;
 
 procedure TfrmToolsfalar.edPortChange(Sender: TObject);
 begin
-
 end;
 
-procedure TfrmToolsfalar.LTCPComponent1Connect(aSocket: TLSocket);
+procedure TfrmToolsfalar.ConnDataReceived(Sender: TObject; const AData: string);
 begin
-  //ShowMessage('Conectou!');
-end;
-
-procedure TfrmToolsfalar.LTCPComponent1Disconnect(aSocket: TLSocket);
-begin
-  //ShowMessage('Disconectou');
-end;
-
-procedure TfrmToolsfalar.LTCPComponent1Error(const msg: string; aSocket: TLSocket);
-begin
-  //ShowMessage('Erro ao conectar!');
-end;
-
-procedure TfrmToolsfalar.LTCPComponent1Receive(aSocket: TLSocket);
-var
-   info : String;
-begin
-  //ShowMessage('Recebeu a mensagem:');
-
-  aSocket.GetMessage(info);
-  //ShowMessage(info);
 end;
 
 procedure TfrmToolsfalar.Falar();
 var
-   pergunta: string;
+  pergunta: string;
 begin
   pergunta := edFalar.text;
-  if(pergunta<>'') then
+  if (pergunta <> '') then
   begin
-     LTCPComponent1.SendMessage(edFalar.text,nil);
-     //Disconectar();
+    FVoiceSynth.Say(pergunta);
+
+    if FConn.Connected then
+      FConn.SendText(pergunta);
   end;
 end;
 
 procedure TfrmToolsfalar.Conectar();
 begin
-  LTCPComponent1.Connect(edIP.text,strtoint(edPort.text));
+  try
+    FConn.Connect(edIP.text, StrToIntDef(edPort.text, 8096));
+  except
+  end;
 end;
 
 procedure TfrmToolsfalar.Disconectar();
 begin
-  LTCPComponent1.Disconnect(true);
+  FConn.Disconnect;
 end;
 
 end.
-

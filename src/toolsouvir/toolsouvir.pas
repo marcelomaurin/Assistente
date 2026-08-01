@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  lNetComponents, lNet, strutils;
+  strutils, aiconn, aivoicerecognizer;
 
 type
 
@@ -19,19 +19,23 @@ type
     edPort: TEdit;
     Label1: TLabel;
     Label2: TLabel;
-    LTCPComponent1: TLTCPComponent;
     Shape1: TShape;
     procedure btConectClick(Sender: TObject);
     procedure btDisconectClick(Sender: TObject);
-    procedure LTCPComponent1Receive(aSocket: TLSocket);
     procedure Shape1ChangeBounds(Sender: TObject);
   private
     lastfrase : string;
+    FConn: TAIConnClient;
+    FVoiceRecog: TAIVoiceRecognizer;
+    procedure ConnDataReceived(Sender: TObject; const AData: string);
+    procedure VoiceRecognized(Sender: TObject; const AText: string);
   public
     frase : string;
+    constructor Create(AOwner: TComponent); override;
     procedure Conectar();
     procedure Disconectar();
-
+    procedure ProcessaTextoReconhecido(const ATexto: string);
+    property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
   end;
 
 var
@@ -43,17 +47,24 @@ implementation
 
 uses main;
 
-{ TfrmToolsOuvir }
+constructor TfrmToolsOuvir.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FConn := TAIConnClient.Create(Self);
+  FConn.OnDataReceived := @ConnDataReceived;
 
+  FVoiceRecog := TAIVoiceRecognizer.Create(Self);
+  FVoiceRecog.Engine := vreOpenAIWhisper;
+  FVoiceRecog.OnRecognized := @VoiceRecognized;
+end;
 
 procedure TfrmToolsOuvir.Shape1ChangeBounds(Sender: TObject);
 begin
-
 end;
 
 procedure TfrmToolsOuvir.btConectClick(Sender: TObject);
 begin
-   Conectar();
+  Conectar();
 end;
 
 procedure TfrmToolsOuvir.btDisconectClick(Sender: TObject);
@@ -61,42 +72,49 @@ begin
   Disconectar();
 end;
 
-procedure TfrmToolsOuvir.LTCPComponent1Receive(aSocket: TLSocket);
-var
-   info : String;
-   posicao : integer;
+procedure TfrmToolsOuvir.VoiceRecognized(Sender: TObject; const AText: string);
 begin
-  //ShowMessage('Recebeu a mensagem:');
-  info := '';
-  aSocket.GetMessage(info);
-  posicao := pos(frase,info);
-  if(posicao<>0) then
+  ProcessaTextoReconhecido(AText);
+end;
+
+procedure TfrmToolsOuvir.ProcessaTextoReconhecido(const ATexto: string);
+var
+  info: string;
+  posicao: integer;
+begin
+  info := ATexto;
+  posicao := Pos(frase, info);
+  if (posicao <> 0) or (frase = '') then
   begin
-       if(lastfrase <> info) then
-       begin
-         lastfrase := info;
-         info := replacestr(info,frase, '');
-         frmmain.NewContext();
-         frmmain.pergunta := info;
+    if (lastfrase <> info) then
+    begin
+      lastfrase := info;
+      if frase <> '' then
+        info := ReplaceStr(info, frase, '');
 
-         frmmain.FazPergunta();
-       end;
-
-
+      frmmain.NewContext();
+      frmmain.pergunta := Trim(info);
+      frmmain.FazPergunta();
+    end;
   end;
+end;
 
-  //ShowMessage(info);
+procedure TfrmToolsOuvir.ConnDataReceived(Sender: TObject; const AData: string);
+begin
+  ProcessaTextoReconhecido(AData);
 end;
 
 procedure TfrmToolsOuvir.Conectar();
 begin
-  LTCPComponent1.Connect(edIP.text,strtoint(edPort.text));
+  try
+    FConn.Connect(edIP.text, StrToIntDef(edPort.text, 8097));
+  except
+  end;
 end;
 
 procedure TfrmToolsOuvir.Disconectar();
 begin
-  LTCPComponent1.Disconnect(true);
+  FConn.Disconnect;
 end;
 
 end.
-
