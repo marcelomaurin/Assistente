@@ -73,11 +73,11 @@ type
     procedure cbProviderChange(Sender: TObject);
     procedure btSalvarClick(Sender: TObject);
     procedure btCancelarClick(Sender: TObject);
-    procedure FormShow(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
-    procedure CarregaModelosDoProvedor;
+    FLoading: Boolean;
   public
-
+    procedure CarregaModelosDoProvedor;
   end;
 
 var
@@ -89,6 +89,16 @@ implementation
 
 { TfrmConfig }
 
+procedure TfrmConfig.FormCreate(Sender: TObject);
+begin
+  FLoading := True;
+  try
+    GetAIProviderList(cbProvider.Items);
+  finally
+    FLoading := False;
+  end;
+end;
+
 procedure TfrmConfig.CarregaModelosDoProvedor;
 var
   Prov: TAIProvider;
@@ -98,7 +108,7 @@ begin
   Prov := GetAIProviderFromIndex(cbProvider.ItemIndex);
   GetAIModelListForProvider(Prov, cbModel.Items);
 
-  if cbModel.Items.IndexOf(ModeloAtual) >= 0 then
+  if Trim(ModeloAtual) <> '' then
     cbModel.Text := ModeloAtual
   else if cbModel.Items.Count > 0 then
     cbModel.ItemIndex := 0;
@@ -108,17 +118,11 @@ procedure TfrmConfig.cbProviderChange(Sender: TObject);
 var
   Prov: TAIProvider;
 begin
+  if FLoading then Exit;
+
   Prov := GetAIProviderFromIndex(cbProvider.ItemIndex);
   CarregaModelosDoProvedor;
   edURL.Text := GetDefaultEndpointForProvider(Prov);
-end;
-
-procedure TfrmConfig.FormShow(Sender: TObject);
-begin
-  GetAIProviderList(cbProvider.Items);
-  if (cbProvider.ItemIndex < 0) or (cbProvider.ItemIndex >= cbProvider.Items.Count) then
-    cbProvider.ItemIndex := 0;
-  CarregaModelosDoProvedor;
 end;
 
 procedure TfrmConfig.btSalvarClick(Sender: TObject);

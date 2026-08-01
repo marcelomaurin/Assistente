@@ -222,7 +222,9 @@ begin
     if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
       FormCfg.cbProvider.ItemIndex := 0;
 
-    FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
+    FormCfg.CarregaModelosDoProvedor;
+    if Trim(FSetMain.ChatGPTModel) <> '' then
+      FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
     FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
     FormCfg.edURL.Text := FSetMain.ChatGPTURL;
     FormCfg.edFrase.Text := FSetMain.Frase;

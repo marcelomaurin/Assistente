@@ -7,7 +7,7 @@ object frmConfig: TfrmConfig
   Caption = 'Configurações do Assistente'
   ClientHeight = 460
   ClientWidth = 380
-  OnShow = FormShow
+  OnCreate = FormCreate
   Position = poOwnerFormCenter
   LCLVersion = '4.4.0.0'
   object pcConfig: TPageControl
