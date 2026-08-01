@@ -126,13 +126,14 @@ begin
   FormCfg := TfrmConfig.Create(Self);
   try
     // Carrega dados do FSetMain nos campos das abas
-    FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
-    FormCfg.edFrase.Text := FSetMain.Frase;
     FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
-    if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex > 5) then
+    if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
       FormCfg.cbProvider.ItemIndex := 0;
-    FormCfg.edModel.Text := FSetMain.ChatGPTModel;
+
+    FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
+    FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
     FormCfg.edURL.Text := FSetMain.ChatGPTURL;
+    FormCfg.edFrase.Text := FSetMain.Frase;
     FormCfg.edSynthIP.Text := FSetMain.VoiceSynthIP;
     FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
     FormCfg.edRecogIP.Text := FSetMain.VoiceRecogIP;
@@ -152,11 +153,11 @@ begin
     if FormCfg.ShowModal = mrOk then
     begin
       // Salva no FSetMain e persiste no Setmain.cfg
-      FSetMain.CHATGPT := FormCfg.edTokenGPT.Text;
-      FSetMain.Frase := FormCfg.edFrase.Text;
       FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
-      FSetMain.ChatGPTModel := FormCfg.edModel.Text;
+      FSetMain.ChatGPTModel := FormCfg.cbModel.Text;
+      FSetMain.CHATGPT := FormCfg.edTokenGPT.Text;
       FSetMain.ChatGPTURL := FormCfg.edURL.Text;
+      FSetMain.Frase := FormCfg.edFrase.Text;
       FSetMain.VoiceSynthIP := FormCfg.edSynthIP.Text;
       FSetMain.VoiceSynthPort := StrToIntDef(FormCfg.edSynthPort.Text, 8096);
       FSetMain.VoiceRecogIP := FormCfg.edRecogIP.Text;

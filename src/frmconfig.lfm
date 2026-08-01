@@ -7,6 +7,7 @@ object frmConfig: TfrmConfig
   Caption = 'Configurações do Assistente'
   ClientHeight = 460
   ClientWidth = 380
+  OnShow = FormShow
   Position = poOwnerFormCenter
   LCLVersion = '4.4.0.0'
   object pcConfig: TPageControl
@@ -22,26 +23,10 @@ object frmConfig: TfrmConfig
       Caption = 'IA / ChatGPT'
       ClientHeight = 382
       ClientWidth = 372
-      object lblToken: TLabel
-        Left = 10
-        Height = 15
-        Top = 15
-        Width = 80
-        Caption = 'Chatgpt Token:'
-        ParentColor = False
-      end
-      object edTokenGPT: TEdit
-        Left = 10
-        Height = 23
-        Top = 35
-        Width = 350
-        PasswordChar = '*'
-        TabOrder = 0
-      end
       object lblProvider: TLabel
         Left = 10
         Height = 15
-        Top = 75
+        Top = 15
         Width = 51
         Caption = 'Provedor:'
         ParentColor = False
@@ -49,33 +34,43 @@ object frmConfig: TfrmConfig
       object cbProvider: TComboBox
         Left = 10
         Height = 23
-        Top = 95
-        Width = 200
+        Top = 35
+        Width = 350
         ItemHeight = 15
-        Items.Strings = (
-          'OpenAI'
-          'OpenRouter'
-          'Cerebras'
-          'Local (Ollama)'
-          'Gemini'
-          'Claude'
-        )
+        OnChange = cbProviderChange
         Style = csDropDownList
-        TabOrder = 1
+        TabOrder = 0
       end
       object lblModel: TLabel
         Left = 10
         Height = 15
-        Top = 135
-        Width = 231
-        Caption = 'Modelo (em branco = padrão do provedor):'
+        Top = 75
+        Width = 44
+        Caption = 'Modelo:'
         ParentColor = False
       end
-      object edModel: TEdit
+      object cbModel: TComboBox
+        Left = 10
+        Height = 23
+        Top = 95
+        Width = 350
+        ItemHeight = 15
+        TabOrder = 1
+      end
+      object lblToken: TLabel
+        Left = 10
+        Height = 15
+        Top = 135
+        Width = 80
+        Caption = 'Chatgpt Token:'
+        ParentColor = False
+      end
+      object edTokenGPT: TEdit
         Left = 10
         Height = 23
         Top = 155
         Width = 350
+        PasswordChar = '*'
         TabOrder = 2
       end
       object lblURL: TLabel
