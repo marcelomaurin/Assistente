@@ -98,7 +98,7 @@ type
     procedure SetToken(const AValue: WideString);
     procedure SetTipoChat(const AValue: TVersionChat);
     function MontaJson: WideString;
-    function PegaMensagem(const JSON: WideString): WideString;
+    function PegaMensagem(const JSON: string): WideString;
     function GetEndpoint: WideString;
     function GetModelName: WideString;
     procedure AddProviderHeaders(AHTTP: TFPHttpClient);
@@ -354,9 +354,9 @@ begin
   Result := S + '/v1/chat/completions';
 end;
 
-function TCHATGPT.PegaMensagem(const JSON: WideString): WideString;
+function TCHATGPT.PegaMensagem(const JSON: string): WideString;
 var
-  CleanJSON: WideString;
+  CleanJSON: string;
   Data: TJSONData;
   JsonObject, MessageObject: TJSONObject;
   ChoicesArray: TJSONArray;
@@ -743,7 +743,7 @@ begin
     try
       try
         RawResponse := HTTP.Post(Endpoint);
-        FResponse := PegaMensagem(UTF8ToUTF16(RawResponse));
+        FResponse := PegaMensagem(RawResponse);
         FLastResult := UTF8Encode(FResponse);
         Result := Trim(FResponse) <> '';
         FLastSuccess := Result;
