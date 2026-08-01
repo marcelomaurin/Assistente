@@ -1,0 +1,104 @@
+object frmSplash: TfrmSplash
+  Left = 500
+  Height = 310
+  Top = 250
+  Width = 460
+  BorderStyle = bsNone
+  Caption = 'Splash'
+  ClientHeight = 310
+  ClientWidth = 460
+  Color = 2432023
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '4.4.0.0'
+  object pnlMain: TPanel
+    Left = 0
+    Height = 310
+    Top = 0
+    Width = 460
+    Align = alClient
+    BevelInner = bvRaised
+    BevelOuter = bvLowered
+    ClientHeight = 310
+    ClientWidth = 460
+    Color = 2432023
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 0
+    object GifAnimSplash: TGifAnim
+      Left = 20
+      Height = 140
+      Top = 25
+      Width = 140
+      Animate = True
+      AutoSize = False
+      FileName = 'robo8.gif'
+    end
+    object lblTitle: TLabel
+      Left = 175
+      Height = 30
+      Top = 25
+      Width = 260
+      Caption = 'Assistente Virtual AI'
+      Font.Color = 15787776
+      Font.Height = -21
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblSubtitle: TLabel
+      Left = 175
+      Height = 20
+      Top = 65
+      Width = 260
+      Caption = 'Agente Inteligente de Voz e Chat'
+      Font.Color = 13684944
+      Font.Height = -13
+      Font.Name = 'Segoe UI'
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblVersion: TLabel
+      Left = 175
+      Height = 20
+      Top = 95
+      Width = 260
+      Caption = 'Versão 1.0.0'
+      Font.Color = 53683
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblStatus: TLabel
+      Left = 20
+      Height = 18
+      Top = 220
+      Width = 420
+      Caption = 'Carregando componentes de IA...'
+      Font.Color = 14737632
+      Font.Height = -12
+      Font.Name = 'Segoe UI'
+      ParentColor = False
+      ParentFont = False
+    end
+    object pbProgress: TProgressBar
+      Left = 20
+      Height = 22
+      Top = 245
+      Width = 420
+      Smooth = True
+      TabOrder = 0
+    end
+  end
+  object tmrSplash: TTimer
+    Enabled = False
+    Interval = 50
+    OnTimer = tmrSplashTimer
+    Left = 390
+    Top = 150
+  end
+end
