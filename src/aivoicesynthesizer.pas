@@ -348,7 +348,9 @@ procedure TAIVoiceSynthesizer.Say(const AText: string);
 var
   SpeakText: string;
   {$IFDEF MSWINDOWS}
-  Flags: Integer;
+  Flags, I: Integer;
+  Voices, VoiceItem: OleVariant;
+  VoiceNameFound: string;
   {$ENDIF}
 begin
   ClearError;
@@ -365,6 +367,8 @@ begin
 
   if FEngine = seOpenAI then
   begin
+    if Trim(FVoiceName) <> '' then
+      FOpenAIVoice := LowerCase(FVoiceName);
     SayOpenAI(SpeakText);
     Exit;
   end;
@@ -386,6 +390,33 @@ begin
 
       if (FRate >= -10) and (FRate <= 10) then
         FSpVoice.Rate := FRate;
+
+      if Trim(FVoiceName) <> '' then
+      begin
+        try
+          Voices := FSpVoice.GetVoices;
+          for I := 0 to Voices.Count - 1 do
+          begin
+            VoiceItem := Voices.Item(I);
+            VoiceNameFound := '';
+            try
+              VoiceNameFound := VoiceItem.GetAttribute('Name');
+            except
+              try
+                VoiceNameFound := VoiceItem.GetDescription;
+              except
+              end;
+            end;
+
+            if SameText(VoiceNameFound, FVoiceName) or (Pos(LowerCase(FVoiceName), LowerCase(VoiceNameFound)) > 0) then
+            begin
+              FSpVoice.Voice := VoiceItem;
+              Break;
+            end;
+          end;
+        except
+        end;
+      end;
 
       if FAsynchronous then
         Flags := 1 // SPF_ASYNC
