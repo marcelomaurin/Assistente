@@ -125,7 +125,7 @@ var
 begin
   FormCfg := TfrmConfig.Create(Self);
   try
-    // Carrega dados do FSetMain nos campos da aba
+    // Carrega dados do FSetMain nos campos das abas
     FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
     FormCfg.edFrase.Text := FSetMain.Frase;
     FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
@@ -137,6 +137,17 @@ begin
     FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
     FormCfg.edRecogIP.Text := FSetMain.VoiceRecogIP;
     FormCfg.edRecogPort.Text := IntToStr(FSetMain.VoiceRecogPort);
+
+    // Aba Banco de Dados
+    FormCfg.edMyHost.Text := FSetMain.HostnameMy;
+    FormCfg.edMyDb.Text := FSetMain.BancoMy;
+    FormCfg.edMyUser.Text := FSetMain.UsernameMy;
+    FormCfg.edMyPass.Text := FSetMain.PasswordMy;
+    FormCfg.edPostHost.Text := FSetMain.HostnamePost;
+    FormCfg.edPostDb.Text := FSetMain.BancoPOST;
+    FormCfg.edPostUser.Text := FSetMain.UsernamePost;
+    FormCfg.edPostPass.Text := FSetMain.PasswordPost;
+    FormCfg.edPostSchema.Text := FSetMain.SchemaPost;
 
     if FormCfg.ShowModal = mrOk then
     begin
@@ -150,6 +161,17 @@ begin
       FSetMain.VoiceSynthPort := StrToIntDef(FormCfg.edSynthPort.Text, 8096);
       FSetMain.VoiceRecogIP := FormCfg.edRecogIP.Text;
       FSetMain.VoiceRecogPort := StrToIntDef(FormCfg.edRecogPort.Text, 8097);
+
+      FSetMain.HostnameMy := FormCfg.edMyHost.Text;
+      FSetMain.BancoMy := FormCfg.edMyDb.Text;
+      FSetMain.UsernameMy := FormCfg.edMyUser.Text;
+      FSetMain.PasswordMy := FormCfg.edMyPass.Text;
+      FSetMain.HostnamePost := FormCfg.edPostHost.Text;
+      FSetMain.BancoPOST := FormCfg.edPostDb.Text;
+      FSetMain.UsernamePost := FormCfg.edPostUser.Text;
+      FSetMain.PasswordPost := FormCfg.edPostPass.Text;
+      FSetMain.SchemaPost := FormCfg.edPostSchema.Text;
+
       FSetMain.SalvaContexto(false);
 
       AplicaConfigChatGPT();
