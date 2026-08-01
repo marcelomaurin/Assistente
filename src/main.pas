@@ -112,25 +112,36 @@ begin
 end;
 
 { Tfrmmain }
-
 procedure Tfrmmain.FormCreate(Sender: TObject);
 begin
    FAguardandoResposta := false;
    FVoiceActive := true;
 
-   FSetMain := TSetMain.create();
-   FSetMain.CarregaContexto();
+   try
+     FSetMain := TSetMain.create();
+     FSetMain.CarregaContexto();
+   except
+   end;
 
-   FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
-   FVoiceSynth.Engine := seSystemDefault;
+   try
+     FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
+     FVoiceSynth.Engine := seSystemDefault;
+   except
+   end;
 
-   FVoiceRecog := TAIVoiceRecognizer.Create(Self);
-   FVoiceRecog.Engine := vreOpenAIWhisper;
-   FVoiceRecog.OnRecognized := @VoiceRecognized;
+   try
+     FVoiceRecog := TAIVoiceRecognizer.Create(Self);
+     FVoiceRecog.Engine := vreOpenAIWhisper;
+     FVoiceRecog.OnRecognized := @VoiceRecognized;
+   except
+   end;
 
-   CHATGPT1 := TCHATGPT.create(self);
-   CHATGPT1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
-   AplicaConfigChatGPT();
+   try
+     CHATGPT1 := TCHATGPT.create(self);
+     CHATGPT1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
+     AplicaConfigChatGPT();
+   except
+   end;
 
    AtualizaEstadoSpeaker();
    CarregaIcones();
@@ -141,17 +152,19 @@ var
   ImgDir: string;
 begin
   ImgDir := ExtractFilePath(ApplicationName) + 'images' + PathDelim;
-
-  if FileExists(ImgDir + 'app_icon.png') then
-    btIniciar.Glyph.LoadFromFile(ImgDir + 'app_icon.png');
-  if FileExists(ImgDir + 'settings.png') then
-    btAbrirConfig.Glyph.LoadFromFile(ImgDir + 'settings.png');
-  if FileExists(ImgDir + 'send.png') then
-    btEnviar.Glyph.LoadFromFile(ImgDir + 'send.png');
-  if FileExists(ImgDir + 'mic.png') then
-    btMic.Glyph.LoadFromFile(ImgDir + 'mic.png');
-  if FileExists(ImgDir + 'speaker.png') then
-    btSpeaker.Glyph.LoadFromFile(ImgDir + 'speaker.png');
+  try
+    if FileExists(ImgDir + 'app_icon.png') then
+      btIniciar.Glyph.LoadFromFile(ImgDir + 'app_icon.png');
+    if FileExists(ImgDir + 'settings.png') then
+      btAbrirConfig.Glyph.LoadFromFile(ImgDir + 'settings.png');
+    if FileExists(ImgDir + 'send.png') then
+      btEnviar.Glyph.LoadFromFile(ImgDir + 'send.png');
+    if FileExists(ImgDir + 'mic.png') then
+      btMic.Glyph.LoadFromFile(ImgDir + 'mic.png');
+    if FileExists(ImgDir + 'speaker.png') then
+      btSpeaker.Glyph.LoadFromFile(ImgDir + 'speaker.png');
+  except
+  end;
 end;
 
 procedure Tfrmmain.AtualizaEstadoSpeaker;
@@ -189,10 +202,14 @@ var
   posicao: integer;
 begin
   info := AText;
-  posicao := Pos(FSetMain.Frase, info);
-  if (posicao <> 0) or (FSetMain.Frase = '') then
+  if (FSetMain <> nil) and (FSetMain.Frase <> '') then
+    posicao := Pos(FSetMain.Frase, info)
+  else
+    posicao := 1;
+
+  if posicao <> 0 then
   begin
-    if FSetMain.Frase <> '' then
+    if (FSetMain <> nil) and (FSetMain.Frase <> '') then
       info := ReplaceStr(info, FSetMain.Frase, '');
 
     NewContext();
@@ -221,29 +238,39 @@ begin
   if CHATGPT1 = nil then
     Exit;
 
-  CHATGPT1.TOKEN := FSetMain.CHATGPT;
-  CHATGPT1.Provider := TAIProvider(FSetMain.ChatGPTProvider);
-  CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
-  CHATGPT1.URL := FSetMain.ChatGPTURL;
+  try
+    if FSetMain <> nil then
+    begin
+      CHATGPT1.TOKEN := FSetMain.CHATGPT;
+      if (FSetMain.ChatGPTProvider >= 0) and (FSetMain.ChatGPTProvider <= Ord(High(TAIProvider))) then
+        CHATGPT1.Provider := TAIProvider(FSetMain.ChatGPTProvider)
+      else
+        CHATGPT1.Provider := AIP_OPENAI;
 
-  if Assigned(FVoiceRecog) then
-    FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
+      CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
+      CHATGPT1.URL := FSetMain.ChatGPTURL;
 
-  if Assigned(FVoiceSynth) then
-  begin
-    FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
-    case FSetMain.SynthEngine of
-      0: FVoiceSynth.Engine := seSystemDefault;
-      1: FVoiceSynth.Engine := seSAPI;
-      2: FVoiceSynth.Engine := seEspeak;
-      3: FVoiceSynth.Engine := seOpenAI;
-    else
-      FVoiceSynth.Engine := seSystemDefault;
+      if Assigned(FVoiceRecog) then
+        FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
+
+      if Assigned(FVoiceSynth) then
+      begin
+        FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
+        case FSetMain.SynthEngine of
+          0: FVoiceSynth.Engine := seSystemDefault;
+          1: FVoiceSynth.Engine := seSAPI;
+          2: FVoiceSynth.Engine := seEspeak;
+          3: FVoiceSynth.Engine := seOpenAI;
+        else
+          FVoiceSynth.Engine := seSystemDefault;
+        end;
+        FVoiceSynth.VoiceName := FSetMain.SynthVoice;
+        FVoiceSynth.Volume := FSetMain.SynthVolume;
+        FVoiceSynth.Rate := FSetMain.SynthRate;
+        FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+      end;
     end;
-    FVoiceSynth.VoiceName := FSetMain.SynthVoice;
-    FVoiceSynth.Volume := FSetMain.SynthVolume;
-    FVoiceSynth.Rate := FSetMain.SynthRate;
-    FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+  except
   end;
 end;
 
