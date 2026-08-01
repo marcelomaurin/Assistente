@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  ComCtrls, GifAnim, strutils, chatgpt, setmain, frmconfig, aivoicesynthesizer, aivoicerecognizer;
+  Buttons, ComCtrls, GifAnim, strutils, chatgpt, setmain, frmconfig, aivoicesynthesizer, aivoicerecognizer;
 
 type
 
@@ -16,20 +16,20 @@ type
     pnlTop: TPanel;
     GifAnim1: TGifAnim;
     pnlTopControls: TPanel;
-    btIniciar: TButton;
-    btAbrirConfig: TButton;
+    btIniciar: TBitBtn;
+    btAbrirConfig: TBitBtn;
     
     pnlChat: TPanel;
     pnlHistoricoHeader: TPanel;
     lblHistorico: TLabel;
-    btSpeaker: TButton;
+    btSpeaker: TBitBtn;
     memHistorico: TMemo;
     
     pnlPergunta: TPanel;
     lblPergunta: TLabel;
     memPergunta: TMemo;
-    btEnviar: TButton;
-    btMic: TButton;
+    btEnviar: TBitBtn;
+    btMic: TBitBtn;
 
     procedure btAbrirConfigClick(Sender: TObject);
     procedure btEnviarClick(Sender: TObject);
@@ -46,6 +46,7 @@ type
     procedure AplicaConfigChatGPT();
     procedure VoiceRecognized(Sender: TObject; const AText: string);
     procedure AtualizaEstadoSpeaker;
+    procedure CarregaIcones;
   public
     pergunta : string;
     procedure NewContext();
@@ -132,6 +133,25 @@ begin
    AplicaConfigChatGPT();
 
    AtualizaEstadoSpeaker();
+   CarregaIcones();
+end;
+
+procedure Tfrmmain.CarregaIcones;
+var
+  ImgDir: string;
+begin
+  ImgDir := ExtractFilePath(ApplicationName) + 'images' + PathDelim;
+
+  if FileExists(ImgDir + 'app_icon.png') then
+    btIniciar.Glyph.LoadFromFile(ImgDir + 'app_icon.png');
+  if FileExists(ImgDir + 'settings.png') then
+    btAbrirConfig.Glyph.LoadFromFile(ImgDir + 'settings.png');
+  if FileExists(ImgDir + 'send.png') then
+    btEnviar.Glyph.LoadFromFile(ImgDir + 'send.png');
+  if FileExists(ImgDir + 'mic.png') then
+    btMic.Glyph.LoadFromFile(ImgDir + 'mic.png');
+  if FileExists(ImgDir + 'speaker.png') then
+    btSpeaker.Glyph.LoadFromFile(ImgDir + 'speaker.png');
 end;
 
 procedure Tfrmmain.AtualizaEstadoSpeaker;

@@ -36,7 +36,7 @@ object frmmain: Tfrmmain
       ClientHeight = 160
       ClientWidth = 230
       TabOrder = 0
-      object btIniciar: TButton
+      object btIniciar: TBitBtn
         Left = 10
         Height = 40
         Top = 20
@@ -45,7 +45,7 @@ object frmmain: Tfrmmain
         OnClick = btIniciarClick
         TabOrder = 0
       end
-      object btAbrirConfig: TButton
+      object btAbrirConfig: TBitBtn
         Left = 10
         Height = 40
         Top = 80
@@ -84,7 +84,7 @@ object frmmain: Tfrmmain
         Font.Style = [fsBold]
         ParentColor = False
       end
-      object btSpeaker: TButton
+      object btSpeaker: TBitBtn
         Left = 300
         Height = 28
         Top = 3
@@ -131,7 +131,7 @@ object frmmain: Tfrmmain
       ScrollBars = ssVertical
       TabOrder = 0
     end
-    object btEnviar: TButton
+    object btEnviar: TBitBtn
       Left = 310
       Height = 44
       Top = 28
@@ -140,7 +140,7 @@ object frmmain: Tfrmmain
       OnClick = btEnviarClick
       TabOrder = 1
     end
-    object btMic: TButton
+    object btMic: TBitBtn
       Left = 310
       Height = 44
       Top = 79
