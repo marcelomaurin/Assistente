@@ -1,0 +1,197 @@
+object frmConfig: TfrmConfig
+  Left = 450
+  Height = 440
+  Top = 200
+  Width = 360
+  BorderStyle = bsDialog
+  Caption = 'Configurações do Assistente'
+  ClientHeight = 440
+  ClientWidth = 360
+  Position = poOwnerFormCenter
+  LCLVersion = '4.4.0.0'
+  object pcConfig: TPageControl
+    Left = 0
+    Height = 390
+    Top = 0
+    Width = 360
+    ActivePage = tsIA
+    Align = alTop
+    TabIndex = 0
+    TabOrder = 0
+    object tsIA: TTabSheet
+      Caption = 'IA / ChatGPT'
+      ClientHeight = 362
+      ClientWidth = 352
+      object lblToken: TLabel
+        Left = 10
+        Height = 15
+        Top = 15
+        Width = 80
+        Caption = 'Chatgpt Token:'
+        ParentColor = False
+      end
+      object edTokenGPT: TEdit
+        Left = 10
+        Height = 23
+        Top = 35
+        Width = 330
+        PasswordChar = '*'
+        TabOrder = 0
+      end
+      object lblProvider: TLabel
+        Left = 10
+        Height = 15
+        Top = 75
+        Width = 51
+        Caption = 'Provedor:'
+        ParentColor = False
+      end
+      object cbProvider: TComboBox
+        Left = 10
+        Height = 23
+        Top = 95
+        Width = 200
+        ItemHeight = 15
+        Items.Strings = (
+          'OpenAI'
+          'OpenRouter'
+          'Cerebras'
+          'Local (Ollama)'
+          'Gemini'
+          'Claude'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+      end
+      object lblModel: TLabel
+        Left = 10
+        Height = 15
+        Top = 135
+        Width = 231
+        Caption = 'Modelo (em branco = padrão do provedor):'
+        ParentColor = False
+      end
+      object edModel: TEdit
+        Left = 10
+        Height = 23
+        Top = 155
+        Width = 330
+        TabOrder = 2
+      end
+      object lblURL: TLabel
+        Left = 10
+        Height = 15
+        Top = 195
+        Width = 213
+        Caption = 'URL customizada (em branco = padrão):'
+        ParentColor = False
+      end
+      object edURL: TEdit
+        Left = 10
+        Height = 23
+        Top = 215
+        Width = 330
+        TabOrder = 3
+      end
+    end
+    object tsVoz: TTabSheet
+      Caption = 'Voz / Ativação'
+      ClientHeight = 362
+      ClientWidth = 352
+      object lblFrase: TLabel
+        Left = 10
+        Height = 15
+        Top = 15
+        Width = 100
+        Caption = 'Frase de Ativação:'
+        ParentColor = False
+      end
+      object edFrase: TEdit
+        Left = 10
+        Height = 23
+        Top = 35
+        Width = 250
+        TabOrder = 0
+        Text = 'meu anjo'
+      end
+      object lblSynth: TLabel
+        Left = 10
+        Height = 15
+        Top = 75
+        Width = 129
+        Caption = 'Voz - Síntese (IP / Porta):'
+        ParentColor = False
+      end
+      object edSynthIP: TEdit
+        Left = 10
+        Height = 23
+        Top = 95
+        Width = 160
+        TabOrder = 1
+        Text = '127.0.0.1'
+      end
+      object edSynthPort: TEdit
+        Left = 180
+        Height = 23
+        Top = 95
+        Width = 70
+        TabOrder = 2
+        Text = '8096'
+      end
+      object lblRecog: TLabel
+        Left = 10
+        Height = 15
+        Top = 135
+        Width = 182
+        Caption = 'Voz - Reconhecimento (IP / Porta):'
+        ParentColor = False
+      end
+      object edRecogIP: TEdit
+        Left = 10
+        Height = 23
+        Top = 155
+        Width = 160
+        TabOrder = 3
+        Text = '127.0.0.1'
+      end
+      object edRecogPort: TEdit
+        Left = 180
+        Height = 23
+        Top = 155
+        Width = 70
+        TabOrder = 4
+        Text = '8097'
+      end
+    end
+  end
+  object pnlButtons: TPanel
+    Left = 0
+    Height = 50
+    Top = 390
+    Width = 360
+    Align = alBottom
+    ClientHeight = 50
+    ClientWidth = 360
+    TabOrder = 1
+    object btSalvar: TButton
+      Left = 150
+      Height = 30
+      Top = 10
+      Width = 90
+      Caption = 'Salvar'
+      ModalResult = 1
+      OnClick = btSalvarClick
+      TabOrder = 0
+    end
+    object btCancelar: TButton
+      Left = 255
+      Height = 30
+      Top = 10
+      Width = 90
+      Caption = 'Cancelar'
+      ModalResult = 2
+      OnClick = btCancelarClick
+      TabOrder = 1
+    end
+  end
+end

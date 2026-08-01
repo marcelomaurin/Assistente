@@ -31,9 +31,6 @@
         <PackageName Value="pkg_gifanim"/>
       </Item>
       <Item>
-        <PackageName Value="lnetvisual"/>
-      </Item>
-      <Item>
         <PackageName Value="SynEdit"/>
       </Item>
       <Item>
@@ -68,7 +65,19 @@
         <UnitName Value="ToolsOuvir"/>
       </Unit>
       <Unit>
+        <Filename Value="aibase.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
         <Filename Value="chatgpt.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="aisockets.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="aiconn.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -85,6 +94,13 @@
       <Unit>
         <Filename Value="setmain.pas"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="frmconfig.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmConfig"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>
   </ProjectOptions>
