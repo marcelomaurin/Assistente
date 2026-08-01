@@ -335,11 +335,26 @@ begin
 end;
 
 procedure Tfrmmain.btIniciarClick(Sender: TObject);
+var
+  GifFile: string;
 begin
   AplicaConfigChatGPT();
 
-  GifAnim1.visible := true;
-  GifAnim1.Animate := true;
+  GifFile := ExtractFilePath(ApplicationName) + 'img' + PathDelim + 'robo8.gif';
+  if not FileExists(GifFile) then
+    GifFile := ExtractFilePath(ExtractFileDir(ExtractFilePath(ApplicationName))) + 'img' + PathDelim + 'robo8.gif';
+  if not FileExists(GifFile) then
+    GifFile := ExtractFilePath(ApplicationName) + 'robo8.gif';
+
+  if FileExists(GifFile) then
+  begin
+    try
+      GifAnim1.FileName := GifFile;
+      GifAnim1.Visible := True;
+      GifAnim1.Animate := True;
+    except
+    end;
+  end;
 end;
 
 procedure Tfrmmain.btEnviarClick(Sender: TObject);

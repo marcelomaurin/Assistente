@@ -56,12 +56,25 @@ begin
 end;
 
 procedure TfrmSplash.FormShow(Sender: TObject);
+var
+  GifFile: string;
 begin
-  if FileExists(GifAnimSplash.FileName) then
+  GifFile := ExtractFilePath(ApplicationName) + 'img' + PathDelim + 'robo8.gif';
+  if not FileExists(GifFile) then
+    GifFile := ExtractFilePath(ExtractFileDir(ExtractFilePath(ApplicationName))) + 'img' + PathDelim + 'robo8.gif';
+  if not FileExists(GifFile) then
+    GifFile := ExtractFilePath(ApplicationName) + 'robo8.gif';
+
+  if FileExists(GifFile) then
   begin
-    GifAnimSplash.Visible := True;
-    GifAnimSplash.Animate := True;
+    try
+      GifAnimSplash.FileName := GifFile;
+      GifAnimSplash.Visible := True;
+      GifAnimSplash.Animate := True;
+    except
+    end;
   end;
+
   tmrSplash.Enabled := True;
 end;
 

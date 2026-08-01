@@ -18,8 +18,9 @@ begin
   RequireDerivedFormResource:=True;
   Application.Scaled:=True;
   Application.Initialize;
+  Application.CreateForm(Tfrmmain, frmmain);
 
-  // Exibe a tela de Splash estilizada por 5 segundos antes de abrir a aplicacao
+  // Exibe a tela de Splash estilizada por 5 segundos antes de exibir o assistente
   frmSplashForm := TfrmSplash.Create(nil);
   try
     frmSplashForm.ShowModal;
@@ -27,6 +28,5 @@ begin
     frmSplashForm.Free;
   end;
 
-  Application.CreateForm(Tfrmmain, frmmain);
   Application.Run;
 end.
