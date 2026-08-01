@@ -230,6 +230,8 @@ begin
     FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
     FormCfg.edRecogIP.Text := FSetMain.VoiceRecogIP;
     FormCfg.edRecogPort.Text := IntToStr(FSetMain.VoiceRecogPort);
+    FormCfg.edVerIP.Text := FSetMain.VerIP;
+    FormCfg.edVerPort.Text := IntToStr(FSetMain.VerPort);
 
     FormCfg.edMyHost.Text := FSetMain.HostnameMy;
     FormCfg.edMyDb.Text := FSetMain.BancoMy;
@@ -252,6 +254,8 @@ begin
       FSetMain.VoiceSynthPort := StrToIntDef(FormCfg.edSynthPort.Text, 8096);
       FSetMain.VoiceRecogIP := FormCfg.edRecogIP.Text;
       FSetMain.VoiceRecogPort := StrToIntDef(FormCfg.edRecogPort.Text, 8097);
+      FSetMain.VerIP := FormCfg.edVerIP.Text;
+      FSetMain.VerPort := StrToIntDef(FormCfg.edVerPort.Text, 8097);
 
       FSetMain.HostnameMy := FormCfg.edMyHost.Text;
       FSetMain.BancoMy := FormCfg.edMyDb.Text;

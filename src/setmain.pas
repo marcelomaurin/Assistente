@@ -72,6 +72,10 @@ type
         FVoiceRecogIP : String;
         FVoiceRecogPort : integer;
 
+        // Endereço do serviço de visão (ToolsVer)
+        FVerIP : String;
+        FVerPort : integer;
+
         //filename : String;
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
@@ -132,6 +136,8 @@ type
         property VoiceSynthPort : integer read FVoiceSynthPort write FVoiceSynthPort;
         property VoiceRecogIP : String read FVoiceRecogIP write FVoiceRecogIP;
         property VoiceRecogPort : integer read FVoiceRecogPort write FVoiceRecogPort;
+        property VerIP : String read FVerIP write FVerIP;
+        property VerPort : integer read FVerPort write FVerPort;
   end;
 
   var
@@ -187,6 +193,8 @@ begin
     FVoiceSynthPort := 8096;
     FVoiceRecogIP := '127.0.0.1';
     FVoiceRecogPort := 8097;
+    FVerIP := '127.0.0.1';
+    FVerPort := 8097;
 
 end;
 
@@ -397,6 +405,14 @@ begin
     begin
       FVoiceRecogPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
     end;
+    if  BuscaChave(arquivo,'VERIP:',posicao) then
+    begin
+      FVerIP := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'VERPORT:',posicao) then
+    begin
+      FVerPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
+    end;
 
 end;
 
@@ -497,6 +513,8 @@ begin
   arquivo.Append('VOICESYNTHPORT:'+inttostr(FVoiceSynthPort));
   arquivo.Append('VOICERECOGIP:'+FVoiceRecogIP);
   arquivo.Append('VOICERECOGPORT:'+inttostr(FVoiceRecogPort));
+  arquivo.Append('VERIP:'+FVerIP);
+  arquivo.Append('VERPORT:'+inttostr(FVerPort));
 
   arquivo.SaveToFile(fpath+filename);
 end;
