@@ -19,14 +19,6 @@ begin
   Application.Scaled:=True;
   Application.Initialize;
   Application.CreateForm(Tfrmmain, frmmain);
-
-  // Exibe a tela de Splash estilizada por 5 segundos antes de exibir o assistente
-  frmSplashForm := TfrmSplash.Create(nil);
-  try
-    frmSplashForm.ShowModal;
-  finally
-    frmSplashForm.Free;
-  end;
-
+  Application.CreateForm(TfrmSplash, frmSplashForm);
   Application.Run;
 end.

@@ -36,6 +36,8 @@ var
 
 implementation
 
+uses main;
+
 {$R *.lfm}
 
 { TfrmSplash }
@@ -59,6 +61,9 @@ procedure TfrmSplash.FormShow(Sender: TObject);
 var
   GifFile: string;
 begin
+  if Assigned(frmmain) then
+    frmmain.Hide;
+
   GifFile := ExtractFilePath(ApplicationName) + 'img' + PathDelim + 'robo8.gif';
   if not FileExists(GifFile) then
     GifFile := ExtractFilePath(ExtractFileDir(ExtractFilePath(ApplicationName))) + 'img' + PathDelim + 'robo8.gif';
@@ -92,7 +97,12 @@ begin
   if pbProgress.Position >= 100 then
   begin
     tmrSplash.Enabled := False;
-    ModalResult := mrOk;
+    if Assigned(frmmain) then
+    begin
+      frmmain.Show;
+      frmmain.BringToFront;
+    end;
+    Close;
   end;
 end;
 
