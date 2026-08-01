@@ -13,33 +13,47 @@ type
   { Tfrmmain }
 
   Tfrmmain = class(TForm)
-    btEnviarPrompt: TButton;
+    pnlTop: TPanel;
+    GifAnim1: TGifAnim;
+    pnlTopControls: TPanel;
     btIniciar: TButton;
     btAbrirConfig: TButton;
-    edPrompt: TEdit;
-    GifAnim1: TGifAnim;
-    Label8: TLabel;
-    PageControl1: TPageControl;
-    TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
-    TabSheet3: TTabSheet;
+    
+    pnlChat: TPanel;
+    pnlHistoricoHeader: TPanel;
+    lblHistorico: TLabel;
+    btSpeaker: TButton;
+    memHistorico: TMemo;
+    
+    pnlPergunta: TPanel;
+    lblPergunta: TLabel;
+    memPergunta: TMemo;
+    btEnviar: TButton;
+    btMic: TButton;
+
     procedure btAbrirConfigClick(Sender: TObject);
-    procedure btEnviarPromptClick(Sender: TObject);
+    procedure btEnviarClick(Sender: TObject);
     procedure btIniciarClick(Sender: TObject);
-    procedure edPromptKeyPress(Sender: TObject; var Key: char);
+    procedure btMicClick(Sender: TObject);
+    procedure btSpeakerClick(Sender: TObject);
+    procedure memPerguntaKeyPress(Sender: TObject; var Key: char);
     procedure FormCreate(Sender: TObject);
   private
     FAguardandoResposta : boolean;
+    FVoiceActive: boolean;
     FVoiceSynth: TAIVoiceSynthesizer;
     FVoiceRecog: TAIVoiceRecognizer;
     procedure AplicaConfigChatGPT();
     procedure VoiceRecognized(Sender: TObject; const AText: string);
+    procedure AtualizaEstadoSpeaker;
   public
     pergunta : string;
     procedure NewContext();
     procedure FazPergunta();
+    procedure AdicionaMensagemHistorico(const Remetente, Mensagem: string);
     property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
     property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
+    property VoiceActive: boolean read FVoiceActive;
   end;
 
   { TAskChatGPTThread
@@ -90,7 +104,9 @@ end;
 procedure TAskChatGPTThread.EntregaResposta;
 begin
   frmmain.FAguardandoResposta := false;
-  if Assigned(frmmain.FVoiceSynth) then
+  frmmain.AdicionaMensagemHistorico('Assistente', FResposta);
+
+  if frmmain.FVoiceActive and Assigned(frmmain.FVoiceSynth) then
     frmmain.FVoiceSynth.Say(FResposta);
 end;
 
@@ -99,6 +115,8 @@ end;
 procedure Tfrmmain.FormCreate(Sender: TObject);
 begin
    FAguardandoResposta := false;
+   FVoiceActive := true;
+
    FSetMain := TSetMain.create();
    FSetMain.CarregaContexto();
 
@@ -112,6 +130,37 @@ begin
    CHATGPT1 := TCHATGPT.create(self);
    CHATGPT1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
    AplicaConfigChatGPT();
+
+   AtualizaEstadoSpeaker();
+end;
+
+procedure Tfrmmain.AtualizaEstadoSpeaker;
+begin
+  if FVoiceActive then
+  begin
+    btSpeaker.Caption := '🔊 Voz ON';
+    btSpeaker.Hint := 'Clique para desativar a fala do assistente';
+  end
+  else
+  begin
+    btSpeaker.Caption := '🔇 Voz OFF';
+    btSpeaker.Hint := 'Clique para ativar a fala do assistente';
+  end;
+end;
+
+procedure Tfrmmain.btSpeakerClick(Sender: TObject);
+begin
+  FVoiceActive := not FVoiceActive;
+  AtualizaEstadoSpeaker();
+end;
+
+procedure Tfrmmain.btMicClick(Sender: TObject);
+begin
+  if Assigned(FVoiceRecog) then
+  begin
+    AdicionaMensagemHistorico('Sistema', 'Ouvindo... Fale sua pergunta.');
+    FVoiceRecog.Recognize('');
+  end;
 end;
 
 procedure Tfrmmain.VoiceRecognized(Sender: TObject; const AText: string);
@@ -128,7 +177,22 @@ begin
 
     NewContext();
     pergunta := Trim(info);
-    FazPergunta();
+    if pergunta <> '' then
+    begin
+      AdicionaMensagemHistorico('Você (Voz)', pergunta);
+      FazPergunta();
+    end;
+  end;
+end;
+
+procedure Tfrmmain.AdicionaMensagemHistorico(const Remetente, Mensagem: string);
+begin
+  if memHistorico <> nil then
+  begin
+    memHistorico.Lines.Add('[' + FormatDateTime('hh:nn', Now) + '] ' + Remetente + ':');
+    memHistorico.Lines.Add(Mensagem);
+    memHistorico.Lines.Add('');
+    memHistorico.SelStart := Length(memHistorico.Text);
   end;
 end;
 
@@ -216,23 +280,24 @@ begin
   GifAnim1.Animate := true;
 end;
 
-procedure Tfrmmain.btEnviarPromptClick(Sender: TObject);
+procedure Tfrmmain.btEnviarClick(Sender: TObject);
 begin
-  if Trim(edPrompt.Text) = '' then
+  if Trim(memPergunta.Text) = '' then
     Exit;
 
   NewContext();
-  pergunta := edPrompt.Text;
+  pergunta := Trim(memPergunta.Text);
+  AdicionaMensagemHistorico('Você', pergunta);
   FazPergunta();
-  edPrompt.Text := '';
+  memPergunta.Text := '';
 end;
 
-procedure Tfrmmain.edPromptKeyPress(Sender: TObject; var Key: char);
+procedure Tfrmmain.memPerguntaKeyPress(Sender: TObject; var Key: char);
 begin
-  if Key = #13 then
+  if (Key = #13) and not (ssCtrl in GetKeyShiftState) then
   begin
     Key := #0;
-    btEnviarPromptClick(Sender);
+    btEnviarClick(Sender);
   end;
 end;
 
@@ -255,7 +320,7 @@ begin
          Exit;
 
        FAguardandoResposta := true;
-       if Assigned(FVoiceSynth) then
+       if FVoiceActive and Assigned(FVoiceSynth) then
          FVoiceSynth.Say('Claro, deixa eu pesquisar sua pergunta, aguarde um momento');
 
        TAskChatGPTThread.Create(pergunta);
