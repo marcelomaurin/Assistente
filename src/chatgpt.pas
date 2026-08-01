@@ -272,8 +272,8 @@ constructor TCHATGPT.create(AOwner: TComponent);
 
 begin
   inherited Create(AOwner);
-  //FTipoChat:= VCT_GPT35TURBO;
-  FTipoChat:= VCT_GPT40;
+  FTipoChat:= VCT_GPT35TURBO;
+  //FTipoChat:= VCT_GPT40;
   //HTTPSend.Sock.SSL.SSLType := LT_TLSv1;
   //Self.IsUTF8 := False;
   FParams := TStringList.Create;

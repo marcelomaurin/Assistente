@@ -55,7 +55,7 @@ object frmToolsver: TfrmToolsver
     Top = 3
     Width = 80
     TabOrder = 2
-    Text = '8096'
+    Text = '8097'
     OnChange = edPortChange
   end
   object btConect: TButton

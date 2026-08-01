@@ -36,7 +36,7 @@ uses
 end;
 
 var
-  CHATGPT: TCHATGPT;
+  CHATGPT1: TCHATGPT;
 
 implementation
 

@@ -22,9 +22,9 @@ object frmmain: Tfrmmain
     Height = 496
     Top = 0
     Width = 343
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alTop
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = 'Animação'

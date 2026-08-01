@@ -8,8 +8,8 @@
         <Filename Value="assistente.lpr"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="7"/>
-        <CursorPos X="67" Y="13"/>
-        <UsageCount Value="38"/>
+        <CursorPos X="27" Y="16"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -18,11 +18,9 @@
         <ComponentName Value="frmmain"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="48"/>
-        <CursorPos X="14" Y="53"/>
-        <UsageCount Value="38"/>
+        <CursorPos X="3" Y="3"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
@@ -35,7 +33,7 @@
         <EditorIndex Value="1"/>
         <TopLine Value="75"/>
         <CursorPos Y="108"/>
-        <UsageCount Value="38"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
@@ -49,25 +47,26 @@
         <EditorIndex Value="4"/>
         <TopLine Value="64"/>
         <CursorPos Y="77"/>
-        <UsageCount Value="38"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="chatgpt.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="121"/>
-        <CursorPos X="76" Y="153"/>
-        <UsageCount Value="38"/>
+        <TopLine Value="198"/>
+        <CursorPos Y="206"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="funcoes.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="55"/>
+        <TopLine Value="757"/>
         <CursorPos X="76" Y="78"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="38"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -79,9 +78,18 @@
         <EditorIndex Value="6"/>
         <TopLine Value="53"/>
         <CursorPos X="63" Y="65"/>
-        <UsageCount Value="25"/>
+        <UsageCount Value="31"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="setmain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="87"/>
+        <CursorPos X="25" Y="94"/>
+        <UsageCount Value="30"/>
+        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../../.lazarus/onlinepackagemanager/packages/lnet/lib/lnet.pp"/>
@@ -127,37 +135,8 @@
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="LFM"/>
       </Unit>
-      <Unit>
-        <Filename Value="setmain.pas"/>
-        <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="87"/>
-        <CursorPos X="25" Y="94"/>
-        <UsageCount Value="24"/>
-        <Loaded Value="True"/>
-      </Unit>
     </Units>
-    <JumpHistory HistoryIndex="22">
-      <Position>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <Caret Line="65" Column="63" TopLine="53"/>
-      </Position>
-      <Position>
-        <Filename Value="chatgpt.pas"/>
-        <Caret Line="160" Column="28" TopLine="143"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="53" Column="28" TopLine="46"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="72" Column="29" TopLine="56"/>
-      </Position>
-      <Position>
-        <Filename Value="main.pas"/>
-        <Caret Line="87" Column="34" TopLine="71"/>
-      </Position>
+    <JumpHistory HistoryIndex="29">
       <Position>
         <Filename Value="main.pas"/>
         <Caret Line="93" Column="36" TopLine="77"/>
@@ -230,10 +209,76 @@
         <Filename Value="main.pas"/>
         <Caret Line="59" Column="14" TopLine="52"/>
       </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="53" Column="14" TopLine="48"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="56" Column="32"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="152" TopLine="144"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="203" Column="19" TopLine="202"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="209" TopLine="202"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="152" TopLine="143"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="205" Column="12" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="208" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="209" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="210" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="chatgpt.pas"/>
+        <Caret Line="212" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="main.pas"/>
+        <Caret Line="3" Column="3"/>
+      </Position>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="chatgpt.pas"/>
+        <Line Value="206"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="chatgpt.pas"/>
+        <Line Value="209"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
 </CONFIG>
