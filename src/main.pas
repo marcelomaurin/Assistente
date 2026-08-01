@@ -362,8 +362,6 @@ begin
          Exit;
 
        FAguardandoResposta := true;
-       if FVoiceActive and Assigned(FVoiceSynth) then
-         FVoiceSynth.Say('Claro, deixa eu pesquisar sua pergunta, aguarde um momento');
 
        TAskChatGPTThread.Create(pergunta);
      end;
