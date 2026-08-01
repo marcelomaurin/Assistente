@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  ComCtrls, GifAnim, toolsfalar, toolsouvir, chatgpt, toolsver, setmain, frmconfig;
+  ComCtrls, GifAnim, strutils, chatgpt, setmain, frmconfig, aivoicesynthesizer, aivoicerecognizer;
 
 type
 
@@ -30,11 +30,16 @@ type
     procedure FormCreate(Sender: TObject);
   private
     FAguardandoResposta : boolean;
+    FVoiceSynth: TAIVoiceSynthesizer;
+    FVoiceRecog: TAIVoiceRecognizer;
     procedure AplicaConfigChatGPT();
+    procedure VoiceRecognized(Sender: TObject; const AText: string);
   public
     pergunta : string;
     procedure NewContext();
     procedure FazPergunta();
+    property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
+    property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
   end;
 
   { TAskChatGPTThread
@@ -85,8 +90,8 @@ end;
 procedure TAskChatGPTThread.EntregaResposta;
 begin
   frmmain.FAguardandoResposta := false;
-  frmToolsfalar.edFalar.Text := FResposta;
-  frmToolsfalar.Falar();
+  if Assigned(frmmain.FVoiceSynth) then
+    frmmain.FVoiceSynth.Say(FResposta);
 end;
 
 { Tfrmmain }
@@ -97,35 +102,58 @@ begin
    FSetMain := TSetMain.create();
    FSetMain.CarregaContexto();
 
-   frmToolsfalar := TfrmToolsfalar.Create(self);
-   frmToolsOuvir := TfrmToolsOuvir.create(self);
-   frmToolsVer := TfrmToolsver.create(self);
+   FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
+   FVoiceSynth.Engine := seSystemDefault;
 
-   chatgpt1 := TCHATGPT.create(self);
-   chatgpt1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
+   FVoiceRecog := TAIVoiceRecognizer.Create(Self);
+   FVoiceRecog.Engine := vreOpenAIWhisper;
+   FVoiceRecog.OnRecognized := @VoiceRecognized;
+
+   CHATGPT1 := TCHATGPT.create(self);
+   CHATGPT1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
    AplicaConfigChatGPT();
 end;
 
-// Repassa para o componente TCHATGPT as configurações salvas no FSetMain
+procedure Tfrmmain.VoiceRecognized(Sender: TObject; const AText: string);
+var
+  info: string;
+  posicao: integer;
+begin
+  info := AText;
+  posicao := Pos(FSetMain.Frase, info);
+  if (posicao <> 0) or (FSetMain.Frase = '') then
+  begin
+    if FSetMain.Frase <> '' then
+      info := ReplaceStr(info, FSetMain.Frase, '');
+
+    NewContext();
+    pergunta := Trim(info);
+    FazPergunta();
+  end;
+end;
+
 procedure Tfrmmain.AplicaConfigChatGPT();
 begin
   if CHATGPT1 = nil then
     Exit;
 
-  chatgpt1.TOKEN := FSetMain.CHATGPT;
-  chatgpt1.Provider := TAIProvider(FSetMain.ChatGPTProvider);
-  chatgpt1.CustomModel := FSetMain.ChatGPTModel;
-  chatgpt1.URL := FSetMain.ChatGPTURL;
+  CHATGPT1.TOKEN := FSetMain.CHATGPT;
+  CHATGPT1.Provider := TAIProvider(FSetMain.ChatGPTProvider);
+  CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
+  CHATGPT1.URL := FSetMain.ChatGPTURL;
+
+  if Assigned(FVoiceRecog) then
+    FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
+  if Assigned(FVoiceSynth) then
+    FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
 end;
 
-// Chama a janela modal de configurações (frmconfig.pas)
 procedure Tfrmmain.btAbrirConfigClick(Sender: TObject);
 var
   FormCfg: TfrmConfig;
 begin
   FormCfg := TfrmConfig.Create(Self);
   try
-    // Carrega dados do FSetMain nos campos das abas
     FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
     if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
       FormCfg.cbProvider.ItemIndex := 0;
@@ -139,7 +167,6 @@ begin
     FormCfg.edRecogIP.Text := FSetMain.VoiceRecogIP;
     FormCfg.edRecogPort.Text := IntToStr(FSetMain.VoiceRecogPort);
 
-    // Aba Banco de Dados
     FormCfg.edMyHost.Text := FSetMain.HostnameMy;
     FormCfg.edMyDb.Text := FSetMain.BancoMy;
     FormCfg.edMyUser.Text := FSetMain.UsernameMy;
@@ -152,7 +179,6 @@ begin
 
     if FormCfg.ShowModal = mrOk then
     begin
-      // Salva no FSetMain e persiste no Setmain.cfg
       FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
       FSetMain.ChatGPTModel := FormCfg.cbModel.Text;
       FSetMain.CHATGPT := FormCfg.edTokenGPT.Text;
@@ -186,24 +212,8 @@ procedure Tfrmmain.btIniciarClick(Sender: TObject);
 begin
   AplicaConfigChatGPT();
 
-  GifAnim1.visible:= true;
-  GifAnim1.Animate:=true;
-
-  frmToolsOuvir.edIP.text := FSetMain.VoiceRecogIP;
-  frmToolsOuvir.edPort.text := IntToStr(FSetMain.VoiceRecogPort);
-  frmToolsOuvir.frase := FSetMain.Frase;
-  frmToolsOuvir.Show();
-  frmToolsOuvir.Conectar();
-
-  frmToolsfalar.edIP.text := FSetMain.VoiceSynthIP;
-  frmToolsfalar.edPort.text := IntToStr(FSetMain.VoiceSynthPort);
-  frmToolsfalar.Show();
-  frmToolsfalar.Conectar();
-  frmToolsfalar.btConectClick(self);
-
-  frmToolsver.show();
-  frmToolsver.Conectar();
-  frmToolsver.btConectClick(self);
+  GifAnim1.visible := true;
+  GifAnim1.Animate := true;
 end;
 
 procedure Tfrmmain.btEnviarPromptClick(Sender: TObject);
@@ -245,8 +255,8 @@ begin
          Exit;
 
        FAguardandoResposta := true;
-       frmToolsfalar.edFalar.Text := 'Claro, deixa eu pesquisar sua pergunta , aguarde um momento  ';
-       frmToolsfalar.Falar();
+       if Assigned(FVoiceSynth) then
+         FVoiceSynth.Say('Claro, deixa eu pesquisar sua pergunta, aguarde um momento');
 
        TAskChatGPTThread.Create(pergunta);
      end;

@@ -65,13 +65,4 @@ object frmToolsOuvir: TfrmToolsOuvir
     TabOrder = 3
     OnClick = btConectClick
   end
-  object LTCPComponent1: TLTCPComponent
-    Host = '192.168.0.6'
-    Port = 7091
-    OnReceive = LTCPComponent1Receive
-    Timeout = 0
-    ReuseAddress = True
-    Left = 374
-    Top = 53
-  end
 end

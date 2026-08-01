@@ -7,29 +7,29 @@ object frmmain: Tfrmmain
   ClientHeight = 571
   ClientWidth = 343
   OnCreate = FormCreate
-  LCLVersion = '2.2.0.4'
+  LCLVersion = '3.2.0.0'
   object btIniciar: TButton
     Left = 80
     Height = 48
     Top = 512
     Width = 195
     Caption = 'Iniciar'
-    OnClick = btIniciarClick
     TabOrder = 0
+    OnClick = btIniciarClick
   end
   object PageControl1: TPageControl
     Left = 0
     Height = 496
     Top = 0
     Width = 343
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     Align = alTop
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 1
     object TabSheet1: TTabSheet
       Caption = 'Animação'
-      ClientHeight = 465
-      ClientWidth = 333
+      ClientHeight = 468
+      ClientWidth = 335
       object GifAnim1: TGifAnim
         Left = -56
         Height = 498
@@ -42,36 +42,166 @@ object frmmain: Tfrmmain
     end
     object TabSheet2: TTabSheet
       Caption = 'Configuração'
-      ClientHeight = 465
-      ClientWidth = 333
+      ClientHeight = 468
+      ClientWidth = 335
       object Label1: TLabel
         Left = 4
-        Height = 17
+        Height = 15
         Top = 11
-        Width = 100
+        Width = 80
         Caption = 'Chatgpt Token:'
       end
       object edTokenGPT: TEdit
         Left = 5
-        Height = 34
+        Height = 23
         Top = 32
         Width = 307
         TabOrder = 0
+        Text = ''
       end
       object Label2: TLabel
         Left = 4
-        Height = 17
+        Height = 15
         Top = 72
-        Width = 40
+        Width = 30
         Caption = 'Frase:'
       end
       object edFrase: TEdit
         Left = 5
-        Height = 34
+        Height = 23
         Top = 88
         Width = 219
         TabOrder = 1
-        Text = 'Fatec'
+        Text = 'meu anjo'
+      end
+      object Label3: TLabel
+        Left = 4
+        Height = 15
+        Top = 120
+        Width = 60
+        Caption = 'Provedor:'
+      end
+      object cbProvider: TComboBox
+        Left = 5
+        Height = 23
+        Top = 136
+        Width = 150
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'OpenAI'
+          'OpenRouter'
+          'Cerebras'
+          'Local (Ollama)'
+          'Gemini'
+          'Claude'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'OpenAI'
+      end
+      object Label4: TLabel
+        Left = 4
+        Height = 15
+        Top = 168
+        Width = 260
+        Caption = 'Modelo (em branco = padrão do provedor):'
+      end
+      object edModel: TEdit
+        Left = 5
+        Height = 23
+        Top = 184
+        Width = 307
+        TabOrder = 3
+      end
+      object Label5: TLabel
+        Left = 4
+        Height = 15
+        Top = 216
+        Width = 260
+        Caption = 'URL customizada (em branco = padrão):'
+      end
+      object edURL: TEdit
+        Left = 5
+        Height = 23
+        Top = 232
+        Width = 307
+        TabOrder = 4
+      end
+      object Label6: TLabel
+        Left = 4
+        Height = 15
+        Top = 264
+        Width = 170
+        Caption = 'Voz - Síntese (IP / Porta):'
+      end
+      object edSynthIP: TEdit
+        Left = 5
+        Height = 23
+        Top = 280
+        Width = 150
+        TabOrder = 5
+        Text = '127.0.0.1'
+      end
+      object edSynthPort: TEdit
+        Left = 162
+        Height = 23
+        Top = 280
+        Width = 60
+        TabOrder = 6
+        Text = '8096'
+      end
+      object Label7: TLabel
+        Left = 4
+        Height = 15
+        Top = 312
+        Width = 210
+        Caption = 'Voz - Reconhecimento (IP / Porta):'
+      end
+      object edRecogIP: TEdit
+        Left = 5
+        Height = 23
+        Top = 328
+        Width = 150
+        TabOrder = 7
+        Text = '127.0.0.1'
+      end
+      object edRecogPort: TEdit
+        Left = 162
+        Height = 23
+        Top = 328
+        Width = 60
+        TabOrder = 8
+        Text = '8097'
+      end
+    end
+    object TabSheet3: TTabSheet
+      Caption = 'Perguntar'
+      ClientHeight = 468
+      ClientWidth = 335
+      object Label8: TLabel
+        Left = 4
+        Height = 15
+        Top = 11
+        Width = 260
+        Caption = 'Digite sua pergunta (se não quiser falar):'
+      end
+      object edPrompt: TEdit
+        Left = 5
+        Height = 23
+        Top = 32
+        Width = 307
+        TabOrder = 0
+        OnKeyPress = edPromptKeyPress
+      end
+      object btEnviarPrompt: TButton
+        Left = 5
+        Height = 30
+        Top = 64
+        Width = 150
+        Caption = 'Perguntar'
+        TabOrder = 1
+        OnClick = btEnviarPromptClick
       end
     end
   end

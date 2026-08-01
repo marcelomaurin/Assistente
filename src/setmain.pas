@@ -56,6 +56,21 @@ type
         FSchemaPost: String;
         FToolsFalar : Boolean;
 
+        // Configuração do componente TCHATGPT (unit chatgpt.pas)
+        FChatGPTProvider : integer; // ordinal de TAIProvider (chatgpt.pas)
+        FChatGPTModel : String;     // modelo customizado (TCHATGPT.CustomModel); vazio = padrão do provedor
+        FChatGPTURL : String;       // endpoint customizado (TCHATGPT.URL); vazio = padrão do provedor
+
+        // Palavra/frase de ativação usada pelo ToolsOuvir
+        FFrase : String;
+
+        // Endereço do serviço externo de síntese de voz (ToolsFalar)
+        FVoiceSynthIP : String;
+        FVoiceSynthPort : integer;
+
+        // Endereço do serviço externo de reconhecimento de voz (ToolsOuvir)
+        FVoiceRecogIP : String;
+        FVoiceRecogPort : integer;
 
         //filename : String;
         procedure SetDevice(const Value : Boolean);
@@ -106,6 +121,17 @@ type
         property PasswordPost : String read FPasswordPost write FPasswordPost;
         property SchemaPost: String read FSchemaPost write FSchemaPost;
         property ToolsFalar : Boolean read FToolsFalar write SetToolsFalar;
+
+        property ChatGPTProvider : integer read FChatGPTProvider write FChatGPTProvider;
+        property ChatGPTModel : String read FChatGPTModel write FChatGPTModel;
+        property ChatGPTURL : String read FChatGPTURL write FChatGPTURL;
+
+        property Frase : String read FFrase write FFrase;
+
+        property VoiceSynthIP : String read FVoiceSynthIP write FVoiceSynthIP;
+        property VoiceSynthPort : integer read FVoiceSynthPort write FVoiceSynthPort;
+        property VoiceRecogIP : String read FVoiceRecogIP write FVoiceRecogIP;
+        property VoiceRecogPort : integer read FVoiceRecogPort write FVoiceRecogPort;
   end;
 
   var
@@ -150,6 +176,17 @@ begin
     end;
     FCHATGPT:=''; //CHATGPT TOKEN
     FToolsFalar := false;
+
+    FChatGPTProvider := 0;  // AIP_OPENAI
+    FChatGPTModel := '';    // padrão do provedor
+    FChatGPTURL := '';      // padrão do provedor
+
+    FFrase := 'meu anjo';
+
+    FVoiceSynthIP := '127.0.0.1';
+    FVoiceSynthPort := 8096;
+    FVoiceRecogIP := '127.0.0.1';
+    FVoiceRecogPort := 8097;
 
 end;
 
@@ -328,6 +365,39 @@ begin
       FTOOLSFALAR := iif(RetiraInfo(arquivo.Strings[posicao])='0',false,true);
     end;
 
+    if  BuscaChave(arquivo,'CHATGPTPROVIDER:',posicao) then
+    begin
+      FChatGPTProvider := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    end;
+    if  BuscaChave(arquivo,'CHATGPTMODEL:',posicao) then
+    begin
+      FChatGPTModel := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'CHATGPTURL:',posicao) then
+    begin
+      FChatGPTURL := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'FRASE:',posicao) then
+    begin
+      FFrase := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'VOICESYNTHIP:',posicao) then
+    begin
+      FVoiceSynthIP := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'VOICESYNTHPORT:',posicao) then
+    begin
+      FVoiceSynthPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8096);
+    end;
+    if  BuscaChave(arquivo,'VOICERECOGIP:',posicao) then
+    begin
+      FVoiceRecogIP := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'VOICERECOGPORT:',posicao) then
+    begin
+      FVoiceRecogPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
+    end;
+
 end;
 
 
@@ -418,6 +488,16 @@ begin
   arquivo.Append('PASSWORDPOST:'+FPasswordPOST);
   arquivo.Append('SCHEMAPOST:'+FSchemaPost);
   arquivo.Append('TOOLSFALAR:'+iif(FToolsFalar,'1','0'));
+
+  arquivo.Append('CHATGPTPROVIDER:'+inttostr(FChatGPTProvider));
+  arquivo.Append('CHATGPTMODEL:'+FChatGPTModel);
+  arquivo.Append('CHATGPTURL:'+FChatGPTURL);
+  arquivo.Append('FRASE:'+FFrase);
+  arquivo.Append('VOICESYNTHIP:'+FVoiceSynthIP);
+  arquivo.Append('VOICESYNTHPORT:'+inttostr(FVoiceSynthPort));
+  arquivo.Append('VOICERECOGIP:'+FVoiceRecogIP);
+  arquivo.Append('VOICERECOGPORT:'+inttostr(FVoiceRecogPort));
+
   arquivo.SaveToFile(fpath+filename);
 end;
 

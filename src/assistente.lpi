@@ -50,21 +50,6 @@
         <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
-        <Filename Value="toolsfalar/toolsfalar.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmToolsfalar"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit>
-      <Unit>
-        <Filename Value="toolsouvir/toolsouvir.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmToolsOuvir"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="ToolsOuvir"/>
-      </Unit>
-      <Unit>
         <Filename Value="aibase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
@@ -73,23 +58,8 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="aisockets.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="aiconn.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
         <Filename Value="funcoes.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="toolsVer/toolsver.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="frmToolsver"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
       </Unit>
       <Unit>
         <Filename Value="setmain.pas"/>
@@ -119,7 +89,6 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="toolsfalar;toolsouvir;toolsVer"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

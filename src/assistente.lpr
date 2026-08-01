@@ -10,7 +10,7 @@ uses
   athreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lnetvisual, main, chatgpt, funcoes, setmain, ToolsOuvir, toolsver
+  Forms, main, aibase, chatgpt, funcoes, setmain, frmconfig, aivoicesynthesizer, aivoicerecognizer
   { you can add units after this };
 
 {$R *.res}
@@ -22,4 +22,3 @@ begin
   Application.CreateForm(Tfrmmain, frmmain);
   Application.Run;
 end.
-

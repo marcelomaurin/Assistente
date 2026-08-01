@@ -92,16 +92,4 @@ object frmToolsver: TfrmToolsver
     TabOrder = 5
     Text = 'Wellcome to ToolsFalar'
   end
-  object LTCPComponent1: TLTCPComponent
-    Host = '192.168.0.6'
-    Port = 7091
-    OnReceive = LTCPComponent1Receive
-    OnError = LTCPComponent1Error
-    OnDisconnect = LTCPComponent1Disconnect
-    OnConnect = LTCPComponent1Connect
-    Timeout = 0
-    ReuseAddress = True
-    Left = 346
-    Top = 25
-  end
 end

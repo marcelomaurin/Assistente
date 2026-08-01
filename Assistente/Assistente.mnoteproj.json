@@ -1,0 +1,53 @@
+{
+  "file_version" : "1.1",
+  "project" : {
+    "goal" : "",
+    "scope" : "",
+    "constraints" : "",
+    "expected_deliverables" : "",
+    "name" : "Assistente",
+    "root" : ".",
+    "description" : "assistente"
+  },
+  "agile_documents" : {
+    "functional_requirements" : [
+    ],
+    "non_functional_requirements" : [
+    ],
+    "stakeholders" : [
+    ],
+    "risk_map" : [
+    ],
+    "epics" : [
+    ],
+    "user_stories" : [
+    ]
+  },
+  "agents" : [
+  ],
+  "planning" : {
+    "tasks" : [
+    ],
+    "dependencies" : [
+    ],
+    "execution_plan" : [
+    ],
+    "parallel_groups" : [
+    ],
+    "milestones" : [
+    ],
+    "gantt" : [
+    ],
+    "timeline" : [
+    ]
+  },
+  "task_actions" : [
+  ],
+  "agent_task_analysis" : [
+  ],
+  "revisions" : [
+  ],
+  "last_generated_json" : "",
+  "last_generated_markdown" : "",
+  "saved_at" : "2026-08-01T15:40:42"
+}
