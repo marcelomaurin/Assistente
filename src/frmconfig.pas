@@ -5,7 +5,8 @@ unit frmconfig;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls, chatgpt, aivoicesynthesizer;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls,
+  chatgpt, aivoicesynthesizer, jarvis_api;
 
 type
 
@@ -13,12 +14,26 @@ type
 
   TfrmConfig = class(TForm)
     pcConfig: TPageControl;
+    tsJarvis: TTabSheet;
     tsIA: TTabSheet;
     tsOutputVoice: TTabSheet;
     tsVoz: TTabSheet;
     tsVisao: TTabSheet;
     tsBanco: TTabSheet;
     
+    // Aba JARVIS (API Segura v1)
+    lblJarvisURL: TLabel;
+    edJarvisURL: TEdit;
+    lblJarvisKey: TLabel;
+    edJarvisKey: TEdit;
+    btVerChave: TButton;
+    lblJarvisMode: TLabel;
+    cbJarvisMode: TComboBox;
+    chkMinimizeTray: TCheckBox;
+    chkAutoSpeak: TCheckBox;
+    btTestarJarvis: TButton;
+    lblJarvisStatus: TLabel;
+
     // Aba IA (Ordem: Provedor -> Modelo -> Token -> URL)
     lblProvider: TLabel;
     cbProvider: TComboBox;
@@ -84,6 +99,8 @@ type
     btSalvar: TButton;
     btCancelar: TButton;
 
+    procedure btVerChaveClick(Sender: TObject);
+    procedure btTestarJarvisClick(Sender: TObject);
     procedure cbProviderChange(Sender: TObject);
     procedure cbSynthEngineChange(Sender: TObject);
     procedure tbSynthVolumeChange(Sender: TObject);
@@ -114,6 +131,49 @@ begin
     GetAIProviderList(cbProvider.Items);
   finally
     FLoading := False;
+  end;
+end;
+
+procedure TfrmConfig.btVerChaveClick(Sender: TObject);
+begin
+  if edJarvisKey.EchoMode = emPassword then
+  begin
+    edJarvisKey.EchoMode := emNormal;
+    btVerChave.Caption := 'Ocultar';
+  end
+  else
+  begin
+    edJarvisKey.EchoMode := emPassword;
+    btVerChave.Caption := 'Exibir';
+  end;
+end;
+
+procedure TfrmConfig.btTestarJarvisClick(Sender: TObject);
+var
+  Client: TJarvisAPIClient;
+  Msg: string;
+begin
+  lblJarvisStatus.Font.Color := clNavy;
+  lblJarvisStatus.Caption := 'Conectando ao JARVIS...';
+  Application.ProcessMessages;
+
+  Client := TJarvisAPIClient.Create(nil);
+  try
+    Client.BaseURL := Trim(edJarvisURL.Text);
+    Client.APIKey := Trim(edJarvisKey.Text);
+    Client.Timeout := 10;
+    if Client.TestarConexao(Msg) then
+    begin
+      lblJarvisStatus.Font.Color := clGreen;
+      lblJarvisStatus.Caption := 'OK: ' + Msg;
+    end
+    else
+    begin
+      lblJarvisStatus.Font.Color := clRed;
+      lblJarvisStatus.Caption := 'FALHA: ' + Msg;
+    end;
+  finally
+    Client.Free;
   end;
 end;
 

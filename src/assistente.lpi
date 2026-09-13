@@ -25,12 +25,6 @@
     </RunParams>
     <RequiredPackages>
       <Item>
-        <PackageName Value="pkg_gifanim_dsgn"/>
-      </Item>
-      <Item>
-        <PackageName Value="pkg_gifanim"/>
-      </Item>
-      <Item>
         <PackageName Value="SynEdit"/>
       </Item>
       <Item>
@@ -48,6 +42,10 @@
         <ComponentName Value="frmmain"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value="jarvis_api.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="aibase.pas"/>

@@ -1,6 +1,7 @@
 //Objetivo construir os parametros de setup da classe principal
 //Criado por Marcelo Maurin Martins
 //Data:07/02/2021
+//Atualizado com suporte a API Segura v1 do JARVIS Residencial
 
 unit setmain;
 
@@ -15,8 +16,6 @@ const filename = 'Setmain.cfg';
 
 
 type
-  { TfrmMenu }
-
   { TSetMain }
 
   TSetMain = class(TObject)
@@ -61,6 +60,13 @@ type
         FChatGPTModel : String;     // modelo customizado (TCHATGPT.CustomModel); vazio = padrão do provedor
         FChatGPTURL : String;       // endpoint customizado (TCHATGPT.URL); vazio = padrão do provedor
 
+        // Configurações do JARVIS Residencial (API Segura v1)
+        FJarvisURL : String;
+        FJarvisAPIKey : String;
+        FJarvisIAMode : String;
+        FMinimizeToTray : Boolean;
+        FAutoSpeak : Boolean;
+
         // Palavra/frase de ativação usada pelo ToolsOuvir
         FFrase : String;
 
@@ -83,7 +89,6 @@ type
         FSynthRate : integer;
         FSynthAsync : boolean;
 
-        //filename : String;
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
         procedure SetPOSY(value : integer);
@@ -99,7 +104,7 @@ type
         procedure Default();
   public
         constructor create();
-        destructor Destroy();
+        destructor Destroy(); override;
         procedure SalvaContexto(flag : boolean);
         Procedure CarregaContexto();
         procedure IdentificaArquivo(flag : boolean);
@@ -137,6 +142,13 @@ type
         property ChatGPTModel : String read FChatGPTModel write FChatGPTModel;
         property ChatGPTURL : String read FChatGPTURL write FChatGPTURL;
 
+        // JARVIS API v1
+        property JarvisURL : String read FJarvisURL write FJarvisURL;
+        property JarvisAPIKey : String read FJarvisAPIKey write FJarvisAPIKey;
+        property JarvisIAMode : String read FJarvisIAMode write FJarvisIAMode;
+        property MinimizeToTray : Boolean read FMinimizeToTray write FMinimizeToTray;
+        property AutoSpeak : Boolean read FAutoSpeak write FAutoSpeak;
+
         property Frase : String read FFrase write FFrase;
 
         property VoiceSynthIP : String read FVoiceSynthIP write FVoiceSynthIP;
@@ -156,51 +168,78 @@ type
   var
     FSetMain : TSetMain;
 
-
 implementation
 
-procedure TSetMain.SetDevice(const Value: Boolean);
+procedure TSetMain.SetDevice(const Value : Boolean);
 begin
-  ckdevice := Value;
+    ckdevice := Value;
 end;
 
+procedure TSetMain.SetFont(value: TFont);
+begin
+  FFont.Assign(value);
+end;
 
-//Valores default do codigo
+procedure TSetMain.SetCHATGPT(value: String);
+begin
+  FCHATGPT := value;
+end;
+
+procedure TSetMain.SetDllPath(value: string);
+begin
+  FDllPath := value;
+end;
+
+procedure TSetMain.SetDllMyPath(value: string);
+begin
+  FDllMyPath := value;
+end;
+
+procedure TSetMain.SetDllPostPath(value: string);
+begin
+  FDllPostPath := value;
+end;
+
+procedure TSetMain.SetToolsFalar(value: boolean);
+begin
+  FToolsFalar := value;
+end;
+
 procedure TSetMain.Default();
 begin
-    ckdevice := false;
-    fixar:=false;
-    stay:=false;
-    FPosX :=100;
-    FPosY := 100;
-    FFixar :=false;
+    ckdevice := true;
+    Fposx := 100;
+    Fposy := 100;
+    FFixar := false;
     FStay := false;
-
     FDllPath:= ExtractFilePath(ApplicationName);
     FDllMyPath:= ExtractFilePath(ApplicationName);
     FDllPostPath:= ExtractFilePath(ApplicationName);
-    //FLastFiles :="";
-    //    FPATH : string;
-    FHeight :=400;
-    FWidth :=400;
-    FRunScript := '';   //Script de Run
-    FDebugScript :='';  //Script de Debug
-    FCleanScript :='';  //Script de Limpeza
-    FInstall :='';      //Script de Instalacao
-    FCompile :='';      //Script de Compilacao
+    FHeight := 400;
+    FWidth := 400;
+    FRunScript := '';
+    FDebugScript := '';
+    FCleanScript := '';
+    FInstall := '';
+    FCompile := '';
     if FFont = nil then
-    begin
-         FFONT := TFont.create();
+      FFONT := TFont.create();
 
-    end;
-    FCHATGPT:=''; //CHATGPT TOKEN
+    FCHATGPT := '';
     FToolsFalar := false;
 
     FChatGPTProvider := 0;  // AIP_OPENAI
-    FChatGPTModel := '';    // padrão do provedor
-    FChatGPTURL := '';      // padrão do provedor
+    FChatGPTModel := '';
+    FChatGPTURL := '';
 
-    FFrase := 'meu anjo';
+    // JARVIS Defaults
+    FJarvisURL := 'https://chorus-gazette-princeton-charter.trycloudflare.com';
+    FJarvisAPIKey := 'jarvis_sec_v1_90a934713a4a1191e342ce5af0ffe9fe47b0a9a6b47bb915';
+    FJarvisIAMode := 'auto';
+    FMinimizeToTray := true;
+    FAutoSpeak := true;
+
+    FFrase := 'jarvis';
 
     FVoiceSynthIP := '127.0.0.1';
     FVoiceSynthPort := 8096;
@@ -209,12 +248,11 @@ begin
     FVerIP := '127.0.0.1';
     FVerPort := 8097;
 
-    FSynthEngine := 0; // seSystemDefault
+    FSynthEngine := 1; // seSAPI no Windows
     FSynthVoice := '';
     FSynthVolume := 100;
     FSynthRate := 0;
     FSynthAsync := true;
-
 end;
 
 procedure TSetMain.SetPOSX(value: integer);
@@ -239,76 +277,48 @@ end;
 
 procedure TSetMain.SetLastFiles(value: string);
 begin
-  FLastFiles:= value;
-end;
-
-procedure TSetMain.SetFont(value: TFont);
-begin
-  //StringToFont(value,FFONT);
-  FFont := value;
-end;
-
-procedure TSetMain.SetCHATGPT(value: String);
-begin
-  FCHATGPT:= value;
-end;
-
-procedure TSetMain.SetDllPath(value: string);
-begin
-  FDllPath:= value;
-end;
-
-procedure TSetMain.SetDllMyPath(value: string);
-begin
-  FDllMyPath:= value;
-end;
-
-procedure TSetMain.SetDllPostPath(value: string);
-begin
-  FDllPostPath:= value;
-end;
-
-procedure TSetMain.SetToolsFalar(value: boolean);
-begin
-  FToolsFalar := value;
+    FLastFiles := value;
 end;
 
 procedure TSetMain.CarregaContexto();
 var
-  posicao: integer;
+  posicao : integer;
 begin
     if  BuscaChave(arquivo,'DEVICE:',posicao) then
     begin
-      ckdevice := (RetiraInfo(arquivo.Strings[posicao])='1');
+         ckdevice := iif(RetiraInfo(arquivo.Strings[posicao])='0',false,true);
     end;
     if  BuscaChave(arquivo,'POSX:',posicao) then
     begin
-      FPOSX := strtoint(RetiraInfo(arquivo.Strings[posicao]));
+      FPOSX :=  strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'POSY:',posicao) then
     begin
-      FPOSY := strtoint(RetiraInfo(arquivo.Strings[posicao]));
+      FPOSY :=  strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'FIXAR:',posicao) then
     begin
-      FFixar := StrToBool(RetiraInfo(arquivo.Strings[posicao]));
+      FFixar :=  strtobool(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'STAY:',posicao) then
     begin
-      FStay := strtoBool(RetiraInfo(arquivo.Strings[posicao]));
+      FStay :=  strtobool(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'LASTFILES:',posicao) then
     begin
       FLastFiles := RetiraInfo(arquivo.Strings[posicao]);
     end;
+
     if  BuscaChave(arquivo,'HEIGHT:',posicao) then
     begin
       FHEIGHT := strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
+
     if  BuscaChave(arquivo,'WIDTH:',posicao) then
     begin
-      FWidth := strtoint(RetiraInfo(arquivo.Strings[posicao]));
+      FWIDTH := strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
+
     if  BuscaChave(arquivo,'RUNSCRIPT:',posicao) then
     begin
       FRunScript := RetiraInfo(arquivo.Strings[posicao]);
@@ -404,6 +414,29 @@ begin
     begin
       FChatGPTURL := RetiraInfo(arquivo.Strings[posicao]);
     end;
+
+    // Leitura JARVIS
+    if  BuscaChave(arquivo,'JARVISURL:',posicao) then
+    begin
+      FJarvisURL := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'JARVISAPIKEY:',posicao) then
+    begin
+      FJarvisAPIKey := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'JARVISIAMODE:',posicao) then
+    begin
+      FJarvisIAMode := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'MINIMIZETOTRAY:',posicao) then
+    begin
+      FMinimizeToTray := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
+    end;
+    if  BuscaChave(arquivo,'AUTOSPEAK:',posicao) then
+    begin
+      FAutoSpeak := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
+    end;
+
     if  BuscaChave(arquivo,'FRASE:',posicao) then
     begin
       FFrase := RetiraInfo(arquivo.Strings[posicao]);
@@ -435,7 +468,7 @@ begin
 
     if  BuscaChave(arquivo,'SYNTHENGINE:',posicao) then
     begin
-      FSynthEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+      FSynthEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 1);
     end;
     if  BuscaChave(arquivo,'SYNTHVOICE:',posicao) then
     begin
@@ -456,34 +489,13 @@ begin
 
 end;
 
-
 procedure TSetMain.IdentificaArquivo(flag: boolean);
 begin
-  //filename := 'Work'+ FormatDateTime('ddmmyy',now())+'.cfg';
-  {$ifdef Darwin}
-    //Nao testado ainda
-    Fpath :=GetAppConfigDir(false);
-    if not(FileExists(FPATH)) then
-    begin
-      createdir(fpath);
-    end;
-  {$ENDIF}
-  {$IFDEF LINUX}
-      //Fpath :='/home/';
-      //Fpath := GetUserDir()
-      Fpath :=GetAppConfigDir(false);
-      if not(FileExists(FPATH)) then
-      begin
-         createdir(fpath);
-      end;
-  {$ENDIF}
-  {$IFDEF WINDOWS}
-      Fpath :=GetAppConfigDir(false);
-      if not(FileExists(FPATH)) then
-      begin
-         createdir(fpath);
-      end;
-  {$ENDIF}
+  Fpath := GetAppConfigDir(false);
+  if not(FileExists(FPATH)) then
+  begin
+     createdir(fpath);
+  end;
   if (FileExists(fpath+filename)) then
   begin
     arquivo.LoadFromFile(fpath+filename);
@@ -492,19 +504,16 @@ begin
   else
   begin
     default();
-    //SalvaContexto(false);
   end;
-
 end;
 
-//Metodo construtor
 constructor TSetMain.create();
 begin
+    inherited create();
     arquivo := TStringList.create();
     FFONT := TFont.create();
     IdentificaArquivo(true);
 end;
-
 
 procedure TSetMain.SalvaContexto(flag: boolean);
 begin
@@ -512,7 +521,6 @@ begin
   begin
     IdentificaArquivo(false);
   end;
-  //filename := 'Work'+ FormatDateTime('ddmmyy',now())+'.cfg';
   arquivo.Clear;
   arquivo.Append('DEVICE:'+iif(ckdevice,'1','0'));
   arquivo.Append('POSX:'+inttostr(FPOSX));
@@ -548,6 +556,14 @@ begin
   arquivo.Append('CHATGPTPROVIDER:'+inttostr(FChatGPTProvider));
   arquivo.Append('CHATGPTMODEL:'+FChatGPTModel);
   arquivo.Append('CHATGPTURL:'+FChatGPTURL);
+
+  // Salva JARVIS
+  arquivo.Append('JARVISURL:'+FJarvisURL);
+  arquivo.Append('JARVISAPIKEY:'+FJarvisAPIKey);
+  arquivo.Append('JARVISIAMODE:'+FJarvisIAMode);
+  arquivo.Append('MINIMIZETOTRAY:'+iif(FMinimizeToTray, '1', '0'));
+  arquivo.Append('AUTOSPEAK:'+iif(FAutoSpeak, '1', '0'));
+
   arquivo.Append('FRASE:'+FFrase);
   arquivo.Append('VOICESYNTHIP:'+FVoiceSynthIP);
   arquivo.Append('VOICESYNTHPORT:'+inttostr(FVoiceSynthPort));
@@ -567,14 +583,10 @@ end;
 
 destructor TSetMain.Destroy;
 begin
-  //SalvaContexto(false);
   arquivo.free;
   arquivo := nil;
   FFONT.free;
+  inherited Destroy;
 end;
 
 end.
-
-
-
-

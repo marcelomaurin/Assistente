@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, ComCtrls, GifAnim, strutils, chatgpt, setmain, frmconfig, aivoicesynthesizer, aivoicerecognizer;
+  Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
+  aivoicesynthesizer, aivoicerecognizer, jarvis_api;
 
 type
 
@@ -14,210 +15,366 @@ type
 
   Tfrmmain = class(TForm)
     pnlTop: TPanel;
-    GifAnim1: TGifAnim;
+    imgAvatar: TImage;
     pnlTopControls: TPanel;
+    lblJarvisStatusBadge: TLabel;
+    lblJarvisSub: TLabel;
     btIniciar: TBitBtn;
     btAbrirConfig: TBitBtn;
-    
+    btStatusResidencia: TButton;
+    btClima: TButton;
+
+    pnlQuickBar: TPanel;
+    lblQuick: TLabel;
+    btLuzSala: TButton;
+    btIrrigacao: TButton;
+    btAuditarSeguranca: TButton;
+
     pnlChat: TPanel;
     pnlHistoricoHeader: TPanel;
     lblHistorico: TLabel;
     btSpeaker: TBitBtn;
+    btLimparChat: TButton;
     memHistorico: TMemo;
-    
+
     pnlPergunta: TPanel;
     lblPergunta: TLabel;
     memPergunta: TMemo;
     btEnviar: TBitBtn;
     btMic: TBitBtn;
 
+    tmrCheckOnline: TTimer;
+    trayIcon: TTrayIcon;
+    pmTray: TPopupMenu;
+    miAbrir: TMenuItem;
+    miStatus: TMenuItem;
+    miLuzSala: TMenuItem;
+    miSep1: TMenuItem;
+    miConfig: TMenuItem;
+    miSep2: TMenuItem;
+    miSair: TMenuItem;
+
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure btIniciarClick(Sender: TObject);
     procedure btAbrirConfigClick(Sender: TObject);
     procedure btEnviarClick(Sender: TObject);
-    procedure btIniciarClick(Sender: TObject);
     procedure btMicClick(Sender: TObject);
     procedure btSpeakerClick(Sender: TObject);
+    procedure btLimparChatClick(Sender: TObject);
+    procedure btStatusResidenciaClick(Sender: TObject);
+    procedure btClimaClick(Sender: TObject);
+    procedure btLuzSalaClick(Sender: TObject);
+    procedure btIrrigacaoClick(Sender: TObject);
+    procedure btAuditarSegurancaClick(Sender: TObject);
+    procedure tmrCheckOnlineTimer(Sender: TObject);
+    procedure trayIconClick(Sender: TObject);
+    procedure miAbrirClick(Sender: TObject);
+    procedure miSairClick(Sender: TObject);
     procedure memPerguntaKeyPress(Sender: TObject; var Key: char);
-    procedure FormCreate(Sender: TObject);
   private
-    FAguardandoResposta : boolean;
-    FVoiceActive: boolean;
+    FAguardandoResposta: Boolean;
+    FVoiceActive: Boolean;
     FVoiceSynth: TAIVoiceSynthesizer;
     FVoiceRecog: TAIVoiceRecognizer;
-    procedure AplicaConfigChatGPT();
+    FJarvisClient: TJarvisAPIClient;
+    procedure AplicaConfiguracoes();
     procedure VoiceRecognized(Sender: TObject; const AText: string);
-    procedure AtualizaEstadoSpeaker;
-    procedure CarregaIcones;
+    procedure AtualizaEstadoSpeaker();
+    procedure CarregaIcones();
   public
-    pergunta : string;
-    procedure NewContext();
-    procedure FazPergunta();
+    procedure CheckJarvisOnline();
+    procedure FalaTexto(const ATexto: string);
     procedure AdicionaMensagemHistorico(const Remetente, Mensagem: string);
+    procedure ExecutaComandoJarvis(const ACmd: string);
     property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
     property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
-    property VoiceActive: boolean read FVoiceActive;
+    property VoiceActive: Boolean read FVoiceActive;
+  end;
+
+  { TAskJarvisThread
+    Envia comando via API v1 em background sem travar a interface do Windows }
+  TAskJarvisThread = class(TThread)
+  private
+    FCmd: string;
+    FModoIA: string;
+    FURL: string;
+    FKey: string;
+    FSucesso: Boolean;
+    FResposta: string;
+    FProvedor: string;
+    FAcao: string;
+    FAudioURL: string;
+    procedure EntregaResposta();
+  protected
+    procedure Execute(); override;
+  public
+    constructor Create(const ACmd, AModoIA, AURL, AKey: string);
   end;
 
   { TAskChatGPTThread
-    Executa CHATGPT1.SendQuestion em background. }
+    Compatibilidade com a engine legada CHATGPT }
   TAskChatGPTThread = class(TThread)
   private
-    FPergunta : string;
-    FResposta : string;
-    FSucesso  : boolean;
-    procedure EntregaResposta;
+    FPergunta: string;
+    FResposta: string;
+    FSucesso: Boolean;
+    procedure EntregaResposta();
   protected
-    procedure Execute; override;
+    procedure Execute(); override;
   public
-    constructor Create(const APergunta : string);
+    constructor Create(const APergunta: string);
   end;
 
 var
   frmmain: Tfrmmain;
+  CHATGPT1: TCHATGPT;
 
 implementation
 
 {$R *.lfm}
 
-{ TAskChatGPTThread }
+{ TAskJarvisThread }
 
-constructor TAskChatGPTThread.Create(const APergunta: string);
+constructor TAskJarvisThread.Create(const ACmd, AModoIA, AURL, AKey: string);
 begin
-  inherited Create(true);
-  FreeOnTerminate := true;
-  FPergunta := APergunta;
+  inherited Create(True);
+  FreeOnTerminate := True;
+  FCmd := ACmd;
+  FModoIA := AModoIA;
+  FURL := AURL;
+  FKey := AKey;
   Start;
 end;
 
-procedure TAskChatGPTThread.Execute;
+procedure TAskJarvisThread.Execute();
+var
+  Client: TJarvisAPIClient;
 begin
-  FSucesso := CHATGPT1.SendQuestion(FPergunta);
-  if FSucesso then
-    FResposta := CHATGPT1.Response
-  else
-  begin
-    FResposta := 'Desculpe, não consegui obter uma resposta agora.';
-    if CHATGPT1.LastError <> '' then
-      FResposta := FResposta + ' (' + CHATGPT1.LastError + ')';
+  Client := TJarvisAPIClient.Create(nil);
+  try
+    Client.BaseURL := FURL;
+    Client.APIKey := FKey;
+    Client.Timeout := 35;
+    FSucesso := Client.EnviarComando(FCmd, FModoIA, FResposta, FProvedor, FAcao, FAudioURL);
+  finally
+    Client.Free;
   end;
   Synchronize(@EntregaResposta);
 end;
 
-procedure TAskChatGPTThread.EntregaResposta;
+procedure TAskJarvisThread.EntregaResposta();
+var
+  TextoFinal: string;
 begin
-  frmmain.FAguardandoResposta := false;
-  frmmain.AdicionaMensagemHistorico('Assistente', FResposta);
+  if Assigned(frmmain) then
+  begin
+    TextoFinal := FResposta;
+    if Trim(FAcao) <> '' then
+      TextoFinal := TextoFinal + sLineBreak + '⚡ Ação executada: ' + FAcao;
 
-  if frmmain.FVoiceActive and Assigned(frmmain.FVoiceSynth) then
-    frmmain.FVoiceSynth.Say(FResposta);
+    frmmain.AdicionaMensagemHistorico('JARVIS (' + FProvedor + ')', TextoFinal);
+
+    if (FSetMain <> nil) and FSetMain.AutoSpeak then
+      frmmain.FalaTexto(FResposta);
+
+    frmmain.FAguardandoResposta := False;
+    frmmain.btEnviar.Enabled := True;
+  end;
+end;
+
+{ TAskChatGPTThread }
+
+constructor TAskChatGPTThread.Create(const APergunta: string);
+begin
+  inherited Create(True);
+  FreeOnTerminate := True;
+  FPergunta := APergunta;
+  Start;
+end;
+
+procedure TAskChatGPTThread.Execute();
+begin
+  if Assigned(CHATGPT1) then
+  begin
+    FSucesso := CHATGPT1.SendQuestion(FPergunta);
+    if FSucesso then
+      FResposta := CHATGPT1.Response
+    else
+    begin
+      FResposta := 'Desculpe, não consegui obter uma resposta.';
+      if CHATGPT1.LastError <> '' then
+        FResposta := FResposta + ' (' + CHATGPT1.LastError + ')';
+    end;
+  end;
+  Synchronize(@EntregaResposta);
+end;
+
+procedure TAskChatGPTThread.EntregaResposta();
+begin
+  if Assigned(frmmain) then
+  begin
+    frmmain.AdicionaMensagemHistorico('ChatGPT / IA', FResposta);
+    if (FSetMain <> nil) and FSetMain.AutoSpeak then
+      frmmain.FalaTexto(FResposta);
+    frmmain.FAguardandoResposta := False;
+    frmmain.btEnviar.Enabled := True;
+  end;
 end;
 
 { Tfrmmain }
+
 procedure Tfrmmain.FormCreate(Sender: TObject);
-begin
-   FAguardandoResposta := false;
-   FVoiceActive := true;
-
-   try
-     FSetMain := TSetMain.create();
-     FSetMain.CarregaContexto();
-   except
-   end;
-
-   try
-     FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
-     FVoiceSynth.Engine := seSystemDefault;
-   except
-   end;
-
-   try
-     FVoiceRecog := TAIVoiceRecognizer.Create(Self);
-     FVoiceRecog.Engine := vreOpenAIWhisper;
-     FVoiceRecog.OnRecognized := @VoiceRecognized;
-   except
-   end;
-
-   try
-     CHATGPT1 := TCHATGPT.create(self);
-     CHATGPT1.Dev := 'Você é o Assistente de IA da FATEC. Responda de forma clara, direta e em português.';
-     AplicaConfigChatGPT();
-   except
-   end;
-
-   AtualizaEstadoSpeaker();
-   CarregaIcones();
-end;
-
-procedure Tfrmmain.CarregaIcones;
 var
-  ImgDir: string;
+  ImgPath: string;
 begin
-  ImgDir := ExtractFilePath(ApplicationName) + 'images' + PathDelim;
-  try
-    if FileExists(ImgDir + 'app_icon.png') then
-      btIniciar.Glyph.LoadFromFile(ImgDir + 'app_icon.png');
-    if FileExists(ImgDir + 'settings.png') then
-      btAbrirConfig.Glyph.LoadFromFile(ImgDir + 'settings.png');
-    if FileExists(ImgDir + 'send.png') then
-      btEnviar.Glyph.LoadFromFile(ImgDir + 'send.png');
-    if FileExists(ImgDir + 'mic.png') then
-      btMic.Glyph.LoadFromFile(ImgDir + 'mic.png');
-    if FileExists(ImgDir + 'speaker.png') then
-      btSpeaker.Glyph.LoadFromFile(ImgDir + 'speaker.png');
-  except
+  FAguardandoResposta := False;
+  FVoiceActive := False;
+
+  if FSetMain = nil then
+    FSetMain := TSetMain.create();
+
+  FJarvisClient := TJarvisAPIClient.Create(Self);
+
+  // Inicializa componentes de voz
+  FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
+  FVoiceRecog := TAIVoiceRecognizer.Create(Self);
+  FVoiceRecog.OnRecognized := @VoiceRecognized;
+
+  CHATGPT1 := TCHATGPT.Create(Self);
+
+  AplicaConfiguracoes();
+  CarregaIcones();
+
+  // Tenta carregar avatar se existir
+  ImgPath := ExtractFilePath(Application.ExeName) + 'img' + PathDelim + 'robo8.gif';
+  if not FileExists(ImgPath) then
+    ImgPath := ExtractFilePath(Application.ExeName) + 'robo8.gif';
+  if not FileExists(ImgPath) then
+    ImgPath := ExtractFilePath(Application.ExeName) + 'img' + PathDelim + 'avatar.png';
+
+  if FileExists(ImgPath) then
+  begin
+    try
+      imgAvatar.Picture.LoadFromFile(ImgPath);
+    except
+    end;
+  end;
+
+  AdicionaMensagemHistorico('Sistema', 'JARVIS Desktop Client inicializado com sucesso no Windows.');
+  CheckJarvisOnline();
+end;
+
+procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  if (FSetMain <> nil) and FSetMain.MinimizeToTray and (CloseAction <> caFree) then
+  begin
+    CloseAction := caNone;
+    Hide;
+    trayIcon.Show;
+    trayIcon.ShowBalloonHint;
   end;
 end;
 
-procedure Tfrmmain.AtualizaEstadoSpeaker;
+procedure Tfrmmain.CarregaIcones();
 begin
-  if FVoiceActive then
-  begin
-    btSpeaker.Caption := '🔊 Voz ON';
-    btSpeaker.Hint := 'Clique para desativar a fala do assistente';
-  end
-  else
-  begin
-    btSpeaker.Caption := '🔇 Voz OFF';
-    btSpeaker.Hint := 'Clique para ativar a fala do assistente';
-  end;
-end;
-
-procedure Tfrmmain.btSpeakerClick(Sender: TObject);
-begin
-  FVoiceActive := not FVoiceActive;
   AtualizaEstadoSpeaker();
 end;
 
-procedure Tfrmmain.btMicClick(Sender: TObject);
+procedure Tfrmmain.AtualizaEstadoSpeaker();
 begin
-  if Assigned(FVoiceRecog) then
+  if (FSetMain <> nil) and FSetMain.AutoSpeak then
   begin
-    AdicionaMensagemHistorico('Sistema', 'Ouvindo... Fale sua pergunta.');
-    FVoiceRecog.Recognize('');
+    btSpeaker.Caption := '🔊 Voz ON';
+    btSpeaker.Font.Color := clGreen;
+  end
+  else
+  begin
+    btSpeaker.Caption := '🔇 Voz MUTE';
+    btSpeaker.Font.Color := clGray;
   end;
 end;
 
-procedure Tfrmmain.VoiceRecognized(Sender: TObject; const AText: string);
-var
-  info: string;
-  posicao: integer;
+procedure Tfrmmain.AplicaConfiguracoes();
 begin
-  info := AText;
-  if (FSetMain <> nil) and (FSetMain.Frase <> '') then
-    posicao := Pos(FSetMain.Frase, info)
+  if FSetMain = nil then Exit;
+
+  FJarvisClient.BaseURL := FSetMain.JarvisURL;
+  FJarvisClient.APIKey := FSetMain.JarvisAPIKey;
+  FJarvisClient.IAMode := FSetMain.JarvisIAMode;
+
+  // ChatGPT Suite Legado
+  CHATGPT1.TOKEN := FSetMain.CHATGPT;
+  if (FSetMain.ChatGPTProvider >= 0) and (FSetMain.ChatGPTProvider <= Ord(High(TAIProvider))) then
+    CHATGPT1.Provider := TAIProvider(FSetMain.ChatGPTProvider)
   else
-    posicao := 1;
+    CHATGPT1.Provider := AIP_OPENAI;
+  CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
+  CHATGPT1.URL := FSetMain.ChatGPTURL;
 
-  if posicao <> 0 then
+  // Sintetizador
+  if Assigned(FVoiceSynth) then
   begin
-    if (FSetMain <> nil) and (FSetMain.Frase <> '') then
-      info := ReplaceStr(info, FSetMain.Frase, '');
+    case FSetMain.SynthEngine of
+      0: FVoiceSynth.Engine := seSystemDefault;
+      1: FVoiceSynth.Engine := seSAPI;
+      2: FVoiceSynth.Engine := seEspeak;
+      3: FVoiceSynth.Engine := seOpenAI;
+    else
+      FVoiceSynth.Engine := seSAPI;
+    end;
+    FVoiceSynth.VoiceName := FSetMain.SynthVoice;
+    FVoiceSynth.Volume := FSetMain.SynthVolume;
+    FVoiceSynth.Rate := FSetMain.SynthRate;
+    FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+  end;
 
-    NewContext();
-    pergunta := Trim(info);
-    if pergunta <> '' then
-    begin
-      AdicionaMensagemHistorico('Você (Voz)', pergunta);
-      FazPergunta();
+  AtualizaEstadoSpeaker();
+end;
+
+procedure Tfrmmain.CheckJarvisOnline();
+var
+  Msg: string;
+begin
+  if Trim(FSetMain.JarvisURL) = '' then
+  begin
+    lblJarvisStatusBadge.Caption := '● NÃO CONFIGURADO';
+    lblJarvisStatusBadge.Font.Color := clGray;
+    Exit;
+  end;
+
+  FJarvisClient.BaseURL := FSetMain.JarvisURL;
+  FJarvisClient.APIKey := FSetMain.JarvisAPIKey;
+  FJarvisClient.Timeout := 5;
+
+  if FJarvisClient.TestarConexao(Msg) then
+  begin
+    if Pos('trycloudflare.com', LowerCase(FSetMain.JarvisURL)) > 0 then
+      lblJarvisStatusBadge.Caption := '● ONLINE (Cloudflare Edge)'
+    else
+      lblJarvisStatusBadge.Caption := '● ONLINE (Rede Local)';
+    lblJarvisStatusBadge.Font.Color := $0034D399; // Verde Esmeralda
+  end
+  else
+  begin
+    lblJarvisStatusBadge.Caption := '● OFFLINE / CONECTANDO...';
+    lblJarvisStatusBadge.Font.Color := $004545EF; // Vermelho
+  end;
+end;
+
+procedure Tfrmmain.FalaTexto(const ATexto: string);
+var
+  TextoLimpo: string;
+begin
+  if (FSetMain = nil) or (not FSetMain.AutoSpeak) then Exit;
+
+  // Limpa possíveis tags
+  TextoLimpo := Trim(ReplaceStr(ATexto, '[[CMD:', ''));
+  if Assigned(FVoiceSynth) and (TextoLimpo <> '') then
+  begin
+    try
+      FVoiceSynth.Say(TextoLimpo);
+    except
     end;
   end;
 end;
@@ -226,52 +383,190 @@ procedure Tfrmmain.AdicionaMensagemHistorico(const Remetente, Mensagem: string);
 begin
   if memHistorico <> nil then
   begin
-    memHistorico.Lines.Add('[' + FormatDateTime('hh:nn', Now) + '] ' + Remetente + ':');
+    memHistorico.Lines.Add('[' + FormatDateTime('hh:nn:ss', Now) + '] ' + Remetente + ':');
     memHistorico.Lines.Add(Mensagem);
     memHistorico.Lines.Add('');
     memHistorico.SelStart := Length(memHistorico.Text);
   end;
 end;
 
-procedure Tfrmmain.AplicaConfigChatGPT();
+procedure Tfrmmain.ExecutaComandoJarvis(const ACmd: string);
+var
+  ComandoTrim: string;
 begin
-  if CHATGPT1 = nil then
+  ComandoTrim := Trim(ACmd);
+  if ComandoTrim = '' then Exit;
+
+  if FAguardandoResposta then
+  begin
+    ShowMessage('Aguarde o processamento do comando anterior.');
     Exit;
+  end;
 
+  FAguardandoResposta := True;
+  btEnviar.Enabled := False;
+  AdicionaMensagemHistorico('Você', ComandoTrim);
+
+  // Se o JARVIS estiver configurado, envia para a API v1 do JARVIS
+  if Trim(FSetMain.JarvisURL) <> '' then
+  begin
+    TAskJarvisThread.Create(ComandoTrim, FSetMain.JarvisIAMode, FSetMain.JarvisURL, FSetMain.JarvisAPIKey);
+  end
+  else
+  begin
+    // Fallback para TCHATGPT direto
+    TAskChatGPTThread.Create(ComandoTrim);
+  end;
+end;
+
+procedure Tfrmmain.btEnviarClick(Sender: TObject);
+var
+  Cmd: string;
+begin
+  Cmd := memPergunta.Text;
+  memPergunta.Clear;
+  ExecutaComandoJarvis(Cmd);
+end;
+
+procedure Tfrmmain.memPerguntaKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    btEnviarClick(Sender);
+  end;
+end;
+
+procedure Tfrmmain.btMicClick(Sender: TObject);
+begin
+  btIniciarClick(Sender);
+end;
+
+procedure Tfrmmain.btIniciarClick(Sender: TObject);
+var
+  AudioDlg: TOpenDialog;
+begin
+  AudioDlg := TOpenDialog.Create(Self);
   try
-    if FSetMain <> nil then
+    AudioDlg.Title := 'Selecione arquivo de voz para transcrever e enviar';
+    AudioDlg.Filter := 'Arquivos de Áudio (*.wav;*.mp3)|*.wav;*.mp3|Todos (*.*)|*.*';
+    if AudioDlg.Execute then
     begin
-      CHATGPT1.TOKEN := FSetMain.CHATGPT;
-      if (FSetMain.ChatGPTProvider >= 0) and (FSetMain.ChatGPTProvider <= Ord(High(TAIProvider))) then
-        CHATGPT1.Provider := TAIProvider(FSetMain.ChatGPTProvider)
-      else
-        CHATGPT1.Provider := AIP_OPENAI;
-
-      CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
-      CHATGPT1.URL := FSetMain.ChatGPTURL;
-
-      if Assigned(FVoiceRecog) then
-        FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
-
-      if Assigned(FVoiceSynth) then
+      AdicionaMensagemHistorico('Voz', 'Processando áudio: ' + ExtractFileName(AudioDlg.FileName) + '...');
+      if FVoiceRecog.Recognize(AudioDlg.FileName) then
       begin
-        FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
-        case FSetMain.SynthEngine of
-          0: FVoiceSynth.Engine := seSystemDefault;
-          1: FVoiceSynth.Engine := seSAPI;
-          2: FVoiceSynth.Engine := seEspeak;
-          3: FVoiceSynth.Engine := seOpenAI;
-        else
-          FVoiceSynth.Engine := seSystemDefault;
-        end;
-        FVoiceSynth.VoiceName := FSetMain.SynthVoice;
-        FVoiceSynth.Volume := FSetMain.SynthVolume;
-        FVoiceSynth.Rate := FSetMain.SynthRate;
-        FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+        AdicionaMensagemHistorico('Você (Voz)', FVoiceRecog.RecognizedText);
+        ExecutaComandoJarvis(FVoiceRecog.RecognizedText);
+      end
+      else
+      begin
+        AdicionaMensagemHistorico('Erro', 'Não foi possível transcrever áudio: ' + FVoiceRecog.LastError);
       end;
     end;
-  except
+  finally
+    AudioDlg.Free;
   end;
+end;
+
+procedure Tfrmmain.VoiceRecognized(Sender: TObject; const AText: string);
+var
+  Info: string;
+begin
+  Info := Trim(AText);
+  if Info <> '' then
+  begin
+    AdicionaMensagemHistorico('Você (Voz)', Info);
+    ExecutaComandoJarvis(Info);
+  end;
+end;
+
+procedure Tfrmmain.btSpeakerClick(Sender: TObject);
+begin
+  if FSetMain <> nil then
+  begin
+    FSetMain.AutoSpeak := not FSetMain.AutoSpeak;
+    FSetMain.SalvaContexto(False);
+    AtualizaEstadoSpeaker();
+  end;
+end;
+
+procedure Tfrmmain.btLimparChatClick(Sender: TObject);
+begin
+  memHistorico.Clear;
+end;
+
+procedure Tfrmmain.btStatusResidenciaClick(Sender: TObject);
+var
+  Resumo: string;
+begin
+  if FJarvisClient.ObterStatus(Resumo) then
+  begin
+    AdicionaMensagemHistorico('JARVIS Telemetria', Resumo);
+    CheckJarvisOnline();
+  end
+  else
+  begin
+    AdicionaMensagemHistorico('Erro', 'Falha ao consultar status da residência: ' + FJarvisClient.LastError);
+  end;
+end;
+
+procedure Tfrmmain.btClimaClick(Sender: TObject);
+var
+  Temp, Umidade, Descricao: string;
+  VaiChover: Boolean;
+  Msg: string;
+begin
+  if FJarvisClient.ObterClima(Temp, Umidade, Descricao, VaiChover) then
+  begin
+    Msg := Format('Meteorologia Atual: Temperatura de %s e Umidade de %s.' + sLineBreak + '%s',
+      [Temp, Umidade, Descricao]);
+    AdicionaMensagemHistorico('JARVIS Clima', Msg);
+    if (FSetMain <> nil) and FSetMain.AutoSpeak then
+      FalaTexto(Msg);
+  end
+  else
+  begin
+    AdicionaMensagemHistorico('Erro', 'Falha ao obter telemetria climática.');
+  end;
+end;
+
+procedure Tfrmmain.btLuzSalaClick(Sender: TObject);
+begin
+  ExecutaComandoJarvis('Ligue a iluminação da sala');
+end;
+
+procedure Tfrmmain.btIrrigacaoClick(Sender: TObject);
+begin
+  ExecutaComandoJarvis('Ligue a irrigação da piscina');
+end;
+
+procedure Tfrmmain.btAuditarSegurancaClick(Sender: TObject);
+begin
+  ExecutaComandoJarvis('Qual o status de segurança e firewall?');
+end;
+
+procedure Tfrmmain.tmrCheckOnlineTimer(Sender: TObject);
+begin
+  CheckJarvisOnline();
+end;
+
+procedure Tfrmmain.trayIconClick(Sender: TObject);
+begin
+  miAbrirClick(Sender);
+end;
+
+procedure Tfrmmain.miAbrirClick(Sender: TObject);
+begin
+  Show;
+  WindowState := wsNormal;
+  BringToFront;
+end;
+
+procedure Tfrmmain.miSairClick(Sender: TObject);
+begin
+  if FSetMain <> nil then
+    FSetMain.MinimizeToTray := False;
+  Close;
 end;
 
 procedure Tfrmmain.btAbrirConfigClick(Sender: TObject);
@@ -280,10 +575,22 @@ var
 begin
   FormCfg := TfrmConfig.Create(Self);
   try
+    // Aba JARVIS
+    FormCfg.edJarvisURL.Text := FSetMain.JarvisURL;
+    FormCfg.edJarvisKey.Text := FSetMain.JarvisAPIKey;
+    if FSetMain.JarvisIAMode = 'local_only' then
+      FormCfg.cbJarvisMode.ItemIndex := 1
+    else if FSetMain.JarvisIAMode = 'cloud_only' then
+      FormCfg.cbJarvisMode.ItemIndex := 2
+    else
+      FormCfg.cbJarvisMode.ItemIndex := 0;
+    FormCfg.chkMinimizeTray.Checked := FSetMain.MinimizeToTray;
+    FormCfg.chkAutoSpeak.Checked := FSetMain.AutoSpeak;
+
+    // Aba IA Legada
     FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
     if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
       FormCfg.cbProvider.ItemIndex := 0;
-
     FormCfg.CarregaModelosDoProvedor;
     if Trim(FSetMain.ChatGPTModel) <> '' then
       FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
@@ -293,7 +600,7 @@ begin
     // Aba Output Voice
     FormCfg.cbSynthEngine.ItemIndex := FSetMain.SynthEngine;
     if (FormCfg.cbSynthEngine.ItemIndex < 0) or (FormCfg.cbSynthEngine.ItemIndex >= FormCfg.cbSynthEngine.Items.Count) then
-      FormCfg.cbSynthEngine.ItemIndex := 0;
+      FormCfg.cbSynthEngine.ItemIndex := 1;
     FormCfg.CarregaVozesDoSintetizador;
     if Trim(FSetMain.SynthVoice) <> '' then
       FormCfg.cbSynthVoice.Text := FSetMain.SynthVoice;
@@ -303,6 +610,7 @@ begin
     FormCfg.tbSynthRateChange(Self);
     FormCfg.chkSynthAsync.Checked := FSetMain.SynthAsync;
 
+    // Aba Voz
     FormCfg.edFrase.Text := FSetMain.Frase;
     FormCfg.edSynthIP.Text := FSetMain.VoiceSynthIP;
     FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
@@ -311,6 +619,7 @@ begin
     FormCfg.edVerIP.Text := FSetMain.VerIP;
     FormCfg.edVerPort.Text := IntToStr(FSetMain.VerPort);
 
+    // Aba Banco
     FormCfg.edMyHost.Text := FSetMain.HostnameMy;
     FormCfg.edMyDb.Text := FSetMain.BancoMy;
     FormCfg.edMyUser.Text := FSetMain.UsernameMy;
@@ -323,110 +632,57 @@ begin
 
     if FormCfg.ShowModal = mrOk then
     begin
-      FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
-      FSetMain.ChatGPTModel := FormCfg.cbModel.Text;
-      FSetMain.CHATGPT := FormCfg.edTokenGPT.Text;
-      FSetMain.ChatGPTURL := FormCfg.edURL.Text;
+      // Salva JARVIS
+      FSetMain.JarvisURL := Trim(FormCfg.edJarvisURL.Text);
+      FSetMain.JarvisAPIKey := Trim(FormCfg.edJarvisKey.Text);
+      case FormCfg.cbJarvisMode.ItemIndex of
+        1: FSetMain.JarvisIAMode := 'local_only';
+        2: FSetMain.JarvisIAMode := 'cloud_only';
+      else
+        FSetMain.JarvisIAMode := 'auto';
+      end;
+      FSetMain.MinimizeToTray := FormCfg.chkMinimizeTray.Checked;
+      FSetMain.AutoSpeak := FormCfg.chkAutoSpeak.Checked;
 
-      // Aba Output Voice
+      // Salva IA Legada
+      FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
+      FSetMain.ChatGPTModel := Trim(FormCfg.cbModel.Text);
+      FSetMain.CHATGPT := Trim(FormCfg.edTokenGPT.Text);
+      FSetMain.ChatGPTURL := Trim(FormCfg.edURL.Text);
+
+      // Salva Voz
       FSetMain.SynthEngine := FormCfg.cbSynthEngine.ItemIndex;
-      FSetMain.SynthVoice := FormCfg.cbSynthVoice.Text;
+      FSetMain.SynthVoice := Trim(FormCfg.cbSynthVoice.Text);
       FSetMain.SynthVolume := FormCfg.tbSynthVolume.Position;
       FSetMain.SynthRate := FormCfg.tbSynthRate.Position;
       FSetMain.SynthAsync := FormCfg.chkSynthAsync.Checked;
 
-      FSetMain.Frase := FormCfg.edFrase.Text;
-      FSetMain.VoiceSynthIP := FormCfg.edSynthIP.Text;
-      FSetMain.VoiceSynthPort := StrToIntDef(FormCfg.edSynthPort.Text, 8096);
-      FSetMain.VoiceRecogIP := FormCfg.edRecogIP.Text;
-      FSetMain.VoiceRecogPort := StrToIntDef(FormCfg.edRecogPort.Text, 8097);
-      FSetMain.VerIP := FormCfg.edVerIP.Text;
-      FSetMain.VerPort := StrToIntDef(FormCfg.edVerPort.Text, 8097);
+      FSetMain.Frase := Trim(FormCfg.edFrase.Text);
+      FSetMain.VoiceSynthIP := Trim(FormCfg.edSynthIP.Text);
+      FSetMain.VoiceSynthPort := StrToIntDef(Trim(FormCfg.edSynthPort.Text), 8096);
+      FSetMain.VoiceRecogIP := Trim(FormCfg.edRecogIP.Text);
+      FSetMain.VoiceRecogPort := StrToIntDef(Trim(FormCfg.edRecogPort.Text), 8097);
+      FSetMain.VerIP := Trim(FormCfg.edVerIP.Text);
+      FSetMain.VerPort := StrToIntDef(Trim(FormCfg.edVerPort.Text), 8097);
 
-      FSetMain.HostnameMy := FormCfg.edMyHost.Text;
-      FSetMain.BancoMy := FormCfg.edMyDb.Text;
-      FSetMain.UsernameMy := FormCfg.edMyUser.Text;
-      FSetMain.PasswordMy := FormCfg.edMyPass.Text;
-      FSetMain.HostnamePost := FormCfg.edPostHost.Text;
-      FSetMain.BancoPOST := FormCfg.edPostDb.Text;
-      FSetMain.UsernamePost := FormCfg.edPostUser.Text;
-      FSetMain.PasswordPost := FormCfg.edPostPass.Text;
-      FSetMain.SchemaPost := FormCfg.edPostSchema.Text;
+      // Salva Banco
+      FSetMain.HostnameMy := Trim(FormCfg.edMyHost.Text);
+      FSetMain.BancoMy := Trim(FormCfg.edMyDb.Text);
+      FSetMain.UsernameMy := Trim(FormCfg.edMyUser.Text);
+      FSetMain.PasswordMy := Trim(FormCfg.edMyPass.Text);
+      FSetMain.HostnamePost := Trim(FormCfg.edPostHost.Text);
+      FSetMain.BancoPOST := Trim(FormCfg.edPostDb.Text);
+      FSetMain.UsernamePost := Trim(FormCfg.edPostUser.Text);
+      FSetMain.PasswordPost := Trim(FormCfg.edPostPass.Text);
+      FSetMain.SchemaPost := Trim(FormCfg.edPostSchema.Text);
 
-      FSetMain.SalvaContexto(false);
-      AplicaConfigChatGPT();
+      FSetMain.SalvaContexto(False);
+      AplicaConfiguracoes();
+      CheckJarvisOnline();
     end;
   finally
     FormCfg.Free;
   end;
-end;
-
-procedure Tfrmmain.btIniciarClick(Sender: TObject);
-var
-  GifFile: string;
-begin
-  AplicaConfigChatGPT();
-
-  GifFile := ExtractFilePath(ApplicationName) + 'img' + PathDelim + 'robo8.gif';
-  if not FileExists(GifFile) then
-    GifFile := ExtractFilePath(ExtractFileDir(ExtractFilePath(ApplicationName))) + 'img' + PathDelim + 'robo8.gif';
-  if not FileExists(GifFile) then
-    GifFile := ExtractFilePath(ApplicationName) + 'robo8.gif';
-
-  if FileExists(GifFile) then
-  begin
-    try
-      GifAnim1.FileName := GifFile;
-      GifAnim1.Visible := True;
-      GifAnim1.Animate := True;
-    except
-    end;
-  end;
-end;
-
-procedure Tfrmmain.btEnviarClick(Sender: TObject);
-begin
-  if Trim(memPergunta.Text) = '' then
-    Exit;
-
-  NewContext();
-  pergunta := Trim(memPergunta.Text);
-  AdicionaMensagemHistorico('Você', pergunta);
-  FazPergunta();
-  memPergunta.Text := '';
-end;
-
-procedure Tfrmmain.memPerguntaKeyPress(Sender: TObject; var Key: char);
-begin
-  if (Key = #13) and not (ssCtrl in GetKeyShiftState) then
-  begin
-    Key := #0;
-    btEnviarClick(Sender);
-  end;
-end;
-
-procedure Tfrmmain.NewContext();
-begin
-    pergunta := '';
-end;
-
-procedure Tfrmmain.FazPergunta();
-begin
-     if(CHATGPT1 = nil) then
-     begin
-         CHATGPT1 := TCHATGPT.create(self);
-     end;
-     AplicaConfigChatGPT();
-
-     if(pergunta <> '') then
-     begin
-       if FAguardandoResposta then
-         Exit;
-
-       FAguardandoResposta := true;
-
-       TAskChatGPTThread.Create(pergunta);
-     end;
 end;
 
 end.
