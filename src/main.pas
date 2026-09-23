@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -96,6 +96,7 @@ type
     FProjectManager: TAssistantProjectManager;
     procedure OnSpeechInterruption(Sender: TObject);
     procedure OnContextProjectChanged(Sender: TObject; const AOldProject, ANewProject: string);
+    procedure OnActivePersonChanged(Sender: TObject; const AOldPersonID, ANewPersonID: string);
     procedure AtualizaProjetosUI();
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
     procedure OnAgentStepUpdate(Sender: TObject; AStepIndex, ATotalSteps: Integer; const AStepTitle, AStatus: string);
@@ -268,6 +269,34 @@ begin
   lblJarvisSub.Caption := 'Projeto em foco: ' + ANewProject;
 end;
 
+procedure Tfrmmain.OnActivePersonChanged(Sender: TObject; const AOldPersonID, ANewPersonID: string);
+var
+  S: TAIPersonSession;
+begin
+  if FConversationOrchestrator <> nil then
+  begin
+    S := FConversationOrchestrator.SessionManager.ActiveSession;
+    if S <> nil then
+    begin
+      AdicionaMensagemHistorico('👤 Interlocutor', 'Sessão ativa: ' + S.Name + ' [ID: ' + S.PersonID + ']');
+      if S.CurrentProject <> '' then
+      begin
+        if FAssistantManager <> nil then
+          FAssistantManager.ActiveProject := S.CurrentProject;
+        FConversationOrchestrator.Context.CurrentProject := S.CurrentProject;
+        lblJarvisSub.Caption := 'Projeto em foco: ' + S.CurrentProject;
+      end;
+      if FAvatar3D <> nil then
+      begin
+        FAvatar3D.SetEmotion(aeHappy, 1.0);
+        FAvatar3D.PlayGesture(agWave, 2.0);
+      end;
+      if (FSetMain <> nil) and FSetMain.AutoSpeak then
+        FalaTexto('Olá, ' + S.Name + '!');
+    end;
+  end;
+end;
+
 procedure Tfrmmain.FormCreate(Sender: TObject);
 var
   ImgPath: string;
@@ -310,6 +339,7 @@ begin
     FConversationOrchestrator.Agent := FAssistantManager.Agent;
   FConversationOrchestrator.OnInterruption := @OnSpeechInterruption;
   FConversationOrchestrator.OnProjectChanged := @OnContextProjectChanged;
+  FConversationOrchestrator.OnActivePersonChanged := @OnActivePersonChanged;
 
     FAvatar3D := TAIAvatar3D.Create(Self);
   FAvatar3D.VoiceSynthesizer := FVoiceSynth;
@@ -505,6 +535,8 @@ begin
     FConversationOrchestrator.Context.ResolveReference(ComandoTrim);
     if (FAssistantManager <> nil) and (FConversationOrchestrator.Context.CurrentProject <> '') then
       FAssistantManager.ActiveProject := FConversationOrchestrator.Context.CurrentProject;
+    if FConversationOrchestrator.SessionManager.ActiveSession <> nil then
+      FConversationOrchestrator.SessionManager.ActiveSession.AddMessage('user', ComandoTrim);
   end;
 
   // Avatar entra em Listening e Thinking (Tarefa 119)
@@ -843,6 +875,14 @@ end;
 procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
 begin
   AdicionaMensagemHistorico('Assistente (' + AProvider + ')', AResponseText);
+  // Registra no histórico da sessão da pessoa ativa
+  if (FConversationOrchestrator <> nil) and (FConversationOrchestrator.SessionManager.ActiveSession <> nil) then
+  begin
+    FConversationOrchestrator.SessionManager.ActiveSession.AddMessage('assistant', AResponseText);
+    if FConversationOrchestrator.Context.CurrentProject <> '' then
+      FConversationOrchestrator.SessionManager.ActiveSession.CurrentProject := FConversationOrchestrator.Context.CurrentProject;
+  end;
+
   // Aplica resposta estruturada ou texto no avatar (Tarefas 120 e 121)
   if FAvatar3D <> nil then
   begin
