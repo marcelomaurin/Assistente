@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -90,10 +90,32 @@ type
     FVoiceSynth: TAIVoiceSynthesizer;
     FAvatar3D: TAIAvatar3D;
     FConversationOrchestrator: TAIConversationOrchestrator;
+    FPresentationAgent: TAIPresentationAgent;
     FVoiceRecog: TAIVoiceRecognizer;
     FJarvisClient: TJarvisAPIClient;
     FAssistantManager: TAssistantManager;
     FProjectManager: TAssistantProjectManager;
+
+    { Controles da Interface de Exposicao / Professor Virtual }
+    pnlExposicao: TPanel;
+    pnlRecursoMoldura: TPanel;
+    pnlExposicaoFooter: TPanel;
+    imgRecursoExposicao: TImage;
+    lblFatecHeader: TLabel;
+    lblNarrativaExposicao: TLabel;
+    lblRecursoDescricao: TLabel;
+    btExposicaoContinuar: TBitBtn;
+    btExposicaoProximo: TBitBtn;
+    btAdminToggle: TBitBtn;
+
+    procedure InitExposicaoUI;
+    procedure btExposicaoContinuarClick(Sender: TObject);
+    procedure btExposicaoProximoClick(Sender: TObject);
+    procedure btAdminToggleClick(Sender: TObject);
+    procedure OnPresentationResourceSelected(Sender: TObject; AResource: TPresentationResource);
+    procedure OnPresentationNarrativeSpoken(Sender: TObject; const ANarrative, AEmotion, AGesture: string);
+    procedure OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
+
     procedure OnSpeechInterruption(Sender: TObject);
     procedure OnContextProjectChanged(Sender: TObject; const AOldProject, ANewProject: string);
     procedure OnActivePersonChanged(Sender: TObject; const AOldPersonID, ANewPersonID: string);
@@ -269,6 +291,181 @@ begin
   lblJarvisSub.Caption := 'Projeto em foco: ' + ANewProject;
 end;
 
+procedure Tfrmmain.InitExposicaoUI;
+begin
+  pnlExposicao := TPanel.Create(Self);
+  pnlExposicao.Parent := pnlChat;
+  pnlExposicao.Align := alClient;
+  pnlExposicao.BevelOuter := bvNone;
+  pnlExposicao.Color := $001A1816;
+  pnlExposicao.Visible := True;
+
+  lblFatecHeader := TLabel.Create(Self);
+  lblFatecHeader.Parent := pnlExposicao;
+  lblFatecHeader.Align := alTop;
+  lblFatecHeader.Alignment := taCenter;
+  lblFatecHeader.Caption := '🎓 FATEC RIBEIRÃO PRETO - EXPOSIÇÃO CIENTÍFICA & TECNOLÓGICA';
+  lblFatecHeader.Font.Color := $00FFC040;
+  lblFatecHeader.Font.Height := -14;
+  lblFatecHeader.Font.Style := [fsBold];
+  lblFatecHeader.BorderSpacing.Top := 8;
+  lblFatecHeader.BorderSpacing.Bottom := 4;
+
+  lblNarrativaExposicao := TLabel.Create(Self);
+  lblNarrativaExposicao.Parent := pnlExposicao;
+  lblNarrativaExposicao.Align := alTop;
+  lblNarrativaExposicao.Alignment := taCenter;
+  lblNarrativaExposicao.WordWrap := True;
+  lblNarrativaExposicao.Caption := '"Aproxime-se para conhecer os projetos desenvolvidos pelos nossos pesquisadores..."';
+  lblNarrativaExposicao.Font.Color := clWhite;
+  lblNarrativaExposicao.Font.Height := -13;
+  lblNarrativaExposicao.BorderSpacing.Around := 8;
+
+  pnlExposicaoFooter := TPanel.Create(Self);
+  pnlExposicaoFooter.Parent := pnlExposicao;
+  pnlExposicaoFooter.Align := alBottom;
+  pnlExposicaoFooter.Height := 38;
+  pnlExposicaoFooter.BevelOuter := bvNone;
+  pnlExposicaoFooter.Color := $00242220;
+
+  btExposicaoContinuar := TBitBtn.Create(Self);
+  btExposicaoContinuar.Parent := pnlExposicaoFooter;
+  btExposicaoContinuar.Left := 10;
+  btExposicaoContinuar.Top := 4;
+  btExposicaoContinuar.Width := 150;
+  btExposicaoContinuar.Height := 30;
+  btExposicaoContinuar.Caption := '▶ Continuar Tópico';
+  btExposicaoContinuar.OnClick := @btExposicaoContinuarClick;
+
+  btExposicaoProximo := TBitBtn.Create(Self);
+  btExposicaoProximo.Parent := pnlExposicaoFooter;
+  btExposicaoProximo.Left := 170;
+  btExposicaoProximo.Top := 4;
+  btExposicaoProximo.Width := 150;
+  btExposicaoProximo.Height := 30;
+  btExposicaoProximo.Caption := '⏭ Próximo Projeto';
+  btExposicaoProximo.OnClick := @btExposicaoProximoClick;
+
+  btAdminToggle := TBitBtn.Create(Self);
+  btAdminToggle.Parent := pnlExposicaoFooter;
+  btAdminToggle.Align := alRight;
+  btAdminToggle.Width := 120;
+  btAdminToggle.Caption := '⚙ Admin / Logs';
+  btAdminToggle.OnClick := @btAdminToggleClick;
+
+  lblRecursoDescricao := TLabel.Create(Self);
+  lblRecursoDescricao.Parent := pnlExposicao;
+  lblRecursoDescricao.Align := alBottom;
+  lblRecursoDescricao.Alignment := taCenter;
+  lblRecursoDescricao.Caption := 'Recurso Selecionado: Aguardando início...';
+  lblRecursoDescricao.Font.Color := $0000FF99;
+  lblRecursoDescricao.Font.Height := -11;
+  lblRecursoDescricao.Font.Style := [fsBold];
+  lblRecursoDescricao.BorderSpacing.Bottom := 6;
+
+  pnlRecursoMoldura := TPanel.Create(Self);
+  pnlRecursoMoldura.Parent := pnlExposicao;
+  pnlRecursoMoldura.Align := alClient;
+  pnlRecursoMoldura.BevelOuter := bvNone;
+  pnlRecursoMoldura.Color := $00101010;
+  pnlRecursoMoldura.BorderSpacing.Around := 8;
+
+  imgRecursoExposicao := TImage.Create(Self);
+  imgRecursoExposicao.Parent := pnlRecursoMoldura;
+  imgRecursoExposicao.Align := alClient;
+  imgRecursoExposicao.Center := True;
+  imgRecursoExposicao.Proportional := True;
+  imgRecursoExposicao.Stretch := True;
+end;
+
+procedure Tfrmmain.btExposicaoContinuarClick(Sender: TObject);
+begin
+  if FPresentationAgent <> nil then
+  begin
+    if FPresentationAgent.State = psAnsweringQuestion then
+      FPresentationAgent.ResumePresentation
+    else
+      FPresentationAgent.ContinuePresentation;
+  end;
+end;
+
+procedure Tfrmmain.btExposicaoProximoClick(Sender: TObject);
+begin
+  if FPresentationAgent <> nil then
+    FPresentationAgent.SelectNextProject;
+end;
+
+procedure Tfrmmain.btAdminToggleClick(Sender: TObject);
+begin
+  pnlSidebar.Visible := not pnlSidebar.Visible;
+  pnlQuickBar.Visible := pnlSidebar.Visible;
+  if pnlSidebar.Visible then
+    btAdminToggle.Caption := '✖ Fechar Admin'
+  else
+    btAdminToggle.Caption := '⚙ Admin / Logs';
+end;
+
+procedure Tfrmmain.OnPresentationResourceSelected(Sender: TObject; AResource: TPresentationResource);
+var
+  ImgFile: string;
+begin
+  if AResource = nil then Exit;
+  lblRecursoDescricao.Caption := 'Recurso Selecionado: ' + AResource.Title + ' - ' + AResource.Description;
+
+  ImgFile := AResource.FilePath;
+  if not FileExists(ImgFile) then
+    ImgFile := ExtractFilePath(Application.ExeName) + AResource.FilePath;
+  if not FileExists(ImgFile) then
+    ImgFile := ExtractFilePath(Application.ExeName) + 'img' + PathDelim + ExtractFileName(AResource.FilePath);
+  if not FileExists(ImgFile) then
+    ImgFile := 'D:\projetos\maurinsoft\Assistente\img\' + ExtractFileName(AResource.FilePath);
+
+  if FileExists(ImgFile) and (imgRecursoExposicao <> nil) then
+  begin
+    try
+      imgRecursoExposicao.Picture.LoadFromFile(ImgFile);
+    except
+    end;
+  end;
+end;
+
+procedure Tfrmmain.OnPresentationNarrativeSpoken(Sender: TObject; const ANarrative, AEmotion, AGesture: string);
+begin
+  if lblNarrativaExposicao <> nil then
+    lblNarrativaExposicao.Caption := '"' + ANarrative + '"';
+
+  AdicionaMensagemHistorico('🎓 Professor Virtual', ANarrative);
+
+  if FAvatar3D <> nil then
+  begin
+    if AEmotion = 'alegria' then
+      FAvatar3D.SetEmotion(aeHappy, 1.0)
+    else
+      FAvatar3D.SetEmotion(aeNeutral, 1.0);
+
+    if AGesture = 'agWave' then
+      FAvatar3D.PlayGesture(agWave, 2.0)
+    else if AGesture = 'agPoint' then
+      FAvatar3D.PlayGesture(agPoint, 2.0)
+    else if AGesture = 'agNod' then
+      FAvatar3D.PlayGesture(agNod, 1.8)
+    else
+      FAvatar3D.PlayGesture(agExplain, 2.2);
+  end;
+
+  if (FSetMain <> nil) and FSetMain.AutoSpeak then
+    FalaTexto(ANarrative);
+end;
+
+procedure Tfrmmain.OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
+begin
+  if APackage = nil then Exit;
+  lblJarvisStatusBadge.Caption := '● EXPOSIÇÃO: ' + UpperCase(APackage.ProjectCode);
+  lblJarvisSub.Caption := APackage.Title;
+  if FAssistantManager <> nil then
+    FAssistantManager.ActiveProject := APackage.ProjectCode;
+end;
+
 procedure Tfrmmain.OnActivePersonChanged(Sender: TObject; const AOldPersonID, ANewPersonID: string);
 var
   S: TAIPersonSession;
@@ -279,20 +476,8 @@ begin
     if S <> nil then
     begin
       AdicionaMensagemHistorico('👤 Interlocutor', 'Sessão ativa: ' + S.Name + ' [ID: ' + S.PersonID + ']');
-      if S.CurrentProject <> '' then
-      begin
-        if FAssistantManager <> nil then
-          FAssistantManager.ActiveProject := S.CurrentProject;
-        FConversationOrchestrator.Context.CurrentProject := S.CurrentProject;
-        lblJarvisSub.Caption := 'Projeto em foco: ' + S.CurrentProject;
-      end;
-      if FAvatar3D <> nil then
-      begin
-        FAvatar3D.SetEmotion(aeHappy, 1.0);
-        FAvatar3D.PlayGesture(agWave, 2.0);
-      end;
-      if (FSetMain <> nil) and FSetMain.AutoSpeak then
-        FalaTexto('Olá, ' + S.Name + '!');
+      if FPresentationAgent <> nil then
+        FPresentationAgent.StartPresentation(S.PersonID, S.Name, S.CurrentProject);
     end;
   end;
 end;
@@ -372,6 +557,20 @@ begin
 
   AdicionaMensagemHistorico('Sistema', 'JARVIS Desktop Client inicializado com sucesso no Windows.');
   CheckJarvisOnline();
+
+  // Inicializa Interface de Exposicao do Professor Virtual
+  InitExposicaoUI;
+  FPresentationAgent := TAIPresentationAgent.Create(Self);
+  FPresentationAgent.OnResourceSelected := @OnPresentationResourceSelected;
+  FPresentationAgent.OnNarrativeSpoken := @OnPresentationNarrativeSpoken;
+  FPresentationAgent.OnProjectChanged := @OnPresentationProjectChanged;
+
+  // Inicia com layout limpo de exposicao (sem botoes manuais poluindo a tela)
+  pnlSidebar.Visible := False;
+  pnlQuickBar.Visible := False;
+
+  // Inicia exposicao autonoma do primeiro projeto de destaque
+  FPresentationAgent.StartPresentation('', 'Visitante');
 end;
 
 procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -544,6 +743,15 @@ begin
   begin
     FAvatar3D.SetState(avListening);
     FAvatar3D.SetState(avThinking);
+  end;
+
+  // Se o Professor Virtual estiver em apresentacao, responde a duvida com desvio didatico
+  if (FPresentationAgent <> nil) and (FPresentationAgent.State in [psPresentingConcept, psGreeting]) then
+  begin
+    FPresentationAgent.AnswerQuestion(ComandoTrim);
+    FAguardandoResposta := False;
+    btEnviar.Enabled := True;
+    Exit;
   end;
 
 
