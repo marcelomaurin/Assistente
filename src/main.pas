@@ -516,8 +516,6 @@ begin
   AplicaConfiguracoes();
   CarregaIcones();
 
-  // Inicializa Avatar 3D (Tarefas 117 e 118)
-
   // Inicializa Orquestrador de Conversacao Continua e Barge-In
   FConversationOrchestrator := TAIConversationOrchestrator.Create(Self);
   if FAssistantManager <> nil then
@@ -526,7 +524,7 @@ begin
   FConversationOrchestrator.OnProjectChanged := @OnContextProjectChanged;
   FConversationOrchestrator.OnActivePersonChanged := @OnActivePersonChanged;
 
-    FAvatar3D := TAIAvatar3D.Create(Self);
+  FAvatar3D := TAIAvatar3D.Create(Self);
   FAvatar3D.VoiceSynthesizer := FVoiceSynth;
   if FSetMain <> nil then
   begin
@@ -538,7 +536,6 @@ begin
         FAvatar3D.LoadAvatar(FSetMain.Avatar3DModel);
     end;
   end;
-
 
   // Tenta carregar avatar se existir
   ImgPath := ExtractFilePath(Application.ExeName) + 'img' + PathDelim + 'robo8.gif';
