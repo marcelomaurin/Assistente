@@ -1,0 +1,16 @@
+# Lazarus / Free Pascal
+lib/
+*.o
+*.ppu
+*.or
+*.compiled
+*.bak
+*.lps
+*.identcache
+*.stat
+backup/
+
+# Logs e arquivos temporarios
+*.log
+*.RIA
+*.tmp
