@@ -48,14 +48,6 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="aibase.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="chatgpt.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
         <Filename Value="funcoes.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
@@ -70,14 +62,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit>
-      <Unit>
-        <Filename Value="aivoicesynthesizer.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="aivoicerecognizer.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -86,7 +70,8 @@
       <Filename Value="assistente"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)"/>
+      <IncludeFiles Value="$(ProjOutDir);..\..\CHATGPT;..\..\CHATGPT\pacote\AI;..\..\CHATGPT\pacote\AI Voice;..\..\CHATGPT\pacote\AI Agent;..\..\CHATGPT\pacote\AI Input;..\..\CHATGPT\pacote\AI Input\AISockets;..\..\CHATGPT\pacote\AI Output;..\..\CHATGPT\pacote\AI Files;..\..\CHATGPT\pacote\AI DBase;..\..\CHATGPT\pacote\AI Graphic"/>
+      <OtherUnitFiles Value="$(ProjOutDir);..\..\CHATGPT;..\..\CHATGPT\pacote\AI;..\..\CHATGPT\pacote\AI Voice;..\..\CHATGPT\pacote\AI Agent;..\..\CHATGPT\pacote\AI Input;..\..\CHATGPT\pacote\AI Input\AISockets;..\..\CHATGPT\pacote\AI Output;..\..\CHATGPT\pacote\AI Files;..\..\CHATGPT\pacote\AI DBase;..\..\CHATGPT\pacote\AI Graphic"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
