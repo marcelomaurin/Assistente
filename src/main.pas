@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -89,10 +89,13 @@ type
     FVoiceActive: Boolean;
     FVoiceSynth: TAIVoiceSynthesizer;
     FAvatar3D: TAIAvatar3D;
+    FConversationOrchestrator: TAIConversationOrchestrator;
     FVoiceRecog: TAIVoiceRecognizer;
     FJarvisClient: TJarvisAPIClient;
     FAssistantManager: TAssistantManager;
     FProjectManager: TAssistantProjectManager;
+    procedure OnSpeechInterruption(Sender: TObject);
+    procedure OnContextProjectChanged(Sender: TObject; const AOldProject, ANewProject: string);
     procedure AtualizaProjetosUI();
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
     procedure OnAgentStepUpdate(Sender: TObject; AStepIndex, ATotalSteps: Integer; const AStepTitle, AStatus: string);
@@ -245,6 +248,26 @@ end;
 
 { Tfrmmain }
 
+
+procedure Tfrmmain.OnSpeechInterruption(Sender: TObject);
+begin
+  if FVoiceSynth <> nil then
+    FVoiceSynth.Stop;
+  if FAvatar3D <> nil then
+  begin
+    FAvatar3D.CancelGesture;
+    FAvatar3D.SetState(avListening);
+  end;
+  AdicionaMensagemHistorico('Sistema', 'Interrupcao de fala detectada (Barge-In).');
+end;
+
+procedure Tfrmmain.OnContextProjectChanged(Sender: TObject; const AOldProject, ANewProject: string);
+begin
+  if FAssistantManager <> nil then
+    FAssistantManager.ActiveProject := ANewProject;
+  lblJarvisSub.Caption := 'Projeto em foco: ' + ANewProject;
+end;
+
 procedure Tfrmmain.FormCreate(Sender: TObject);
 var
   ImgPath: string;
@@ -280,7 +303,15 @@ begin
   CarregaIcones();
 
   // Inicializa Avatar 3D (Tarefas 117 e 118)
-  FAvatar3D := TAIAvatar3D.Create(Self);
+
+  // Inicializa Orquestrador de Conversacao Continua e Barge-In
+  FConversationOrchestrator := TAIConversationOrchestrator.Create(Self);
+  if FAssistantManager <> nil then
+    FConversationOrchestrator.Agent := FAssistantManager.Agent;
+  FConversationOrchestrator.OnInterruption := @OnSpeechInterruption;
+  FConversationOrchestrator.OnProjectChanged := @OnContextProjectChanged;
+
+    FAvatar3D := TAIAvatar3D.Create(Self);
   FAvatar3D.VoiceSynthesizer := FVoiceSynth;
   if FSetMain <> nil then
   begin
@@ -432,7 +463,9 @@ begin
   if Assigned(FVoiceSynth) and (TextoLimpo <> '') then
   begin
     try
-      FVoiceSynth.Say(TextoLimpo);
+      if FConversationOrchestrator <> nil then
+        FConversationOrchestrator.StartSpeaking;
+            FVoiceSynth.Say(TextoLimpo);
     except
     end;
   end;
@@ -465,6 +498,15 @@ begin
   FAguardandoResposta := True;
   btEnviar.Enabled := False;
   AdicionaMensagemHistorico('Você', ComandoTrim);
+  // Notifica orquestrador de conversacao e resolve pronomes continuos
+  if FConversationOrchestrator <> nil then
+  begin
+    FConversationOrchestrator.NotifySpeechStart;
+    FConversationOrchestrator.Context.ResolveReference(ComandoTrim);
+    if (FAssistantManager <> nil) and (FConversationOrchestrator.Context.CurrentProject <> '') then
+      FAssistantManager.ActiveProject := FConversationOrchestrator.Context.CurrentProject;
+  end;
+
   // Avatar entra em Listening e Thinking (Tarefa 119)
   if FAvatar3D <> nil then
   begin
