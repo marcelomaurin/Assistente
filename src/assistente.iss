@@ -44,9 +44,6 @@ TD_ASSISTENTE=Install ASSISTENTE
 Source: "D:\projetos\maurinsoft\ASSISTENTE\src\assistente.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 
-; Banco de dados e CSVs para pasta de dados global
-Source: "D:\projetos\maurinsoft\Assistente\src\srvouve.exe"; DestDir: "{commonappdata}\Assistente\"; Flags: ignoreversion
-Source: "D:\projetos\maurinsoft\Assistente\src\_internal\*.*"; DestDir: "{commonappdata}\Assistente\_internal\"; Flags: ignoreversion
 
 
 [Icons]

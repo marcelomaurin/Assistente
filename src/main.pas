@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -87,6 +87,9 @@ type
   private
     FAguardandoResposta: Boolean;
     FVoiceActive: Boolean;
+    FAudioInput: TAIAudioInput;
+    FAudioPlayer: TAIAudioPlayer;
+    FListeningWavFile: string;
     FVoiceSynth: TAIVoiceSynthesizer;
     FAvatar3D: TAIAvatar3D;
     FConversationOrchestrator: TAIConversationOrchestrator;
@@ -135,6 +138,8 @@ type
     procedure ExecutaComandoJarvis(const ACmd: string);
     property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
     property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
+    property AudioInput: TAIAudioInput read FAudioInput;
+    property AudioPlayer: TAIAudioPlayer read FAudioPlayer;
     property VoiceActive: Boolean read FVoiceActive;
     property AssistantManager: TAssistantManager read FAssistantManager;
   end;
@@ -494,7 +499,9 @@ begin
 
   FJarvisClient := TJarvisAPIClient.Create(Self);
 
-  // Inicializa componentes de voz
+  // Inicializa componentes de áudio e voz da biblioteca CHATGPT
+  FAudioInput := TAIAudioInput.Create(Self);
+  FAudioPlayer := TAIAudioPlayer.Create(Self);
   FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
   FVoiceRecog := TAIVoiceRecognizer.Create(Self);
   FVoiceRecog.OnRecognized := @VoiceRecognized;
@@ -628,7 +635,38 @@ begin
     FAssistantManager.ChatGPT.URL := FSetMain.ChatGPTURL;
   end;
 
-  // Sintetizador
+  // Configurações do Capturador de Áudio (TAIAudioInput do CHATGPT)
+  if Assigned(FAudioInput) then
+  begin
+    FAudioInput.InputSource := asMic;
+    if FSetMain.AudioSampleRate > 0 then
+      FAudioInput.SampleRate := FSetMain.AudioSampleRate
+    else
+      FAudioInput.SampleRate := 16000;
+    if FSetMain.AudioChannels > 0 then
+      FAudioInput.Channels := FSetMain.AudioChannels
+    else
+      FAudioInput.Channels := 1;
+  end;
+
+  // Configurações do Reconhecedor de Voz (TAIVoiceRecognizer do CHATGPT)
+  if Assigned(FVoiceRecog) then
+  begin
+    case FSetMain.RecogEngine of
+      0: FVoiceRecog.Engine := vreOpenAIWhisper;
+      1: FVoiceRecog.Engine := vreSAPI;
+      2: FVoiceRecog.Engine := vreSystemDefault;
+    else
+      FVoiceRecog.Engine := vreOpenAIWhisper;
+    end;
+    if Trim(FSetMain.RecogLanguage) <> '' then
+      FVoiceRecog.Language := FSetMain.RecogLanguage
+    else
+      FVoiceRecog.Language := 'pt';
+    FVoiceRecog.OpenAIToken := FSetMain.CHATGPT;
+  end;
+
+  // Configurações do Sintetizador de Voz (TAIVoiceSynthesizer do CHATGPT)
   if Assigned(FVoiceSynth) then
   begin
     case FSetMain.SynthEngine of
@@ -643,6 +681,7 @@ begin
     FVoiceSynth.Volume := FSetMain.SynthVolume;
     FVoiceSynth.Rate := FSetMain.SynthRate;
     FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
+    FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
   end;
 
   AtualizaEstadoSpeaker();
@@ -791,28 +830,51 @@ begin
 end;
 
 procedure Tfrmmain.btIniciarClick(Sender: TObject);
-var
-  AudioDlg: TOpenDialog;
 begin
-  AudioDlg := TOpenDialog.Create(Self);
-  try
-    AudioDlg.Title := 'Selecione arquivo de voz para transcrever e enviar';
-    AudioDlg.Filter := 'Arquivos de Áudio (*.wav;*.mp3)|*.wav;*.mp3|Todos (*.*)|*.*';
-    if AudioDlg.Execute then
+  if FAudioInput = nil then Exit;
+
+  if not FAudioInput.Recording then
+  begin
+    FListeningWavFile := IncludeTrailingPathDelimiter(GetTempDir) + 'assistente_mic.wav';
+    if FileExists(FListeningWavFile) then
+      DeleteFile(FListeningWavFile);
+
+    if FAudioInput.StartRecord(FListeningWavFile) then
     begin
-      AdicionaMensagemHistorico('Voz', 'Processando áudio: ' + ExtractFileName(AudioDlg.FileName) + '...');
-      if FVoiceRecog.Recognize(AudioDlg.FileName) then
+      btIniciar.Caption := '⏹ Parar';
+      btMic.Caption := '⏹ Parar';
+      if FAvatar3D <> nil then
+        FAvatar3D.SetState(avListening);
+      AdicionaMensagemHistorico('Voz', '🎤 Gravando microfone via TAIAudioInput... Fale agora e clique em Parar.');
+    end
+    else
+    begin
+      AdicionaMensagemHistorico('Erro', 'Falha ao iniciar microfone: ' + FAudioInput.LastError);
+    end;
+  end
+  else
+  begin
+    FAudioInput.StopRecord;
+    btIniciar.Caption := '🎤 Ouvir';
+    btMic.Caption := '🎤 Falar';
+
+    if FileExists(FListeningWavFile) then
+    begin
+      AdicionaMensagemHistorico('Voz', 'Transcrevendo áudio gravado via TAIVoiceRecognizer...');
+      if (FVoiceRecog <> nil) and FVoiceRecog.Recognize(FListeningWavFile) then
       begin
         AdicionaMensagemHistorico('Você (Voz)', FVoiceRecog.RecognizedText);
         ExecutaComandoJarvis(FVoiceRecog.RecognizedText);
       end
-      else
+      else if FVoiceRecog <> nil then
       begin
-        AdicionaMensagemHistorico('Erro', 'Não foi possível transcrever áudio: ' + FVoiceRecog.LastError);
+        AdicionaMensagemHistorico('Erro', 'Falha na transcrição: ' + FVoiceRecog.LastError);
       end;
+    end
+    else
+    begin
+      AdicionaMensagemHistorico('Erro', 'Arquivo de áudio não foi gerado pelo microfone.');
     end;
-  finally
-    AudioDlg.Free;
   end;
 end;
 
@@ -958,14 +1020,17 @@ begin
     FormCfg.tbSynthRateChange(Self);
     FormCfg.chkSynthAsync.Checked := FSetMain.SynthAsync;
 
-    // Aba Voz
-    FormCfg.edFrase.Text := FSetMain.Frase;
-    FormCfg.edSynthIP.Text := FSetMain.VoiceSynthIP;
-    FormCfg.edSynthPort.Text := IntToStr(FSetMain.VoiceSynthPort);
-    FormCfg.edRecogIP.Text := FSetMain.VoiceRecogIP;
-    FormCfg.edRecogPort.Text := IntToStr(FSetMain.VoiceRecogPort);
-    FormCfg.edVerIP.Text := FSetMain.VerIP;
-    FormCfg.edVerPort.Text := IntToStr(FSetMain.VerPort);
+    // Aba Reconhecimento de Voz / Microfone (CHATGPT)
+    FormCfg.cbRecogEngine.ItemIndex := FSetMain.RecogEngine;
+    FormCfg.edRecogLanguage.Text := FSetMain.RecogLanguage;
+    if FSetMain.AudioSampleRate = 44100 then
+      FormCfg.cbAudioSampleRate.ItemIndex := 1
+    else
+      FormCfg.cbAudioSampleRate.ItemIndex := 0;
+    if FSetMain.AudioChannels = 2 then
+      FormCfg.cbAudioChannels.ItemIndex := 1
+    else
+      FormCfg.cbAudioChannels.ItemIndex := 0;
 
     // Aba Avatar 3D (Tarefa 123)
     FormCfg.edAvatarModel.Text := FSetMain.Avatar3DModel;
@@ -1012,13 +1077,17 @@ begin
       FSetMain.SynthRate := FormCfg.tbSynthRate.Position;
       FSetMain.SynthAsync := FormCfg.chkSynthAsync.Checked;
 
-      FSetMain.Frase := Trim(FormCfg.edFrase.Text);
-      FSetMain.VoiceSynthIP := Trim(FormCfg.edSynthIP.Text);
-      FSetMain.VoiceSynthPort := StrToIntDef(Trim(FormCfg.edSynthPort.Text), 8096);
-      FSetMain.VoiceRecogIP := Trim(FormCfg.edRecogIP.Text);
-      FSetMain.VoiceRecogPort := StrToIntDef(Trim(FormCfg.edRecogPort.Text), 8097);
-      FSetMain.VerIP := Trim(FormCfg.edVerIP.Text);
-      FSetMain.VerPort := StrToIntDef(Trim(FormCfg.edVerPort.Text), 8097);
+      // Salva Entrada de Voz / Audio (CHATGPT)
+      FSetMain.RecogEngine := FormCfg.cbRecogEngine.ItemIndex;
+      FSetMain.RecogLanguage := Trim(FormCfg.edRecogLanguage.Text);
+      if FormCfg.cbAudioSampleRate.ItemIndex = 1 then
+        FSetMain.AudioSampleRate := 44100
+      else
+        FSetMain.AudioSampleRate := 16000;
+      if FormCfg.cbAudioChannels.ItemIndex = 1 then
+        FSetMain.AudioChannels := 2
+      else
+        FSetMain.AudioChannels := 1;
 
       // Salva Banco
       FSetMain.HostnameMy := Trim(FormCfg.edMyHost.Text);
@@ -1167,11 +1236,38 @@ end;
 
 procedure Tfrmmain.btPararClick(Sender: TObject);
 begin
+  if (FAudioInput <> nil) and FAudioInput.Recording then
+  begin
+    FAudioInput.StopRecord;
+    btIniciar.Caption := '🎤 Ouvir';
+    btMic.Caption := '🎤 Falar';
+    AdicionaMensagemHistorico('Sistema', 'Gravação de microfone interrompida.');
+  end;
+
+  if Assigned(FVoiceSynth) then
+    FVoiceSynth.Stop;
+
+  if Assigned(FAudioPlayer) and FAudioPlayer.Playing then
+    FAudioPlayer.Stop;
+
+  if Assigned(FAvatar3D) then
+  begin
+    FAvatar3D.SetState(avIdle);
+    FAvatar3D.CancelGesture;
+  end;
+
+  if Assigned(FConversationOrchestrator) then
+    FConversationOrchestrator.StopSpeaking;
+
   if Assigned(FAssistantManager) then
   begin
     FAssistantManager.CancelExecution;
     AdicionaMensagemHistorico('Sistema', '■ Interrupção solicitada pelo usuário.');
   end;
+
+  FAguardandoResposta := False;
+  btEnviar.Enabled := True;
+  lblJarvisSub.Caption := '● Interrompido pelo usuário';
 end;
 
 end.

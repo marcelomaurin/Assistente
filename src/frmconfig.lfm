@@ -399,72 +399,94 @@ object frmConfig: TfrmConfig
       end
     end
     object tsVoz: TTabSheet
-      Caption = 'Voz / AtivaÃ§Ã£o'
+      Caption = 'Entrada de Voz / Microfone'
       ClientHeight = 412
       ClientWidth = 382
-      object lblFrase: TLabel
+      object lblRecogEngine: TLabel
         Left = 10
         Height = 15
         Top = 15
-        Width = 100
-        Caption = 'Frase de AtivaÃ§Ã£o:'
+        Width = 260
+        Caption = 'Mecanismo de Reconhecimento (CHATGPT):'
         ParentColor = False
       end
-      object edFrase: TEdit
+      object cbRecogEngine: TComboBox
         Left = 10
         Height = 23
         Top = 35
-        Width = 250
+        Width = 350
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'OpenAI Whisper (Nuvem / Alta Precisão)'
+          'Windows SAPI (Local / Sem Nuvem)'
+          'Padrão do Sistema'
+        )
+        Style = csDropDownList
         TabOrder = 0
-        Text = 'jarvis'
+        Text = 'OpenAI Whisper (Nuvem / Alta Precisão)'
       end
-      object lblSynth: TLabel
+      object lblRecogLanguage: TLabel
         Left = 10
         Height = 15
         Top = 75
-        Width = 129
-        Caption = 'Voz - SÃ­ntese (IP / Porta):'
+        Width = 150
+        Caption = 'Idioma de Transcrição:'
         ParentColor = False
       end
-      object edSynthIP: TEdit
+      object edRecogLanguage: TEdit
         Left = 10
         Height = 23
         Top = 95
         Width = 160
         TabOrder = 1
-        Text = '127.0.0.1'
+        Text = 'pt'
       end
-      object edSynthPort: TEdit
-        Left = 180
-        Height = 23
-        Top = 95
-        Width = 70
-        TabOrder = 2
-        Text = '8096'
-      end
-      object lblRecog: TLabel
+      object lblAudioSampleRate: TLabel
         Left = 10
         Height = 15
         Top = 135
-        Width = 182
-        Caption = 'Voz - Reconhecimento (IP / Porta):'
+        Width = 230
+        Caption = 'Taxa de Amostragem (TAIAudioInput):'
         ParentColor = False
       end
-      object edRecogIP: TEdit
+      object cbAudioSampleRate: TComboBox
         Left = 10
         Height = 23
         Top = 155
-        Width = 160
-        TabOrder = 3
-        Text = '127.0.0.1'
+        Width = 200
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          '16000 Hz (Recomendado)'
+          '44100 Hz (Qualidade Alta)'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = '16000 Hz (Recomendado)'
       end
-      object edRecogPort: TEdit
-        Left = 180
+      object lblAudioChannels: TLabel
+        Left = 10
+        Height = 15
+        Top = 195
+        Width = 120
+        Caption = 'Canais de Áudio:'
+        ParentColor = False
+      end
+      object cbAudioChannels: TComboBox
+        Left = 10
         Height = 23
-        Top = 155
-        Width = 70
-        TabOrder = 4
-        Text = '8097'
+        Top = 215
+        Width = 200
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          '1 - Mono'
+          '2 - Estéreo'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+        Text = '1 - Mono'
       end
     end
     object tsVisao: TTabSheet

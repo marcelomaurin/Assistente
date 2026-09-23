@@ -95,6 +95,12 @@ type
         FSynthRate : integer;
         FSynthAsync : boolean;
 
+        // Configurações do Input Audio / Reconhecedor (TAIAudioInput / TAIVoiceRecognizer)
+        FRecogEngine : integer; // 0=vreOpenAIWhisper, 1=vreSAPI, 2=vreSystemDefault
+        FRecogLanguage : String;
+        FAudioSampleRate : integer;
+        FAudioChannels : integer;
+
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
         procedure SetPOSY(value : integer);
@@ -169,6 +175,11 @@ type
         property SynthVolume : integer read FSynthVolume write FSynthVolume;
         property SynthRate : integer read FSynthRate write FSynthRate;
         property SynthAsync : boolean read FSynthAsync write FSynthAsync;
+
+        property RecogEngine : integer read FRecogEngine write FRecogEngine;
+        property RecogLanguage : String read FRecogLanguage write FRecogLanguage;
+        property AudioSampleRate : integer read FAudioSampleRate write FAudioSampleRate;
+        property AudioChannels : integer read FAudioChannels write FAudioChannels;
         property Avatar3DModel: string read FAvatar3DModel write FAvatar3DModel;
         property Avatar3DAutoIdle: Boolean read FAvatar3DAutoIdle write FAvatar3DAutoIdle;
         property Avatar3DAutoBlink: Boolean read FAvatar3DAutoBlink write FAvatar3DAutoBlink;
@@ -266,6 +277,11 @@ begin
     FSynthVolume := 100;
     FSynthRate := 0;
     FSynthAsync := true;
+
+    FRecogEngine := 0; // 0=vreOpenAIWhisper, 1=vreSAPI
+    FRecogLanguage := 'pt';
+    FAudioSampleRate := 16000;
+    FAudioChannels := 1;
     FAvatar3DModel := '';
     FAvatar3DAutoIdle := True;
     FAvatar3DAutoBlink := True;
@@ -507,6 +523,23 @@ begin
       FSynthAsync := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     end;
 
+    if  BuscaChave(arquivo,'RECOGENGINE:',posicao) then
+    begin
+      FRecogEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    end;
+    if  BuscaChave(arquivo,'RECOGLANGUAGE:',posicao) then
+    begin
+      FRecogLanguage := RetiraInfo(arquivo.Strings[posicao]);
+    end;
+    if  BuscaChave(arquivo,'AUDIOSAMPLERATE:',posicao) then
+    begin
+      FAudioSampleRate := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 16000);
+    end;
+    if  BuscaChave(arquivo,'AUDIOCHANNELS:',posicao) then
+    begin
+      FAudioChannels := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 1);
+    end;
+
 end;
 
 procedure TSetMain.IdentificaArquivo(flag: boolean);
@@ -597,6 +630,11 @@ begin
   arquivo.Append('SYNTHVOLUME:'+inttostr(FSynthVolume));
   arquivo.Append('SYNTHRATE:'+inttostr(FSynthRate));
   arquivo.Append('SYNTHASYNC:'+iif(FSynthAsync, '1', '0'));
+
+  arquivo.Append('RECOGENGINE:'+inttostr(FRecogEngine));
+  arquivo.Append('RECOGLANGUAGE:'+FRecogLanguage);
+  arquivo.Append('AUDIOSAMPLERATE:'+inttostr(FAudioSampleRate));
+  arquivo.Append('AUDIOCHANNELS:'+inttostr(FAudioChannels));
 
   arquivo.SaveToFile(fpath+filename);
 end;

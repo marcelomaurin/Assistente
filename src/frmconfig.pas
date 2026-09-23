@@ -67,15 +67,15 @@ type
     lblSynthRateVal: TLabel;
     chkSynthAsync: TCheckBox;
     
-    // Aba Voz (Rede / Ativação)
-    lblFrase: TLabel;
-    edFrase: TEdit;
-    lblSynth: TLabel;
-    edSynthIP: TEdit;
-    edSynthPort: TEdit;
-    lblRecog: TLabel;
-    edRecogIP: TEdit;
-    edRecogPort: TEdit;
+    // Aba Reconhecimento de Voz / Microfone (TAIVoiceRecognizer / TAIAudioInput)
+    lblRecogEngine: TLabel;
+    cbRecogEngine: TComboBox;
+    lblRecogLanguage: TLabel;
+    edRecogLanguage: TEdit;
+    lblAudioSampleRate: TLabel;
+    cbAudioSampleRate: TComboBox;
+    lblAudioChannels: TLabel;
+    cbAudioChannels: TComboBox;
 
     // Aba Visão
     lblVer: TLabel;
