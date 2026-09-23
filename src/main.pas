@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, jarvis_api;
+  aivoicesynthesizer, aivoicerecognizer, jarvis_api, agent_manager;
 
 type
 
@@ -78,6 +78,11 @@ type
     FVoiceSynth: TAIVoiceSynthesizer;
     FVoiceRecog: TAIVoiceRecognizer;
     FJarvisClient: TJarvisAPIClient;
+    FAssistantManager: TAssistantManager;
+    procedure OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
+    procedure OnAgentStepUpdate(Sender: TObject; AStepIndex, ATotalSteps: Integer; const AStepTitle, AStatus: string);
+    procedure OnAgentToolLog(Sender: TObject; const AToolName, AArgsJSON, AResultJSON: string; ASuccess: Boolean);
+    procedure OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
     procedure AplicaConfiguracoes();
     procedure VoiceRecognized(Sender: TObject; const AText: string);
     procedure AtualizaEstadoSpeaker();
@@ -90,6 +95,7 @@ type
     property VoiceSynth: TAIVoiceSynthesizer read FVoiceSynth;
     property VoiceRecog: TAIVoiceRecognizer read FVoiceRecog;
     property VoiceActive: Boolean read FVoiceActive;
+    property AssistantManager: TAssistantManager read FAssistantManager;
   end;
 
   { TAskJarvisThread
@@ -243,6 +249,13 @@ begin
 
   CHATGPT1 := TCHATGPT.Create(Self);
 
+  FAssistantManager := TAssistantManager.Create(Self);
+  FAssistantManager.JarvisClient := FJarvisClient;
+  FAssistantManager.OnStateChange := @OnAgentStateChange;
+  FAssistantManager.OnStepUpdate := @OnAgentStepUpdate;
+  FAssistantManager.OnToolLog := @OnAgentToolLog;
+  FAssistantManager.OnComplete := @OnAgentComplete;
+
   AplicaConfiguracoes();
   CarregaIcones();
 
@@ -311,6 +324,17 @@ begin
     CHATGPT1.Provider := AIP_OPENAI;
   CHATGPT1.CustomModel := FSetMain.ChatGPTModel;
   CHATGPT1.URL := FSetMain.ChatGPTURL;
+
+  if Assigned(FAssistantManager) and Assigned(FAssistantManager.ChatGPT) then
+  begin
+    FAssistantManager.ChatGPT.TOKEN := FSetMain.CHATGPT;
+    if (FSetMain.ChatGPTProvider >= 0) and (FSetMain.ChatGPTProvider <= Ord(High(TAIProvider))) then
+      FAssistantManager.ChatGPT.Provider := TAIProvider(FSetMain.ChatGPTProvider)
+    else
+      FAssistantManager.ChatGPT.Provider := AIP_OPENAI;
+    FAssistantManager.ChatGPT.CustomModel := FSetMain.ChatGPTModel;
+    FAssistantManager.ChatGPT.URL := FSetMain.ChatGPTURL;
+  end;
 
   // Sintetizador
   if Assigned(FVoiceSynth) then
@@ -407,14 +431,17 @@ begin
   btEnviar.Enabled := False;
   AdicionaMensagemHistorico('Você', ComandoTrim);
 
-  // Se o JARVIS estiver configurado, envia para a API v1 do JARVIS
-  if Trim(FSetMain.JarvisURL) <> '' then
+  // Executa pelo Pipeline Inteligente do Agente (TAIAgent + TAIPlanner + Tools)
+  if Assigned(FAssistantManager) then
+  begin
+    FAssistantManager.ProcessUserRequestAsync(ComandoTrim);
+  end
+  else if Trim(FSetMain.JarvisURL) <> '' then
   begin
     TAskJarvisThread.Create(ComandoTrim, FSetMain.JarvisIAMode, FSetMain.JarvisURL, FSetMain.JarvisAPIKey);
   end
   else
   begin
-    // Fallback para TCHATGPT direto
     TAskChatGPTThread.Create(ComandoTrim);
   end;
 end;
@@ -683,6 +710,55 @@ begin
   finally
     FormCfg.Free;
   end;
+end;
+
+
+procedure Tfrmmain.OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
+begin
+  case AState of
+    asPlanning:
+      lblJarvisSub.Caption := '● Agente Planejando Tarefa...';
+    asExecutingStep:
+      lblJarvisSub.Caption := '● Executando Etapa do Agente...';
+    asCallingTool:
+      lblJarvisSub.Caption := '● Acionando Tool Especializada...';
+    asFinished:
+      lblJarvisSub.Caption := '● Resposta Concluída';
+    asCancelled:
+      lblJarvisSub.Caption := '● Operação Cancelada';
+    asError:
+      lblJarvisSub.Caption := '● Erro na Execução';
+  else
+    lblJarvisSub.Caption := 'Central de Automação & Multi-IA';
+  end;
+end;
+
+procedure Tfrmmain.OnAgentStepUpdate(Sender: TObject; AStepIndex, ATotalSteps: Integer; const AStepTitle, AStatus: string);
+begin
+  if AStatus = 'running' then
+    AdicionaMensagemHistorico('⚡ Agente [Etapa ' + IntToStr(AStepIndex + 1) + '/' + IntToStr(ATotalSteps) + ']', '▶ ' + AStepTitle)
+  else if AStatus = 'done' then
+    AdicionaMensagemHistorico('✓ Agente [Etapa ' + IntToStr(AStepIndex + 1) + ']', 'Concluída: ' + AStepTitle);
+end;
+
+procedure Tfrmmain.OnAgentToolLog(Sender: TObject; const AToolName, AArgsJSON, AResultJSON: string; ASuccess: Boolean);
+begin
+  if ASuccess then
+    AdicionaMensagemHistorico('🔧 Tool [' + AToolName + ']', AResultJSON)
+  else
+    AdicionaMensagemHistorico('⚠ Tool Falhou [' + AToolName + ']', AResultJSON);
+end;
+
+procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
+begin
+  AdicionaMensagemHistorico('Assistente (' + AProvider + ')', AResponseText);
+
+  if (FSetMain <> nil) and FSetMain.AutoSpeak then
+    FalaTexto(AResponseText);
+
+  FAguardandoResposta := False;
+  btEnviar.Enabled := True;
+  lblJarvisSub.Caption := 'Central de Automação & Multi-IA';
 end;
 
 end.
