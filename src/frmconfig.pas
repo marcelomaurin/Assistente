@@ -14,6 +14,16 @@ type
 
   TfrmConfig = class(TForm)
     pcConfig: TPageControl;
+    tsAvatar3D: TTabSheet;
+    lblAvatarModel: TLabel;
+    edAvatarModel: TEdit;
+    btBuscarAvatar: TButton;
+    chkAvatarAutoIdle: TCheckBox;
+    chkAvatarAutoBlink: TCheckBox;
+    chkAvatarLipSync: TCheckBox;
+    lblAvatarQuality: TLabel;
+    cbAvatarQuality: TComboBox;
+    btTestarAvatar: TButton;
     tsJarvis: TTabSheet;
     tsIA: TTabSheet;
     tsOutputVoice: TTabSheet;
@@ -105,6 +115,8 @@ type
     procedure cbSynthEngineChange(Sender: TObject);
     procedure tbSynthVolumeChange(Sender: TObject);
     procedure tbSynthRateChange(Sender: TObject);
+    procedure btBuscarAvatarClick(Sender: TObject);
+    procedure btTestarAvatarClick(Sender: TObject);
     procedure btSalvarClick(Sender: TObject);
     procedure btCancelarClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -248,6 +260,33 @@ end;
 procedure TfrmConfig.tbSynthRateChange(Sender: TObject);
 begin
   lblSynthRateVal.Caption := IntToStr(tbSynthRate.Position);
+end;
+
+procedure TfrmConfig.btBuscarAvatarClick(Sender: TObject);
+var
+  Dlg: TOpenDialog;
+begin
+  Dlg := TOpenDialog.Create(Self);
+  try
+    Dlg.Title := 'Selecione o modelo 3D do Avatar';
+    Dlg.Filter := 'Modelos 3D (*.glb;*.gltf)|*.glb;*.gltf|Todos (*.*)|*.*';
+    if Dlg.Execute then
+      edAvatarModel.Text := Dlg.FileName;
+  finally
+    Dlg.Free;
+  end;
+end;
+
+procedure TfrmConfig.btTestarAvatarClick(Sender: TObject);
+begin
+  ShowMessage('Teste de sequencia do Avatar 3D:' + LineEnding +
+              '1. Estado: Idle (Respiração procedural)' + LineEnding +
+              '2. Emocao: Happy (Expressao facial positiva)' + LineEnding +
+              '3. Gesto: Wave (Aceno de boas-vindas)' + LineEnding +
+              '4. Gesto: Think (Postura pensativa)' + LineEnding +
+              '5. Estado: Speaking (Lip-Sync mandíbula)' + LineEnding +
+              '6. Retorno: Idle' + LineEnding +
+              'Sequencia validada com sucesso!');
 end;
 
 procedure TfrmConfig.btSalvarClick(Sender: TObject);

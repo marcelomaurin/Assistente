@@ -19,6 +19,93 @@ object frmConfig: TfrmConfig
     Align = alTop
     TabIndex = 0
     TabOrder = 0
+    object tsAvatar3D: TTabSheet
+      Caption = 'Avatar 3D'
+      ClientHeight = 350
+      ClientWidth = 600
+      object lblAvatarModel: TLabel
+        Left = 20
+        Height = 15
+        Top = 20
+        Width = 130
+        Caption = 'Modelo 3D (.glb / .gltf):'
+        ParentColor = False
+      end
+      object edAvatarModel: TEdit
+        Left = 20
+        Height = 28
+        Top = 40
+        Width = 440
+        TabOrder = 0
+      end
+      object btBuscarAvatar: TButton
+        Left = 470
+        Height = 28
+        Top = 40
+        Width = 90
+        Caption = 'Procurar...'
+        OnClick = btBuscarAvatarClick
+        TabOrder = 1
+      end
+      object chkAvatarAutoIdle: TCheckBox
+        Left = 20
+        Height = 24
+        Top = 85
+        Width = 260
+        Caption = 'Ativar Auto-Idle (Respiracao)'
+        TabOrder = 2
+      end
+      object chkAvatarAutoBlink: TCheckBox
+        Left = 20
+        Height = 24
+        Top = 115
+        Width = 260
+        Caption = 'Ativar Auto-Blink (Piscar Olhos)'
+        TabOrder = 3
+      end
+      object chkAvatarLipSync: TCheckBox
+        Left = 20
+        Height = 24
+        Top = 145
+        Width = 260
+        Caption = 'Ativar Lip-Sync com Sintese de Voz'
+        TabOrder = 4
+      end
+      object lblAvatarQuality: TLabel
+        Left = 20
+        Height = 15
+        Top = 185
+        Width = 100
+        Caption = 'Qualidade Grafica:'
+        ParentColor = False
+      end
+      object cbAvatarQuality: TComboBox
+        Left = 130
+        Height = 28
+        Top = 180
+        Width = 150
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'auto'
+          'low'
+          'medium'
+          'high'
+        )
+        Style = csDropDownList
+        TabOrder = 5
+        Text = 'auto'
+      end
+      object btTestarAvatar: TButton
+        Left = 20
+        Height = 35
+        Top = 230
+        Width = 200
+        Caption = 'Testar Sequencia do Avatar'
+        OnClick = btTestarAvatarClick
+        TabOrder = 6
+      end
+    end
     object tsJarvis: TTabSheet
       Caption = 'JARVIS Residencial'
       ClientHeight = 412

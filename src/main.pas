@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiavatartypes, aiavatar3d, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -88,6 +88,7 @@ type
     FAguardandoResposta: Boolean;
     FVoiceActive: Boolean;
     FVoiceSynth: TAIVoiceSynthesizer;
+    FAvatar3D: TAIAvatar3D;
     FVoiceRecog: TAIVoiceRecognizer;
     FJarvisClient: TJarvisAPIClient;
     FAssistantManager: TAssistantManager;
@@ -278,6 +279,21 @@ begin
   AplicaConfiguracoes();
   CarregaIcones();
 
+  // Inicializa Avatar 3D (Tarefas 117 e 118)
+  FAvatar3D := TAIAvatar3D.Create(Self);
+  FAvatar3D.VoiceSynthesizer := FVoiceSynth;
+  if FSetMain <> nil then
+  begin
+    FAvatar3D.AutoIdle := FSetMain.Avatar3DAutoIdle;
+    FAvatar3D.AutoBlink := FSetMain.Avatar3DAutoBlink;
+    if Trim(FSetMain.Avatar3DModel) <> '' then
+    begin
+      if FileExists(FSetMain.Avatar3DModel) then
+        FAvatar3D.LoadAvatar(FSetMain.Avatar3DModel);
+    end;
+  end;
+
+
   // Tenta carregar avatar se existir
   ImgPath := ExtractFilePath(Application.ExeName) + 'img' + PathDelim + 'robo8.gif';
   if not FileExists(ImgPath) then
@@ -449,6 +465,13 @@ begin
   FAguardandoResposta := True;
   btEnviar.Enabled := False;
   AdicionaMensagemHistorico('Você', ComandoTrim);
+  // Avatar entra em Listening e Thinking (Tarefa 119)
+  if FAvatar3D <> nil then
+  begin
+    FAvatar3D.SetState(avListening);
+    FAvatar3D.SetState(avThinking);
+  end;
+
 
   // Executa pelo Pipeline Inteligente do Agente (TAIAgent + TAIPlanner + Tools)
   if Assigned(FAssistantManager) then
@@ -665,6 +688,13 @@ begin
     FormCfg.edVerIP.Text := FSetMain.VerIP;
     FormCfg.edVerPort.Text := IntToStr(FSetMain.VerPort);
 
+    // Aba Avatar 3D (Tarefa 123)
+    FormCfg.edAvatarModel.Text := FSetMain.Avatar3DModel;
+    FormCfg.chkAvatarAutoIdle.Checked := FSetMain.Avatar3DAutoIdle;
+    FormCfg.chkAvatarAutoBlink.Checked := FSetMain.Avatar3DAutoBlink;
+    FormCfg.chkAvatarLipSync.Checked := FSetMain.Avatar3DLipSync;
+    FormCfg.cbAvatarQuality.Text := FSetMain.Avatar3DQuality;
+
     // Aba Banco
     FormCfg.edMyHost.Text := FSetMain.HostnameMy;
     FormCfg.edMyDb.Text := FSetMain.BancoMy;
@@ -771,6 +801,15 @@ end;
 procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
 begin
   AdicionaMensagemHistorico('Assistente (' + AProvider + ')', AResponseText);
+  // Aplica resposta estruturada ou texto no avatar (Tarefas 120 e 121)
+  if FAvatar3D <> nil then
+  begin
+    if ASuccess then
+      FAvatar3D.ApplyAgentResponse(AResponseText)
+    else
+      FAvatar3D.SetState(avError);
+  end;
+
 
   if (FSetMain <> nil) and FSetMain.AutoSpeak then
     FalaTexto(AResponseText);

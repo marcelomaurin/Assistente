@@ -21,6 +21,12 @@ type
   TSetMain = class(TObject)
 
   private
+        FAvatar3DModel: string;
+        FAvatar3DAutoIdle: Boolean;
+        FAvatar3DAutoBlink: Boolean;
+        FAvatar3DLipSync: Boolean;
+        FAvatar3DIntensity: Double;
+        FAvatar3DQuality: string;
         arquivo :Tstringlist;
         ckdevice : boolean;
         FPosX : integer;
@@ -163,6 +169,13 @@ type
         property SynthVolume : integer read FSynthVolume write FSynthVolume;
         property SynthRate : integer read FSynthRate write FSynthRate;
         property SynthAsync : boolean read FSynthAsync write FSynthAsync;
+        property Avatar3DModel: string read FAvatar3DModel write FAvatar3DModel;
+        property Avatar3DAutoIdle: Boolean read FAvatar3DAutoIdle write FAvatar3DAutoIdle;
+        property Avatar3DAutoBlink: Boolean read FAvatar3DAutoBlink write FAvatar3DAutoBlink;
+        property Avatar3DLipSync: Boolean read FAvatar3DLipSync write FAvatar3DLipSync;
+        property Avatar3DIntensity: Double read FAvatar3DIntensity write FAvatar3DIntensity;
+        property Avatar3DQuality: string read FAvatar3DQuality write FAvatar3DQuality;
+
   end;
 
   var
@@ -253,6 +266,13 @@ begin
     FSynthVolume := 100;
     FSynthRate := 0;
     FSynthAsync := true;
+    FAvatar3DModel := '';
+    FAvatar3DAutoIdle := True;
+    FAvatar3DAutoBlink := True;
+    FAvatar3DLipSync := True;
+    FAvatar3DIntensity := 0.8;
+    FAvatar3DQuality := 'auto';
+
 end;
 
 procedure TSetMain.SetPOSX(value: integer);
