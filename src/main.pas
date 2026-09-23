@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, jarvis_api, agent_manager;
+  aivoicesynthesizer, aivoicerecognizer, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -37,11 +37,20 @@ type
     btLimparChat: TButton;
     memHistorico: TMemo;
 
+    pnlSidebar: TPanel;
+    lblProjetosHeader: TLabel;
+    lstProjetos: TListBox;
+    lblMemoriaHeader: TLabel;
+    memProjetoInfo: TMemo;
+
     pnlPergunta: TPanel;
     lblPergunta: TLabel;
     memPergunta: TMemo;
     btEnviar: TBitBtn;
     btMic: TBitBtn;
+    btAnexar: TBitBtn;
+    btParar: TBitBtn;
+    OpenDialogFiles: TOpenDialog;
 
     tmrCheckOnline: TTimer;
     trayIcon: TTrayIcon;
@@ -72,6 +81,9 @@ type
     procedure miAbrirClick(Sender: TObject);
     procedure miSairClick(Sender: TObject);
     procedure memPerguntaKeyPress(Sender: TObject; var Key: char);
+    procedure lstProjetosSelectionChange(Sender: TObject; User: Boolean);
+    procedure btAnexarClick(Sender: TObject);
+    procedure btPararClick(Sender: TObject);
   private
     FAguardandoResposta: Boolean;
     FVoiceActive: Boolean;
@@ -79,6 +91,8 @@ type
     FVoiceRecog: TAIVoiceRecognizer;
     FJarvisClient: TJarvisAPIClient;
     FAssistantManager: TAssistantManager;
+    FProjectManager: TAssistantProjectManager;
+    procedure AtualizaProjetosUI();
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
     procedure OnAgentStepUpdate(Sender: TObject; AStepIndex, ATotalSteps: Integer; const AStepTitle, AStatus: string);
     procedure OnAgentToolLog(Sender: TObject; const AToolName, AArgsJSON, AResultJSON: string; ASuccess: Boolean);
@@ -249,12 +263,17 @@ begin
 
   CHATGPT1 := TCHATGPT.Create(Self);
 
+  FProjectManager := TAssistantProjectManager.Create(Self);
+
   FAssistantManager := TAssistantManager.Create(Self);
   FAssistantManager.JarvisClient := FJarvisClient;
+  FAssistantManager.ActiveProject := FProjectManager.ActiveProject.Name;
   FAssistantManager.OnStateChange := @OnAgentStateChange;
   FAssistantManager.OnStepUpdate := @OnAgentStepUpdate;
   FAssistantManager.OnToolLog := @OnAgentToolLog;
   FAssistantManager.OnComplete := @OnAgentComplete;
+
+  AtualizaProjetosUI();
 
   AplicaConfiguracoes();
   CarregaIcones();
@@ -759,6 +778,74 @@ begin
   FAguardandoResposta := False;
   btEnviar.Enabled := True;
   lblJarvisSub.Caption := 'Central de Automação & Multi-IA';
+end;
+
+
+procedure Tfrmmain.AtualizaProjetosUI;
+var
+  I: Integer;
+  P: TProjectProfile;
+begin
+  if (FProjectManager = nil) or (lstProjetos = nil) then Exit;
+  lstProjetos.Items.BeginUpdate;
+  try
+    lstProjetos.Items.Clear;
+    for I := 0 to FProjectManager.ProjectCount - 1 do
+    begin
+      P := FProjectManager.GetProject(I);
+      lstProjetos.Items.Add(P.Icon + ' ' + P.Name);
+    end;
+    if lstProjetos.Items.Count > 0 then
+      lstProjetos.ItemIndex := 0;
+  finally
+    lstProjetos.Items.EndUpdate;
+  end;
+
+  if FProjectManager.ActiveProject <> nil then
+    memProjetoInfo.Text := FProjectManager.ActiveProject.GetContextPrompt;
+end;
+
+procedure Tfrmmain.lstProjetosSelectionChange(Sender: TObject; User: Boolean);
+var
+  Idx: Integer;
+  P: TProjectProfile;
+begin
+  Idx := lstProjetos.ItemIndex;
+  if (Idx >= 0) and (FProjectManager <> nil) then
+  begin
+    P := FProjectManager.GetProject(Idx);
+    if P <> nil then
+    begin
+      FProjectManager.SetActiveProjectByCode(P.Code);
+      if Assigned(FAssistantManager) then
+        FAssistantManager.ActiveProject := P.Name;
+      memProjetoInfo.Text := P.GetContextPrompt;
+      AdicionaMensagemHistorico('Sistema', '📁 Projeto alterado para [' + P.Icon + ' ' + P.Name + ']. Contexto ativado.');
+    end;
+  end;
+end;
+
+procedure Tfrmmain.btAnexarClick(Sender: TObject);
+begin
+  if OpenDialogFiles.Execute then
+  begin
+    if (FProjectManager <> nil) and (FProjectManager.ActiveProject <> nil) then
+    begin
+      FProjectManager.ActiveProject.AttachedFiles.Add(OpenDialogFiles.FileName);
+      memProjetoInfo.Text := FProjectManager.ActiveProject.GetContextPrompt;
+    end;
+    AdicionaMensagemHistorico('📎 Anexo', 'Arquivo vinculado: ' + ExtractFileName(OpenDialogFiles.FileName));
+    memPergunta.Text := 'Analise o arquivo anexado: ' + OpenDialogFiles.FileName;
+  end;
+end;
+
+procedure Tfrmmain.btPararClick(Sender: TObject);
+begin
+  if Assigned(FAssistantManager) then
+  begin
+    FAssistantManager.CancelExecution;
+    AdicionaMensagemHistorico('Sistema', '■ Interrupção solicitada pelo usuário.');
+  end;
 end;
 
 end.
