@@ -1,4 +1,4 @@
-==== compile_check iniciado em 01/08/2026 11:52:26,37 ==== 
+==== compile_check iniciado em 23/09/2026 18:48:39,62 ==== 
 Usando LAZBUILD=C:\lazarus\lazbuild.exe 
 Hint: (lazbuild) Primary config path: "C:\Users\mmaurin\AppData\Local\lazarus"
 Hint: (lazarus) [TBuildManager.SetBuildTarget] Old=i386-win32--win32 New=i386-win32--win32 Changed: OS/CPU=True LCL=False
@@ -16,42 +16,60 @@ Info: (lazarus) Param[5]="-WG"
 Info: (lazarus) Param[6]="-l"
 Info: (lazarus) Param[7]="-vewnhibq"
 Info: (lazarus) Param[8]="-FiD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
-Info: (lazarus) Param[9]="-FuD:\projetos\maurinsoft\Assistente\src\"
-Info: (lazarus) Param[10]="-FuD:\projetos\maurinsoft\Assistente\src\toolsfalar"
-Info: (lazarus) Param[11]="-FuD:\projetos\maurinsoft\Assistente\src\toolsouvir"
-Info: (lazarus) Param[12]="-FuD:\projetos\maurinsoft\Assistente\src\toolsVer"
-Info: (lazarus) Param[13]="-FuC:\lazarus\components\synedit\units\i386-win32\win32"
-Info: (lazarus) Param[14]="-FuC:\Users\mmaurin\AppData\Local\lazarus\onlinepackagemanager\packages\gifanim\lib\i386-win32"
-Info: (lazarus) Param[15]="-FuC:\lazarus\lcl\units\i386-win32\win32"
-Info: (lazarus) Param[16]="-FuC:\lazarus\lcl\units\i386-win32"
-Info: (lazarus) Param[17]="-FuC:\lazarus\components\lazedit\lib\i386-win32"
-Info: (lazarus) Param[18]="-FuC:\lazarus\components\freetype\lib\i386-win32"
-Info: (lazarus) Param[19]="-FuC:\lazarus\components\lazutils\lib\i386-win32"
-Info: (lazarus) Param[20]="-FuC:\lazarus\packager\units\i386-win32"
-Info: (lazarus) Param[21]="-FUD:\projetos\maurinsoft\Assistente\src\lib\i386-win32\"
-Info: (lazarus) Param[22]="-FED:\projetos\maurinsoft\Assistente\src\"
-Info: (lazarus) Param[23]="-oD:\projetos\maurinsoft\Assistente\src\assistente.exe"
-Info: (lazarus) Param[24]="-dLCL"
-Info: (lazarus) Param[25]="-dLCLwin32"
-Info: (lazarus) Param[26]="assistente.lpr"
+Info: (lazarus) Param[9]="-FiD:\projetos\maurinsoft\CHATGPT"
+Info: (lazarus) Param[10]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI"
+Info: (lazarus) Param[11]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
+Info: (lazarus) Param[12]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
+Info: (lazarus) Param[13]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
+Info: (lazarus) Param[14]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
+Info: (lazarus) Param[15]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
+Info: (lazarus) Param[16]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
+Info: (lazarus) Param[17]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
+Info: (lazarus) Param[18]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
+Info: (lazarus) Param[19]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
+Info: (lazarus) Param[20]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
+Info: (lazarus) Param[21]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
+Info: (lazarus) Param[22]="-FuD:\projetos\maurinsoft\Assistente\src\"
+Info: (lazarus) Param[23]="-FuD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
+Info: (lazarus) Param[24]="-FuD:\projetos\maurinsoft\CHATGPT"
+Info: (lazarus) Param[25]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI"
+Info: (lazarus) Param[26]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
+Info: (lazarus) Param[27]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
+Info: (lazarus) Param[28]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
+Info: (lazarus) Param[29]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
+Info: (lazarus) Param[30]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
+Info: (lazarus) Param[31]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
+Info: (lazarus) Param[32]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
+Info: (lazarus) Param[33]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
+Info: (lazarus) Param[34]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
+Info: (lazarus) Param[35]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
+Info: (lazarus) Param[36]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
+Info: (lazarus) Param[37]="-FuC:\lazarus\components\synedit\units\i386-win32\win32"
+Info: (lazarus) Param[38]="-FuC:\lazarus\lcl\units\i386-win32\win32"
+Info: (lazarus) Param[39]="-FuC:\lazarus\lcl\units\i386-win32"
+Info: (lazarus) Param[40]="-FuC:\lazarus\components\lazedit\lib\i386-win32"
+Info: (lazarus) Param[41]="-FuC:\lazarus\components\freetype\lib\i386-win32"
+Info: (lazarus) Param[42]="-FuC:\lazarus\components\lazutils\lib\i386-win32"
+Info: (lazarus) Param[43]="-FuC:\lazarus\packager\units\i386-win32"
+Info: (lazarus) Param[44]="-FUD:\projetos\maurinsoft\Assistente\src\lib\i386-win32\"
+Info: (lazarus) Param[45]="-FED:\projetos\maurinsoft\Assistente\src\"
+Info: (lazarus) Param[46]="-oD:\projetos\maurinsoft\Assistente\src\assistente.exe"
+Info: (lazarus) Param[47]="-dLCL"
+Info: (lazarus) Param[48]="-dLCLwin32"
+Info: (lazarus) Param[49]="assistente.lpr"
 Hint: (11030) Start of reading config file C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.cfg
 Hint: (11031) End of reading config file C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.cfg
 Free Pascal Compiler version 3.2.2 [2025/11/08] for i386
 Copyright (c) 1993-2021 by Florian Klaempfl and others
 (1002) Target OS: Win32 for i386
 (3104) Compiling assistente.lpr
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,16) Hint: (5023) Unit "aibase" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,24) Hint: (5023) Unit "chatgpt" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,33) Hint: (5023) Unit "aisockets" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,44) Hint: (5023) Unit "aiconn" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,52) Hint: (5023) Unit "funcoes" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,61) Hint: (5023) Unit "setmain" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,70) Hint: (5023) Unit "ToolsOuvir" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,82) Hint: (5023) Unit "toolsver" not used in assistente
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,35) Hint: (5023) Unit "funcoes" not used in assistente
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,44) Hint: (5023) Unit "setmain" not used in assistente
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,53) Hint: (5023) Unit "frmconfig" not used in assistente
 (9022) Compiling resource D:\projetos\maurinsoft\Assistente\src\lib\i386-win32\assistente.or
 (9015) Linking D:\projetos\maurinsoft\Assistente\src\assistente.exe
-(1008) 25 lines compiled, 1.0 sec, 2147072 bytes code, 123268 bytes data
-(1022) 10 hint(s) issued
+(1008) 39 lines compiled, 1.1 sec, 2528464 bytes code, 132788 bytes data
+(1022) 5 hint(s) issued
 Info: (lazarus) [TCompiler.Compile] end
  
 ==== ExitCode=0 ==== 
