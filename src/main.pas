@@ -427,13 +427,16 @@ var
   KinectStatus, CamStatus: string;
 begin
   ShutdownVision;
-  FVisionState := vstSelected;
-  FVisionStatus := 'Vídeo: desativado';
-  if FSetMain = nil then Exit;
   KinectStatus := '';
   CamStatus := '';
+  FVisionStatus := 'Visão: Desativada';
+  FVisionCapabilities := [];
+  FVisionState := vstSelected;
+  if FSetMain = nil then Exit;
 
-  if FSetMain.VisionSource in [vsKinect, vsBoth] then
+  // Só tenta inicializar Kinect se a fonte incluir Kinect E houver índice configurado válido (>= 0)
+  // Com Habilitar câmera marcado e Kinect indisponível, inicializa exclusivamente InitWebcam()
+  if (FSetMain.VisionSource in [vsKinect, vsBoth]) and (FSetMain.KinectDeviceIndex >= 0) then
   begin
     try
       InitKinect;
@@ -469,7 +472,9 @@ begin
   else if KinectStatus <> '' then
     FVisionStatus := KinectStatus
   else if CamStatus <> '' then
-    FVisionStatus := CamStatus;
+    FVisionStatus := CamStatus
+  else
+    FVisionStatus := 'Visão: Desativada';
 
   AdicionaMensagemHistorico('Vídeo', FVisionStatus);
   UpdateAdminStatusIndicators;
@@ -478,19 +483,21 @@ end;
 procedure Tfrmmain.InitWebcam;
 var
   Devs: TStringList;
+  CamTarget: string;
 begin
-  if (Trim(FSetMain.CameraDevice) = '') or
-     SameText(FSetMain.CameraDevice, 'Nenhuma câmera detectada') then
-  begin
-    FVisionStatus := 'Câmera: nenhuma câmera configurada';
-    Exit;
-  end;
   Devs := TWebcamVision.Devices;
   try
     if Devs.Count = 0 then
     begin
       FVisionStatus := 'Câmera: não detectada';
       Exit;
+    end;
+
+    CamTarget := Trim(FSetMain.CameraDevice);
+    if (CamTarget = '') or SameText(CamTarget, 'Nenhuma câmera detectada') then
+    begin
+      CamTarget := Devs[0];
+      FSetMain.CameraDevice := CamTarget;
     end;
   finally
     Devs.Free;
@@ -502,12 +509,14 @@ begin
     FSetMain.CameraDevice := FWebcam.DeviceName;
     FVisionState := vstInitialized;
     FVisionCapabilities := FVisionCapabilities + VisionCapabilities(vsWebcam);
-    FVisionStatus := 'Câmera: ' + FWebcam.DeviceName + ' - RGB ativo';
+    FVisionStatus := 'Câmera RGB ativa: ' + FWebcam.DeviceName;
+    AdicionaMensagemHistorico('Vídeo', '[CÂMERA RGB ATIVA] ' + FWebcam.DeviceName);
   end
   else
   begin
     FVisionState := vstError;
     FVisionStatus := 'Câmera: ' + FWebcam.LastError;
+    AdicionaMensagemHistorico('Vídeo', FVisionStatus);
     FreeAndNil(FWebcam);
   end;
 end;
@@ -834,14 +843,31 @@ end;
 
 procedure Tfrmmain.btAdminTestVisionClick(Sender: TObject);
 begin
-  UpdateAdminStatusIndicators;
+  ShutdownVision;
   InitVision;
   ShowMessage(FVisionStatus);
 end;
 
 procedure Tfrmmain.UpdateAdminStatusIndicators;
 begin
-  if Assigned(lblStatVision) then lblStatVision.Caption := FVisionStatus;
+  if Assigned(lblStatVision) then
+  begin
+    if (FWebcam <> nil) and FWebcam.Active then
+    begin
+      lblStatVision.Caption := '● Câmera RGB ativa: ' + FWebcam.DeviceName;
+      lblStatVision.Font.Color := $0000FF99;
+    end
+    else if (FVisionStatus <> '') and (FVisionStatus <> 'Visão: Desativada') then
+    begin
+      lblStatVision.Caption := '● Visão: ' + FVisionStatus;
+      lblStatVision.Font.Color := $0000D4FF;
+    end
+    else
+    begin
+      lblStatVision.Caption := '● Visão: Desativada';
+      lblStatVision.Font.Color := clGray;
+    end;
+  end;
   if Assigned(lblStatIA) then
   begin
     if (FAssistantManager <> nil) then
@@ -1494,14 +1520,14 @@ procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   if Assigned(FContinuousListener) then
     FContinuousListener.StopListening;
+  ShutdownVision;
   if (FSetMain <> nil) and FSetMain.MinimizeToTray and (CloseAction <> caFree) then
   begin
     CloseAction := caNone;
     Hide;
     trayIcon.Show;
     trayIcon.ShowBalloonHint;
-  end
-  else ShutdownVision;
+  end;
 end;
 
 procedure Tfrmmain.CarregaIcones();
@@ -2161,6 +2187,7 @@ procedure Tfrmmain.btAbrirConfigClick(Sender: TObject);
 var
   FormCfg: TfrmConfig;
 begin
+  ShutdownVision; // Garante liberacao da camera antes de abrir a tela de configuracao
   if FSetMain = nil then
     FSetMain := TSetMain.create();
 

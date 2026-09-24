@@ -241,6 +241,7 @@ procedure TfrmConfig.LoadVision(Source: TVisionSource; KinectIndex: Integer; con
 var
   Sensor: TAIKinectSensor;
   LKinect, LCam: TStringList;
+  PreferKin, PreferCam: Boolean;
 begin
   LKinect := TStringList.Create;
   LCam := TStringList.Create;
@@ -264,9 +265,11 @@ begin
       on E: Exception do LCam.Clear;
     end;
 
-    ApplyDeviceList(LKinect, LCam, KinectIndex, Camera,
-      Source in [vsKinect, vsBoth],
-      Source in [vsWebcam, vsBoth]);
+    PreferKin := (Source in [vsKinect, vsBoth]) and (LKinect.Count > 0);
+    // Se a fonte incluir webcam OU se houver câmera física disponível e nenhuma configuração anterior contrária, mantém câmera marcada
+    PreferCam := (Source in [vsWebcam, vsBoth]) or ((Source = vsNone) and (LCam.Count > 0) and (LKinect.Count = 0));
+
+    ApplyDeviceList(LKinect, LCam, KinectIndex, Camera, PreferKin, PreferCam);
   finally
     LKinect.Free;
     LCam.Free;
@@ -400,16 +403,17 @@ var
   CanTestKinect, CanTestCam: Boolean;
 begin
   StopVisionTest;
+  imgVisionPreview.Picture.Clear;
   lblVisionStatus.Caption := '';
   KinectStatus := '';
   CameraStatus := '';
 
-  CanTestKinect := chkEnableKinect.Checked and
+  CanTestKinect := chkEnableKinect.Enabled and chkEnableKinect.Checked and
                    (cbKinectDevice.Items.Count > 0) and
                    (cbKinectDevice.Text <> 'Nenhum Kinect detectado') and
                    (cbKinectDevice.ItemIndex >= 0);
 
-  CanTestCam := chkEnableCamera.Checked and
+  CanTestCam := chkEnableCamera.Enabled and chkEnableCamera.Checked and
                 (cbCameraDevice.Items.Count > 0) and
                 (cbCameraDevice.Text <> 'Nenhuma câmera detectada') and
                 (cbCameraDevice.ItemIndex >= 0);
@@ -433,31 +437,27 @@ begin
       on E: Exception do
         KinectStatus := 'Kinect: ' + E.Message;
     end;
-  end
-  else if chkEnableKinect.Checked then
-    KinectStatus := 'Kinect: não detectado ou inválido.';
+  end;
 
   if CanTestCam then
   begin
     try
-      FTestCamera := TWebcamVision.Create(nil);
+      FTestCamera := TWebcamVision.Create(Self);
       if FTestCamera.OpenDevice(cbCameraDevice.Text, tsVisao, imgVisionPreview) then
-        CameraStatus := 'Câmera: inicializada - RGB disponível.'
+        CameraStatus := 'Câmera: ' + FTestCamera.DeviceName + ' (RGB ativo)'
       else
       begin
-        CameraStatus := 'Câmera: ' + FTestCamera.LastError;
+        CameraStatus := 'Câmera: falha ao abrir (' + FTestCamera.LastError + ')';
         FreeAndNil(FTestCamera);
       end;
     except
       on E: Exception do
       begin
-        CameraStatus := 'Câmera: ' + E.Message;
+        CameraStatus := 'Câmera: erro - ' + E.Message;
         FreeAndNil(FTestCamera);
       end;
     end;
-  end
-  else if chkEnableCamera.Checked then
-    CameraStatus := 'Câmera: não detectada ou inválida.';
+  end;
 
   if (KinectStatus <> '') and (CameraStatus <> '') then
     lblVisionStatus.Caption := KinectStatus + ' | ' + CameraStatus
