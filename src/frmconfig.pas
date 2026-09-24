@@ -629,7 +629,13 @@ begin
   begin
     pcConfig.ActivePage := tsVisao;
     ShowMessage('Selecione o Kinect que deseja utilizar.');
-    cbKinectDevice.SetFocus;
+    if cbKinectDevice.CanFocus then
+    begin
+      try
+        cbKinectDevice.SetFocus;
+      except
+      end;
+    end;
     Exit;
   end;
   if chkEnableCamera.Checked and (cbCameraDevice.Items.Count > 0) and
@@ -637,7 +643,13 @@ begin
   begin
     pcConfig.ActivePage := tsVisao;
     ShowMessage('Selecione a câmera que deseja utilizar.');
-    cbCameraDevice.SetFocus;
+    if cbCameraDevice.CanFocus then
+    begin
+      try
+        cbCameraDevice.SetFocus;
+      except
+      end;
+    end;
     Exit;
   end;
   ModalResult := mrOk;

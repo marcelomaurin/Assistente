@@ -156,6 +156,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FocusPergunta(Data: PtrInt);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure pnlHeaderDblClick(Sender: TObject);
     procedure btVoltarExposicaoClick(Sender: TObject);
@@ -711,12 +712,27 @@ begin
 end;
 
 
+procedure Tfrmmain.FocusPergunta(Data: PtrInt);
+begin
+  if Assigned(pnlRoot) and pnlRoot.Visible and
+     Assigned(memPergunta) and
+     memPergunta.Visible and
+     memPergunta.Enabled and
+     memPergunta.CanFocus then
+  begin
+    try
+      memPergunta.SetFocus;
+    except
+    end;
+  end;
+end;
+
 procedure Tfrmmain.FormShow(Sender: TObject);
 begin
   if Assigned(pnlFooter) then
     pnlFooter.Visible := False;
-  if Assigned(memPergunta) and memPergunta.CanFocus then
-    memPergunta.SetFocus;
+
+  Application.QueueAsyncCall(@FocusPergunta, 0);
 end;
 
 procedure Tfrmmain.FormResize(Sender: TObject);
@@ -1035,8 +1051,7 @@ begin
     pnlFooter.Visible := False;
   UpdateExhibitionLayout;
   SetProfessorState('idle');
-  if Assigned(memPergunta) and memPergunta.CanFocus then
-    memPergunta.SetFocus;
+  // Nao chamar SetFocus aqui (durante FormCreate a janela ainda nao esta visivel)
 end;
 
 procedure Tfrmmain.EnterAdminMode;
@@ -1066,6 +1081,7 @@ end;
 procedure Tfrmmain.ExitAdminMode;
 begin
   EnterExhibitionMode;
+  Application.QueueAsyncCall(@FocusPergunta, 0);
 end;
 
 procedure Tfrmmain.SetNarrativeText(const AText: string);
@@ -2560,8 +2576,7 @@ begin
 
   FAguardandoResposta := False;
   btEnviar.Enabled := True;
-  if Assigned(memPergunta) and memPergunta.CanFocus then
-    memPergunta.SetFocus;
+  Application.QueueAsyncCall(@FocusPergunta, 0);
   lblJarvisSub.Caption := 'Central de Automação & Multi-IA';
 end;
 
@@ -2657,8 +2672,7 @@ begin
 
   FAguardandoResposta := False;
   btEnviar.Enabled := True;
-  if Assigned(memPergunta) and memPergunta.CanFocus then
-    memPergunta.SetFocus;
+  Application.QueueAsyncCall(@FocusPergunta, 0);
   lblJarvisSub.Caption := '● Interrompido pelo usuário';
 end;
 
