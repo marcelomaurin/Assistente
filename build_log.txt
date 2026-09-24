@@ -1,9 +1,18 @@
-==== compile_check iniciado em 23/09/2026 18:48:39,62 ==== 
-Usando LAZBUILD=C:\lazarus\lazbuild.exe 
+Data: 2026-09-24T14:06:12.946760-03:00
+Commit base: aa16a4d24de78c95cb012c84d6d1a4f21c868084; alterações locais de Vídeo e dependências incluídas
+Build: Lazarus lazbuild --build-all src/assistente.lpi
+Lazarus: 4.4
+FPC: 3.2.2, i386-win32
+Resultado: sucesso; ExitCode=0
+Executável: D:\projetos\maurinsoft\Assistente\src\assistente.exe
+SHA256: ebcb66ed513d46700f7d32a2e8b57d4ce2c511dcd878de232dd69a7847f3b7c6
+
 Hint: (lazbuild) Primary config path: "C:\Users\mmaurin\AppData\Local\lazarus"
 Hint: (lazarus) [TBuildManager.SetBuildTarget] Old=i386-win32--win32 New=i386-win32--win32 Changed: OS/CPU=True LCL=False
 Hint: (lazarus) [TBuildManager.SetBuildTarget] Old=i386-win32--win32 New=i386-win32--win32 Changed: OS/CPU=True LCL=False
-Hint: (lazarus) Build Project: nothing to do.
+Hint: (lazarus) Project needs building: Compiler params changed for Project
+  Old="-MObjFPC -Scghi -O1 -gw3 -gl -WG -l -vewnhibq -FiD:\projetos\maurinsoft\Assistente\src\lib\i386-win32 -FiD:\projetos\maurinsoft\CHATGPT -FiD:\projetos\maurinsoft\CHATGPT\pacote\AI "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Output" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Files" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Vision" ..."
+  Now="-MObjFPC -Scghi -O1 -gw3 -gl -WG -l -vewnhibq -FiD:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice -FiD:\projetos\maurinsoft\Assistente\src\lib\i386-win32 -FiD:\projetos\maurinsoft\CHATGPT -FiD:\projetos\maurinsoft\CHATGPT\pacote\AI "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Output" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Files" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect" "-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource" ..."
 Info: (lazarus) Execute Title="Compilar projeto, Alvo: D:\projetos\maurinsoft\Assistente\src\assistente.exe"
 Info: (lazarus) Working Directory="D:\projetos\maurinsoft\Assistente\src\"
 Info: (lazarus) Executable="C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.exe"
@@ -15,62 +24,573 @@ Info: (lazarus) Param[4]="-gl"
 Info: (lazarus) Param[5]="-WG"
 Info: (lazarus) Param[6]="-l"
 Info: (lazarus) Param[7]="-vewnhibq"
-Info: (lazarus) Param[8]="-FiD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
-Info: (lazarus) Param[9]="-FiD:\projetos\maurinsoft\CHATGPT"
-Info: (lazarus) Param[10]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI"
-Info: (lazarus) Param[11]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
-Info: (lazarus) Param[12]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
-Info: (lazarus) Param[13]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
-Info: (lazarus) Param[14]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
-Info: (lazarus) Param[15]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
-Info: (lazarus) Param[16]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
-Info: (lazarus) Param[17]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
-Info: (lazarus) Param[18]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
-Info: (lazarus) Param[19]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
-Info: (lazarus) Param[20]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
-Info: (lazarus) Param[21]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
-Info: (lazarus) Param[22]="-FuD:\projetos\maurinsoft\Assistente\src\"
-Info: (lazarus) Param[23]="-FuD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
-Info: (lazarus) Param[24]="-FuD:\projetos\maurinsoft\CHATGPT"
-Info: (lazarus) Param[25]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI"
-Info: (lazarus) Param[26]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
-Info: (lazarus) Param[27]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
-Info: (lazarus) Param[28]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
-Info: (lazarus) Param[29]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
-Info: (lazarus) Param[30]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
-Info: (lazarus) Param[31]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
-Info: (lazarus) Param[32]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
-Info: (lazarus) Param[33]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
-Info: (lazarus) Param[34]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
-Info: (lazarus) Param[35]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
-Info: (lazarus) Param[36]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
-Info: (lazarus) Param[37]="-FuC:\lazarus\components\synedit\units\i386-win32\win32"
-Info: (lazarus) Param[38]="-FuC:\lazarus\lcl\units\i386-win32\win32"
-Info: (lazarus) Param[39]="-FuC:\lazarus\lcl\units\i386-win32"
-Info: (lazarus) Param[40]="-FuC:\lazarus\components\lazedit\lib\i386-win32"
-Info: (lazarus) Param[41]="-FuC:\lazarus\components\freetype\lib\i386-win32"
-Info: (lazarus) Param[42]="-FuC:\lazarus\components\lazutils\lib\i386-win32"
-Info: (lazarus) Param[43]="-FuC:\lazarus\packager\units\i386-win32"
-Info: (lazarus) Param[44]="-FUD:\projetos\maurinsoft\Assistente\src\lib\i386-win32\"
-Info: (lazarus) Param[45]="-FED:\projetos\maurinsoft\Assistente\src\"
-Info: (lazarus) Param[46]="-oD:\projetos\maurinsoft\Assistente\src\assistente.exe"
-Info: (lazarus) Param[47]="-dLCL"
-Info: (lazarus) Param[48]="-dLCLwin32"
-Info: (lazarus) Param[49]="assistente.lpr"
+Info: (lazarus) Param[8]="-FiD:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice"
+Info: (lazarus) Param[9]="-FiD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
+Info: (lazarus) Param[10]="-FiD:\projetos\maurinsoft\CHATGPT"
+Info: (lazarus) Param[11]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI"
+Info: (lazarus) Param[12]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
+Info: (lazarus) Param[13]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
+Info: (lazarus) Param[14]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
+Info: (lazarus) Param[15]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
+Info: (lazarus) Param[16]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio"
+Info: (lazarus) Param[17]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
+Info: (lazarus) Param[18]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
+Info: (lazarus) Param[19]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
+Info: (lazarus) Param[20]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
+Info: (lazarus) Param[21]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
+Info: (lazarus) Param[22]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
+Info: (lazarus) Param[23]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
+Info: (lazarus) Param[24]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect"
+Info: (lazarus) Param[25]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource"
+Info: (lazarus) Param[26]="-FiD:\projetos\maurinsoft\CHATGPT\pacote\AI Vision"
+Info: (lazarus) Param[27]="-FuD:\projetos\maurinsoft\Assistente\src\"
+Info: (lazarus) Param[28]="-FuD:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice"
+Info: (lazarus) Param[29]="-FuD:\projetos\maurinsoft\Assistente\src\lib\i386-win32"
+Info: (lazarus) Param[30]="-FuD:\projetos\maurinsoft\CHATGPT"
+Info: (lazarus) Param[31]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI"
+Info: (lazarus) Param[32]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Voice"
+Info: (lazarus) Param[33]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Agent"
+Info: (lazarus) Param[34]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input"
+Info: (lazarus) Param[35]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AISockets"
+Info: (lazarus) Param[36]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio"
+Info: (lazarus) Param[37]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Output"
+Info: (lazarus) Param[38]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Files"
+Info: (lazarus) Param[39]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI DBase"
+Info: (lazarus) Param[40]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic"
+Info: (lazarus) Param[41]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Graph"
+Info: (lazarus) Param[42]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial"
+Info: (lazarus) Param[43]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput"
+Info: (lazarus) Param[44]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect"
+Info: (lazarus) Param[45]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource"
+Info: (lazarus) Param[46]="-FuD:\projetos\maurinsoft\CHATGPT\pacote\AI Vision"
+Info: (lazarus) Param[47]="-FuC:\lazarus\components\synedit\units\i386-win32\win32"
+Info: (lazarus) Param[48]="-FuC:\lazarus\lcl\units\i386-win32\win32"
+Info: (lazarus) Param[49]="-FuC:\lazarus\lcl\units\i386-win32"
+Info: (lazarus) Param[50]="-FuC:\lazarus\components\lazedit\lib\i386-win32"
+Info: (lazarus) Param[51]="-FuC:\lazarus\components\freetype\lib\i386-win32"
+Info: (lazarus) Param[52]="-FuC:\lazarus\components\lazutils\lib\i386-win32"
+Info: (lazarus) Param[53]="-FuC:\lazarus\packager\units\i386-win32"
+Info: (lazarus) Param[54]="-FUD:\projetos\maurinsoft\Assistente\src\lib\i386-win32\"
+Info: (lazarus) Param[55]="-FED:\projetos\maurinsoft\Assistente\src\"
+Info: (lazarus) Param[56]="-oD:\projetos\maurinsoft\Assistente\src\assistente.exe"
+Info: (lazarus) Param[57]="-dLCL"
+Info: (lazarus) Param[58]="-dLCLwin32"
+Info: (lazarus) Param[59]="assistente.lpr"
+Info: (lazarus) Param[60]="-B"
 Hint: (11030) Start of reading config file C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.cfg
 Hint: (11031) End of reading config file C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.cfg
 Free Pascal Compiler version 3.2.2 [2025/11/08] for i386
 Copyright (c) 1993-2021 by Florian Klaempfl and others
 (1002) Target OS: Win32 for i386
 (3104) Compiling assistente.lpr
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,35) Hint: (5023) Unit "funcoes" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,44) Hint: (5023) Unit "setmain" not used in assistente
-D:\projetos\maurinsoft\Assistente\src\assistente.lpr(13,53) Hint: (5023) Unit "frmconfig" not used in assistente
+(3104) Compiling main.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\aibase.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\aillmproviders.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\aillmproviders.pas(195,19) Hint: (5092) Variable "AConfig" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\aillmproviders.pas(313,19) Hint: (5094) Function result variable of a managed type does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\aillmmodelcatalog.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\aitracebridge.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(234,28) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(415,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(415,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(416,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(416,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(417,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(417,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(418,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(418,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(419,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(419,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(420,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(420,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(421,23) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(421,8) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(155,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(702,34) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(702,16) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(707,44) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(707,43) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "RawByteString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(742,44) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(742,43) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "RawByteString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(788,42) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(788,41) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "RawByteString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(985,40) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(991,56) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(996,50) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(998,54) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(1010,65) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(1034,43) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\chatgpt.pas(1153,13) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+(3104) Compiling setmain.pas
+(3104) Compiling funcoes.pas
+(3104) Compiling main.pas
+(3104) Compiling setmain.pas
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicecredentialstore.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicecredentialstore.pas(66,17) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicecredentialstore.pas(94,17) Hint: (4055) Conversion between ordinals and pointers is not portable
+(3104) Compiling vision_types.pas
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(418,45) Hint: (5057) Local variable "posicao" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(420,22) Note: (6058) Call to subroutine "operator :=(const source:Variant):Boolean;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(420,72) Note: (6058) Call to subroutine "operator :=(const source:Boolean):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(420,77) Note: (6058) Call to subroutine "operator :=(const source:Boolean):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(533,22) Note: (6058) Call to subroutine "operator :=(const source:Variant):Boolean;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(533,72) Note: (6058) Call to subroutine "operator :=(const source:Boolean):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(533,77) Note: (6058) Call to subroutine "operator :=(const source:Boolean):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(155,37) Hint: (5024) Parameter "flag" not used
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(748,49) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(748,49) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(748,27) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(748,44) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(748,48) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(777,56) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(777,56) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(777,31) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(777,51) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(777,55) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(787,66) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(787,66) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(787,35) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(787,60) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(787,65) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(788,56) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(788,56) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(788,30) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(788,50) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(788,55) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(800,58) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(800,58) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(800,31) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(800,52) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(800,57) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(812,67) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(812,67) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(812,34) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(812,61) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(812,66) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(817,77) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(817,77) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(817,41) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(817,71) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(817,76) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(822,76) Note: (6058) Call to subroutine "operator :=(const source:Variant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(822,76) Note: (6058) Call to subroutine "operator +(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(822,37) Note: (6058) Call to subroutine "operator :=(const source:ShortString):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(822,70) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\src\setmain.pas(822,75) Note: (6058) Call to subroutine "operator :=(const source:Char):Variant;" marked as inline is not inlined
+(3104) Compiling frmconfig.pas
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_types.pas
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_backend.pas
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_openai.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_openai.pas(9,3) Hint: (5023) Unit "aivoiceprovider_types" not used in aivoiceprovider_openai
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_openaicompatible.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_openaicompatible.pas(9,3) Hint: (5023) Unit "aivoiceprovider_types" not used in aivoiceprovider_openaicompatible
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(25,35) Hint: (5024) Parameter "AConfig" not used
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(25,66) Hint: (5024) Parameter "AText" not used
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(26,31) Hint: (5024) Parameter "AConfig" not used
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(26,62) Hint: (5024) Parameter "AText" not used
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(26,69) Hint: (5024) Parameter "AOutputFile" not used
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoiceprovider_customhttp.pas(9,3) Hint: (5023) Unit "aivoiceprovider_types" not used in aivoiceprovider_customhttp
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aiaudioplayback.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aiaudioplayback.pas(88,25) Hint: (5091) Local variable "Buffer" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(281,19) Note: (6058) Call to subroutine "operator :=(const source:Variant):OleVariant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(863,34) Note: (6058) Call to subroutine "operator :=(const source:Variant):LongInt;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(863,34) Note: (6058) Call to subroutine "operator -(const op1:Variant;const op2:Variant):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(863,34) Note: (6058) Call to subroutine "operator :=(const source:ShortInt):Variant;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(866,56) Note: (6058) Call to subroutine "operator :=(const source:OleVariant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aivoicesynthesizer.pas(869,52) Note: (6058) Call to subroutine "operator :=(const source:OleVariant):AnsiString;" marked as inline is not inlined
+(3104) Compiling jarvis_api.pas
+(3104) Compiling webcam_vision.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource\aicapturesource.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_backend.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(28,31) Hint: (5024) Parameter "ADevice" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(211,58) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(326,31) Hint: (5091) Local variable "VarName" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(358,19) Hint: (5057) Local variable "LName" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(359,18) Hint: (5057) Local variable "LVer" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(326,15) Note: (6058) Call to subroutine "procedure VarClear(var V:OleVariant);" marked as inline is not inlined
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(329,48) Note: (6058) Call to subroutine "operator :=(const source:OleVariant):AnsiString;" marked as inline is not inlined
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Vision\aicamera_vfw.pas(87,3) Hint: (5028) Local const "WM_CAP_FILE_SAVEDIB" is not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource\aicapturesource.pas(309,3) Note: (5027) Local variable "LResolvedBackend" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AICaptureSource\aicapturesource.pas(194,27) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\webcam_vision.pas(56,15) Hint: (5057) Local variable "N" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\webcam_vision.pas(56,42) Hint: (5057) Local variable "V" does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectsensor.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_types.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(46,33) Hint: (5024) Parameter "ABitmap" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(128,17) Hint: (5058) Variable "AInfo" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(51,25) Hint: (5024) Parameter "AX" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(51,29) Hint: (5024) Parameter "AY" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(52,31) Hint: (5024) Parameter "AMap" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(144,19) Hint: (5092) Variable "ACloud" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(53,66) Hint: (5024) Parameter "AColored" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(53,93) Hint: (5024) Parameter "AStep" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(150,17) Hint: (5058) Variable "AInfo" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(156,17) Hint: (5058) Variable "AInfo" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(56,33) Hint: (5024) Parameter "ASeated" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_backend.pas(56,51) Hint: (5024) Parameter "ASmooth" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_freenect.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_freenect.pas(137,43) Hint: (5024) Parameter "dev" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_freenect.pas(137,82) Hint: (5024) Parameter "timestamp" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_freenect.pas(149,43) Hint: (5024) Parameter "dev" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_freenect.pas(149,82) Hint: (5024) Parameter "timestamp" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(13,14) Warning: (3057) An inherited method is hidden by "QueryInterface(const TGuid;out <Formal type>):LongInt; StdCall;"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(14,14) Warning: (3057) An inherited method is hidden by "_AddRef:LongInt; StdCall;"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(15,14) Warning: (3057) An inherited method is hidden by "_Release:LongInt; StdCall;"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(316,20) Hint: (5057) Local variable "Rect" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(323,108) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(395,20) Hint: (5057) Local variable "Rect" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(402,108) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(459,17) Hint: (5057) Local variable "Frame" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(481,19) Hint: (5091) Local variable "Bodies" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(790,29) Hint: (5058) Variable "AMap" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(810,19) Hint: (5092) Variable "ACloud" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinect_sdk10.pas(1357,16) Hint: (5091) Local variable "Row" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(126,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(127,36) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(128,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(139,26) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(129,31) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(130,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(131,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(132,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(133,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(134,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(135,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(136,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(137,29) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\frmconfig.pas(138,31) Hint: (5024) Parameter "Sender" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Voice\aivoicerecognizer.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Voice\aivoicerecognizer.pas(10,11) Hint: (5023) Unit "ActiveX" not used in aivoicerecognizer
+(3104) Compiling D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(245,15) Hint: (5057) Local variable "wfx" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(550,26) Hint: (5057) Local variable "Hdr" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(556,29) Hint: (5091) Local variable "Buffer" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(713,23) Hint: (5091) Local variable "RawBytes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(859,15) Hint: (5057) Local variable "Hdr" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\vendor\chatgpt-voice\aicontinuouslistener.pas(8,22) Hint: (5023) Unit "Math" not used in aicontinuouslistener
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(239,31) Hint: (5057) Local variable "HeaderA" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(240,31) Hint: (5057) Local variable "HeaderB" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(250,47) Hint: (5057) Local variable "SampleA" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(251,47) Hint: (5057) Local variable "SampleB" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(227,3) Note: (5027) Local variable "DataSize" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIAudio\aiaudio.pas(301,21) Hint: (5057) Local variable "Header" does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatartypes.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatartypes.pas(778,42) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(172,44) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(210,3) Note: (5027) Local variable "ByteLength" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(306,31) Hint: (5057) Local variable "U8Val" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(307,32) Hint: (5057) Local variable "I16Val" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(308,32) Hint: (5057) Local variable "U16Val" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(309,32) Hint: (5057) Local variable "U32Val" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(462,20) Hint: (5091) Local variable "Visited" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(474,23) Hint: (5092) Variable "AMaterials" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(514,22) Hint: (5092) Variable "ATextures" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(582,19) Hint: (5092) Variable "ASkins" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(578,24) Note: (5025) Local variable "AccessorsArr" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(647,22) Hint: (5092) Variable "AVertices" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(648,19) Hint: (5092) Variable "AFaces" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(636,24) Note: (5025) Local variable "J" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(636,27) Note: (5025) Local variable "K" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(642,3) Note: (5025) Local variable "V1" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(642,7) Note: (5025) Local variable "V2" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(642,11) Note: (5025) Local variable "V3" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(822,24) Hint: (5092) Variable "AAnimations" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(814,12) Note: (5025) Local variable "SmpIdx" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(963,22) Hint: (5092) Variable "AVertices" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(964,19) Hint: (5092) Variable "AFaces" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(965,23) Hint: (5092) Variable "AMaterials" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(966,22) Hint: (5092) Variable "ATextures" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(967,19) Hint: (5092) Variable "ASkins" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(968,19) Hint: (5092) Variable "ANodes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(978,22) Hint: (5057) Local variable "Magic" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(982,31) Hint: (5057) Local variable "Version" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(983,34) Hint: (5057) Local variable "FileLength" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(986,35) Hint: (5057) Local variable "ChunkLength" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(987,33) Hint: (5057) Local variable "ChunkType" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(989,24) Hint: (5091) Local variable "JSONBytes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(998,33) Hint: (5057) Local variable "BinType" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aigltfloader.pas(13,22) Hint: (5023) Unit "Math" not used in aigltfloader
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(263,32) Hint: (5057) Local variable "Header" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(264,40) Hint: (5057) Local variable "TrianglesCount" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(276,28) Hint: (5057) Local variable "Face" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(419,23) Hint: (5057) Local variable "Magic" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(64,29) Hint: (5024) Parameter "ASkeleton" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(514,3) Note: (5025) Local variable "I" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aimodel3d.pas(13,32) Hint: (5023) Unit "Math" not used in aimodel3d
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(216,18) Hint: (5060) Function result variable does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(226,18) Hint: (5060) Function result variable does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(481,35) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(483,19) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(498,40) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(500,19) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(537,40) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(541,42) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(545,51) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(548,33) Warning: (4105) Implicit string type conversion with potential data loss from "UnicodeString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(554,39) Hint: (5057) Local variable "OZ" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(554,35) Hint: (5057) Local variable "OY" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(554,31) Hint: (5057) Local variable "OX" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(628,42) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(621,3) Note: (5027) Local variable "FS" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(767,13) Hint: (5057) Local variable "Magic" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(768,20) Hint: (5057) Local variable "Version" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(769,22) Hint: (5057) Local variable "LengthVal" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(777,24) Hint: (5057) Local variable "ChunkLength" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(778,13) Hint: (5057) Local variable "ChunkType" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(792,24) Hint: (5091) Local variable "JSONBytes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiskeletonrig.pas(1170,6) Warning: (5037) Variable "AMissingBones" does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatarcontroller.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiposelibrary.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiposelibrary.pas(417,42) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiposelibrary.pas(13,22) Hint: (5023) Unit "Math" not used in aiposelibrary
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aianimationsequence.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aianimationsequence.pas(14,22) Hint: (5023) Unit "Math" not used in aianimationsequence
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar_lipsync.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar_lipsync.pas(56,22) Hint: (5024) Parameter "DeltaTimeSec" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatarbehavior.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(84,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(85,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(86,36) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(69,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(70,31) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graphic\aiavatar3d.pas(113,58) Hint: (5024) Parameter "AProfilePath" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiinteractioncontext.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiconversationorchestrator.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipersonsession.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipersonsession.pas(124,49) Hint: (5024) Parameter "AName" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\airagbridge.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagentsafety.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagentsafety.pas(259,24) Note: (5025) Local variable "UpperName" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagentsafety.pas(330,3) Note: (5025) Local variable "I" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aitools.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiguardrails.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiguardrails.pas(77,43) Hint: (5024) Parameter "ACall" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas(858,47) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas(860,72) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas(867,50) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas(880,44) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "UTF8String"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiagent.pas(950,44) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aiconversationorchestrator.pas(38,35) Hint: (5024) Parameter "Sender" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipresentation.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipresentation.pas(19,22) Hint: (5023) Unit "StrUtils" not used in aipresentation
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectskeleton.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectskeleton.pas(23,28) Hint: (5024) Parameter "Sender" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectdepth.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectdepth.pas(25,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectdepth.pas(26,38) Hint: (5024) Parameter "Sender" not used
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectcolor.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectcolor.pas(26,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectcolor.pas(27,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(346,3) Note: (5027) Local variable "Head" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(346,9) Note: (5027) Local variable "Hip" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(346,14) Note: (5027) Local variable "Spine" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(346,43) Note: (5027) Local variable "ElbowL" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(346,51) Note: (5027) Local variable "ElbowR" is assigned but never used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(130,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(721,38) Warning: (5066) Symbol "Create" is deprecated: "use options form instead"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIKinect\aikinectperception.pas(726,23) Hint: (5091) Local variable "Bodies" of a managed type does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(43,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(44,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(45,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(46,29) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(47,17) Hint: (5024) Parameter "ATrackingID" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(48,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aikinectadapter.pas(17,3) Hint: (5023) Unit "aikinect_types" not used in aikinectadapter
+(3104) Compiling agent_manager.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(149,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(163,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(173,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(213,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(226,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(239,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(248,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(257,19) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(312,31) Hint: (5091) Local variable "TransposedHidden" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(322,34) Hint: (5091) Local variable "TransposedWeightsHO" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI\neuralnetwork.pas(336,30) Hint: (5091) Local variable "TransposedInput" of a managed type does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput\aiinput.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Input\AIInput\aiinput.pas(8,22) Hint: (5023) Unit "Math" not used in aiinput
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aioutput.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aioutput.pas(81,22) Hint: (5091) Local variable "ExpVals" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aioutput.pas(8,22) Hint: (5023) Unit "Math" not used in aioutput
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aioutput_docs.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aidocxwriter.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aixlsxwriter.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Output\aixlsxwriter.pas(8,22) Hint: (5023) Unit "Math" not used in aixlsxwriter
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(447,30) Hint: (5057) Local variable "Response" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(404,3) Note: (5025) Local variable "BytesRead" not used
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(610,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(612,37) Hint: (5058) Variable "AData" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(626,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(628,37) Hint: (5058) Variable "AData" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(642,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(664,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(694,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(708,65) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimodbus.pas(730,78) Hint: (5057) Local variable "RespLen" does not seem to be initialized
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(199,28) Hint: (5091) Local variable "Topic" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(207,32) Hint: (5091) Local variable "Payload" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(300,38) Hint: (5057) Local variable "WData" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(382,18) Hint: (5057) Local variable "Addr" does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(553,16) Warning: (4045) Comparison might be always true due to range of constant and expression
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aimqtt.pas(14,3) Hint: (5023) Unit "Math" not used in aimqtt
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Industrial\aiindustrial.pas
+(3104) Compiling D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(787,26) Hint: (5091) Local variable "LTokenNodes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(857,23) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(859,16) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(896,21) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(1121,25) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(1123,18) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Graph\aigraphmap.pas(1163,23) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(151,51) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(154,34) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(158,33) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(216,20) Hint: (5091) Local variable "InArr" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(231,22) Hint: (5091) Local variable "OutProb" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(368,23) Hint: (5091) Local variable "Regs" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(400,24) Hint: (5091) Local variable "Bytes" of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(435,44) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(438,28) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\CHATGPT\pacote\AI Agent\aipipeline.pas(442,27) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(74,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(74,47) Hint: (5024) Parameter "ACall" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(75,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(75,51) Hint: (5024) Parameter "ACall" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(76,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(77,31) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(77,48) Hint: (5024) Parameter "ACall" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(78,28) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(79,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(79,47) Hint: (5024) Parameter "ACall" not used
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(593,63) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\agent_manager.pas(595,37) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+(3104) Compiling project_manager.pas
+D:\projetos\maurinsoft\Assistente\src\main.pas(392,48) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(394,28) Warning: (4105) Implicit string type conversion with potential data loss from "WideString" to "AnsiString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(247,37) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(248,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(249,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(250,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(250,76) Hint: (5024) Parameter "ATargetObject" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(252,36) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(253,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(253,62) Hint: (5024) Parameter "AOldProject" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(157,26) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(158,27) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(159,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(160,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(161,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(162,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(163,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(164,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(166,37) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(168,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(169,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(167,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(236,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(237,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(238,46) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(239,45) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(240,44) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(254,37) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(254,60) Hint: (5024) Parameter "AOldPersonID" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(254,74) Hint: (5024) Parameter "ANewPersonID" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(156,26) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(170,25) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(1460,29) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(1465,35) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(1466,27) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(1470,48) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(1475,54) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(1476,46) Warning: (4104) Implicit string type conversion from "AnsiString" to "WideString"
+D:\projetos\maurinsoft\Assistente\src\main.pas(173,29) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(171,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(261,31) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(1780,28) Hint: (5057) Local variable "RiffTag" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\main.pas(1782,28) Hint: (5057) Local variable "WaveTag" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\main.pas(264,43) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(265,40) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(265,57) Hint: (5024) Parameter "AOldState" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(266,38) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(267,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(267,56) Hint: (5024) Parameter "AOrigin" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(267,79) Hint: (5024) Parameter "AConfidence" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(268,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(269,42) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(270,41) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(175,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(176,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(177,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(178,28) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(179,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(180,32) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(181,39) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(182,35) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(184,28) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(185,27) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(172,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(256,34) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(256,78) Hint: (5024) Parameter "ADescription" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(257,33) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(258,30) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(258,64) Hint: (5024) Parameter "AArgsJSON" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(259,31) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(187,42) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(187,59) Hint: (5024) Parameter "User" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(188,29) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\main.pas(189,28) Hint: (5024) Parameter "Sender" not used
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(588,25) Hint: (5057) Local variable "startInfo" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(604,118) Hint: (5057) Local variable "processInfo" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(95,56) Hint: (5024) Parameter "Output" not used
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(763,38) Warning: (5093) function result variable of a managed type does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(974,44) Hint: (5057) Local variable "B" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(988,15) Hint: (5057) Local variable "sei" does not seem to be initialized
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(94,25) Hint: (5024) Parameter "Handle" not used
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1140,8) Warning: (5043) Symbol "CommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1140,20) Warning: (5043) Symbol "SetCommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1135,4) Note: (5027) Local variable "info" is assigned but never used
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1170,8) Warning: (5043) Symbol "CommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1170,20) Warning: (5043) Symbol "SetCommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1195,8) Warning: (5043) Symbol "CommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1195,20) Warning: (5043) Symbol "SetCommandLine" is deprecated
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1385,31) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1385,23) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1388,35) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1388,27) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1391,40) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1391,32) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1392,30) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1392,23) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1399,33) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(1399,25) Hint: (4055) Conversion between ordinals and pointers is not portable
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(11,1) Hint: (5023) Unit "StdCtrls" not used in funcoes
+D:\projetos\maurinsoft\Assistente\src\funcoes.pas(110,6) Hint: (5023) Unit "main" not used in funcoes
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(14,16) Hint: (5023) Unit "funcoes" not used in assistente
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(14,25) Hint: (5023) Unit "setmain" not used in assistente
+D:\projetos\maurinsoft\Assistente\src\assistente.lpr(14,34) Hint: (5023) Unit "frmconfig" not used in assistente
 (9022) Compiling resource D:\projetos\maurinsoft\Assistente\src\lib\i386-win32\assistente.or
 (9015) Linking D:\projetos\maurinsoft\Assistente\src\assistente.exe
-(1008) 39 lines compiled, 1.1 sec, 2528464 bytes code, 132788 bytes data
-(1022) 5 hint(s) issued
+(1008) 37071 lines compiled, 5.5 sec, 2639504 bytes code, 133300 bytes data
+(1021) 83 warning(s) issued
+(1022) 278 hint(s) issued
+(1023) 75 note(s) issued
 Info: (lazarus) [TCompiler.Compile] end
- 
-==== ExitCode=0 ==== 
-==== compile_check finalizado ==== 

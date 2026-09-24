@@ -3,7 +3,7 @@ unit vision_types;
 interface
 uses SysUtils;
 type
-  TVisionSource = (vsNone, vsKinect, vsWebcam);
+  TVisionSource = (vsNone, vsKinect, vsWebcam, vsBoth);
   TVisionState = (vstSelected, vstDetected, vstInitialized, vstError);
   TVisionCapability = (vcRGB, vcDepth, vcSkeleton, vcGesture,
     vcPersonTracking, vcDistance, vcPointing);
@@ -17,6 +17,7 @@ begin
   case Source of
     vsKinect: Result := 'kinect';
     vsWebcam: Result := 'webcam';
+    vsBoth: Result := 'both';
     else Result := 'none';
   end;
 end;
@@ -24,12 +25,13 @@ function ParseVisionSource(const Value: string): TVisionSource;
 begin
   if SameText(Value, 'kinect') then Result := vsKinect
   else if SameText(Value, 'webcam') then Result := vsWebcam
+  else if SameText(Value, 'both') then Result := vsBoth
   else Result := vsNone;
 end;
 function VisionCapabilities(Source: TVisionSource): TVisionCapabilities;
 begin
   case Source of
-    vsKinect: Result := [vcRGB, vcDepth, vcSkeleton, vcGesture,
+    vsKinect, vsBoth: Result := [vcRGB, vcDepth, vcSkeleton, vcGesture,
       vcPersonTracking, vcDistance, vcPointing];
     vsWebcam: Result := [vcRGB];
     else Result := [];

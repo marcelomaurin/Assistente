@@ -4,7 +4,7 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $libraryRoot = Join-Path (Split-Path $projectRoot -Parent) 'CHATGPT\pacote'
 $outputDir = Join-Path ([IO.Path]::GetTempPath()) ('assistente-vision-' + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $outputDir | Out-Null
-$compilerArgs = @('-MObjFPC','-Scghi','-dLCL','-dLCLwin32', ('-Fu' + $projectRoot + '\src'), ('-FU' + $outputDir), ('-FE' + $outputDir))
+$compilerArgs = @('-MObjFPC','-Scghi','-dLCL','-dLCLwin32', ('-Fu' + $projectRoot + '\src'), ('-Fu' + $projectRoot + '\vendor\chatgpt-voice'), ('-FU' + $outputDir), ('-FE' + $outputDir))
 foreach ($relative in @('lcl\units\i386-win32\win32','lcl\units\i386-win32','components\lazutils\lib\i386-win32','packager\units\i386-win32')) {
     $compilerArgs += '-Fu' + (Join-Path $Lazarus $relative)
 }

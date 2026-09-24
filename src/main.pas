@@ -240,6 +240,7 @@ type
     procedure OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
 
     procedure InitVision;
+    procedure InitWebcam;
     procedure ShutdownVision;
     procedure InitKinect;
     procedure ShutdownKinect;
@@ -419,42 +420,63 @@ end;
 { Kinect Perception & Multi-Modal Adapter Implementation }
 
 procedure Tfrmmain.InitVision;
+var KinectStatus: string;
 begin
   ShutdownVision;
   FVisionState := vstSelected;
-  FVisionStatus := 'Visao: desativada';
+  FVisionStatus := 'Vídeo: desativado';
   if FSetMain = nil then Exit;
-  try
-    case FSetMain.VisionSource of
-      vsKinect: InitKinect;
-      vsWebcam:
-        begin
-          FWebcam := TWebcamVision.Create(Self);
-          if FWebcam.OpenDevice(FSetMain.CameraDevice, Self, nil) then
-          begin
-            FSetMain.CameraDevice := FWebcam.DeviceName;
-            FVisionState := vstInitialized;
-            FVisionCapabilities := VisionCapabilities(vsWebcam);
-            FVisionStatus := 'Visao: Webcam - ' + FWebcam.DeviceName;
-          end
-          else
-          begin
-            FVisionState := vstError;
-            FVisionStatus := 'Visao: Webcam - ' + FWebcam.LastError;
-            FreeAndNil(FWebcam);
-          end;
-        end;
+  KinectStatus := '';
+  if FSetMain.VisionSource in [vsKinect, vsBoth] then
+  begin
+    try
+      InitKinect;
+    except
+      on E: Exception do
+      begin
+        ShutdownKinect;
+        FVisionCapabilities := [];
+        FVisionState := vstError;
+        FVisionStatus := 'Kinect: erro - ' + E.Message;
+      end;
     end;
-  except
-    on E: Exception do
-    begin
-      ShutdownVision;
-      FVisionState := vstError;
-      FVisionStatus := 'Visao: erro - ' + E.Message;
-    end;
+    KinectStatus := FVisionStatus;
   end;
-  AdicionaMensagemHistorico('Visao', FVisionStatus);
+  if FSetMain.VisionSource in [vsWebcam, vsBoth] then
+  begin
+    try
+      InitWebcam;
+    except
+      on E: Exception do
+      begin
+        FreeAndNil(FWebcam);
+        FVisionState := vstError;
+        FVisionStatus := 'Câmera: erro - ' + E.Message;
+      end;
+    end;
+    if KinectStatus <> '' then
+      FVisionStatus := KinectStatus + ' | ' + FVisionStatus;
+  end;
+  AdicionaMensagemHistorico('Vídeo', FVisionStatus);
   UpdateAdminStatusIndicators;
+end;
+
+procedure Tfrmmain.InitWebcam;
+begin
+  FWebcam := TWebcamVision.Create(Self);
+  if FWebcam.OpenDevice(FSetMain.CameraDevice, Self, nil) then
+  begin
+    FSetMain.CameraDevice := FWebcam.DeviceName;
+    FVisionState := vstInitialized;
+    FVisionCapabilities := FVisionCapabilities + VisionCapabilities(vsWebcam);
+    FVisionStatus := 'Câmera: ' + FWebcam.DeviceName + ' - RGB ativo';
+  end
+  else
+  begin
+    FVisionState := vstError;
+    FVisionStatus := 'Câmera: ' + FWebcam.LastError;
+    FreeAndNil(FWebcam);
+  end;
 end;
 
 procedure Tfrmmain.ShutdownVision;
@@ -479,7 +501,15 @@ begin
     end;
     FVisionState := vstDetected;
     if (FSetMain.KinectDeviceIndex < 0) or (FSetMain.KinectDeviceIndex >= DevList.Count) then
-      FSetMain.KinectDeviceIndex := 0;
+    begin
+      if DevList.Count = 1 then FSetMain.KinectDeviceIndex := 0
+      else
+      begin
+        FVisionStatus := 'Vídeo: selecione o Kinect em Configurações > Vídeo.';
+        FreeAndNil(FKinectSensor);
+        Exit;
+      end;
+    end;
     FKinectSensor.DeviceIndex := FSetMain.KinectDeviceIndex;
     FKinectSensor.Backend := kbKinectSDK10;
     FKinectSensor.KinectModel := kmXbox360;
@@ -2225,7 +2255,7 @@ begin
 
         // Salva Visao / Kinect
         FormCfg.StopVisionTest;
-        FSetMain.VisionSource := TVisionSource(FormCfg.cbVisionSource.ItemIndex);
+        FSetMain.VisionSource := FormCfg.SelectedVisionSource;
         if FormCfg.cbKinectDevice.ItemIndex >= 0 then
           FSetMain.KinectDeviceIndex := FormCfg.cbKinectDevice.ItemIndex;
         if FormCfg.cbCameraDevice.ItemIndex >= 0 then

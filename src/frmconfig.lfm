@@ -490,41 +490,43 @@ object frmConfig: TfrmConfig
       end
     end
     object tsVisao: TTabSheet
-      Caption = 'Visão'
+      Caption = 'Vídeo'
       ClientHeight = 412
       ClientWidth = 382
       object lblVisionSource: TLabel
         Left = 10
-        Top = 8
+        Top = 6
         Width = 350
         Height = 18
-        Caption = 'Fonte de visao'
+        Caption = 'Dispositivos locais: habilite um ou os dois'
       end
-      object cbVisionSource: TComboBox
+      object chkEnableKinect: TCheckBox
         Left = 10
-        Top = 28
-        Width = 350
-        Height = 24
-        Style = csDropDownList
-        Items.Strings = (
-          'Nenhuma'
-          'Kinect v1'
-          'Webcam'
-        )
-        ItemIndex = 0
+        Top = 30
+        Width = 150
+        Height = 23
+        Caption = 'Habilitar Kinect'
         OnChange = VisionSourceChange
       end
       object cbKinectDevice: TComboBox
-        Left = 10
-        Top = 58
-        Width = 350
+        Left = 165
+        Top = 30
+        Width = 195
         Height = 24
         Style = csDropDownList
       end
-      object cbCameraDevice: TComboBox
+      object chkEnableCamera: TCheckBox
         Left = 10
         Top = 58
-        Width = 350
+        Width = 150
+        Height = 23
+        Caption = 'Habilitar câmera'
+        OnChange = VisionSourceChange
+      end
+      object cbCameraDevice: TComboBox
+        Left = 165
+        Top = 58
+        Width = 195
         Height = 24
         Style = csDropDownList
       end

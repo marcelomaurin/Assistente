@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <General>
+      <SessionStorage Value="InProjectDir"/>
+      <Title Value="assistente"/>
+      <Scaled Value="True"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <XPManifest>
+        <DpiAware Value="True"/>
+      </XPManifest>
+      <Icon Value="0"/>
+    </General>
+    <BuildModes>
+      <Item Name="Default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+    <RunParams>
+      <FormatVersion Value="2"/>
+    </RunParams>
+    <RequiredPackages>
+      <Item>
+        <PackageName Value="SynEdit"/>
+      </Item>
+      <Item>
+        <PackageName Value="LCL"/>
+      </Item>
+    </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="../tests/reception_tests.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmmain"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value="jarvis_api.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="funcoes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="setmain.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="frmconfig.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmConfig"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
+      <Unit>
+        <Filename Value="agent_manager.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="project_manager.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <Target>
+      <Filename Value="../tests/reception_tests.exe"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir);..\..\CHATGPT;..\..\CHATGPT\pacote\AI;..\..\CHATGPT\pacote\AI Voice;..\..\CHATGPT\pacote\AI Agent;..\..\CHATGPT\pacote\AI Input;..\..\CHATGPT\pacote\AI Input\AISockets;..\..\CHATGPT\pacote\AI Input\AIAudio;..\..\CHATGPT\pacote\AI Output;..\..\CHATGPT\pacote\AI Files;..\..\CHATGPT\pacote\AI DBase;..\..\CHATGPT\pacote\AI Graphic;..\..\CHATGPT\pacote\AI Graph;..\..\CHATGPT\pacote\AI Industrial;..\..\CHATGPT\pacote\AI Input\AIInput;..\..\CHATGPT\pacote\AI Observability;..\..\CHATGPT\pacote\AI Vision;..\..\CHATGPT\pacote\AI RAG;..\..\CHATGPT\pacote\AI Input\AICaptureSource"/>
+      <OtherUnitFiles Value="$(ProjOutDir);..\..\CHATGPT;..\..\CHATGPT\pacote\AI;..\..\CHATGPT\pacote\AI Voice;..\..\CHATGPT\pacote\AI Agent;..\..\CHATGPT\pacote\AI Input;..\..\CHATGPT\pacote\AI Input\AISockets;..\..\CHATGPT\pacote\AI Input\AIAudio;..\..\CHATGPT\pacote\AI Output;..\..\CHATGPT\pacote\AI Files;..\..\CHATGPT\pacote\AI DBase;..\..\CHATGPT\pacote\AI Graphic;..\..\CHATGPT\pacote\AI Graph;..\..\CHATGPT\pacote\AI Industrial;..\..\CHATGPT\pacote\AI Input\AIInput;..\..\CHATGPT\pacote\AI Observability;..\..\CHATGPT\pacote\AI Vision;..\..\CHATGPT\pacote\AI RAG;..\..\CHATGPT\pacote\AI Input\AICaptureSource"/>
+      <UnitOutputDirectory Value="lib/tests-$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf3"/>
+      </Debugging>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions>
+      <Item>
+        <Name Value="EAbort"/>
+      </Item>
+      <Item>
+        <Name Value="ECodetoolError"/>
+      </Item>
+      <Item>
+        <Name Value="EFOpenError"/>
+      </Item>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

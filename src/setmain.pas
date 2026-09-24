@@ -364,7 +364,7 @@ begin
     FAvatar3DQuality := 'auto';
 
     FVisionSource := vsNone;
-    FKinectDeviceIndex := 0;
+    FKinectDeviceIndex := -1;
     FCameraDevice := '';
     FKinectMinDistance := 0.8;
     FKinectMaxDistance := 2.5;
@@ -682,7 +682,7 @@ begin
       else FVisionSource := vsNone;
     end;
     if BuscaChave(arquivo,'KINECT_DEVICE_INDEX:',posicao) then
-      FKinectDeviceIndex := StrToIntDef(RetiraInfo(arquivo.Strings[posicao]), 0);
+      FKinectDeviceIndex := StrToIntDef(RetiraInfo(arquivo.Strings[posicao]), -1);
     if BuscaChave(arquivo,'CAMERA_DEVICE:',posicao) then
       FCameraDevice := RetiraInfo(arquivo.Strings[posicao]);
     if BuscaChave(arquivo,'KINECT_MINDIST:',posicao) then
@@ -728,7 +728,7 @@ begin
     arquivo := TStringList.create();
     FFONT := TFont.create();
     FVisionSource := vsNone;
-    FKinectDeviceIndex := 0;
+    FKinectDeviceIndex := -1;
     FKinectMinDistance := 0.8;
     FKinectMaxDistance := 2.5;
     FKinectSeatedMode := True;

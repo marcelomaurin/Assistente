@@ -7,15 +7,44 @@ type
   private
     FCaptureHost: TPanel;
   public
+    class function DeviceLabel(Index: Integer; const ADisplayName: string): string;
+    class function ResolveDevice(List: TStrings; const Saved: string): Integer;
     class function Devices: TStringList;
     function OpenDevice(const Device: string; Parent: TWinControl;
       Preview: TImage): Boolean;
   end;
 implementation
 uses Windows;
-function capGetDriverDescriptionW(Index: UINT; Name: PWideChar;
+function capGetDriverDescriptionW(Index: UINT; ADisplayName: PWideChar;
   NameSize: Integer; Version: PWideChar; VersionSize: Integer): BOOL;
   stdcall; external 'avicap32.dll';
+class function TWebcamVision.DeviceLabel(Index: Integer; const ADisplayName: string): string;
+begin
+  Result := IntToStr(Index) + ' - ' + ADisplayName;
+end;
+
+class function TWebcamVision.ResolveDevice(List: TStrings; const Saved: string): Integer;
+var I, Matches, P: Integer; ADisplayName: string;
+begin
+  Result := List.IndexOf(Saved);
+  if Result >= 0 then Exit;
+  // Migrate configurations that stored only the name, if unambiguous.
+  Matches := 0;
+  if Saved <> '' then
+    for I := 0 to List.Count - 1 do
+    begin
+      P := Pos(' - ', List[I]);
+      ADisplayName := Copy(List[I], P + 3, MaxInt);
+      if (P > 0) and SameText(ADisplayName, Saved) then
+      begin
+        Inc(Matches);
+        Result := I;
+      end;
+    end;
+  if Matches <> 1 then Result := -1;
+  if (Result < 0) and (Saved = '') and (List.Count = 1) then Result := 0;
+end;
+
 class function TWebcamVision.Devices: TStringList;
 var I: Integer; N, V: array[0..255] of WideChar;
 begin
@@ -26,30 +55,23 @@ begin
   begin
     FillChar(N, SizeOf(N), 0); FillChar(V, SizeOf(V), 0);
     if capGetDriverDescriptionW(I, N, Length(N), V, Length(V)) then
-      Result.AddObject(UTF8Encode(UnicodeString(PWideChar(@N[0]))), TObject(PtrInt(I)));
+      Result.AddObject(DeviceLabel(I, UTF8Encode(UnicodeString(PWideChar(@N[0])))), TObject(PtrInt(I)));
   end;
 end;
 function TWebcamVision.OpenDevice(const Device: string; Parent: TWinControl;
   Preview: TImage): Boolean;
-var L: TStringList; I, J: Integer;
+var L: TStringList; I: Integer;
 begin
   StopCapture;
   Result := False;
   L := Devices;
   try
-    I := L.IndexOf(Device);
-    if (I < 0) and (Device = '') and (L.Count = 1) then I := 0;
+    I := ResolveDevice(L, Device);
     if I < 0 then
     begin
       SetError('Webcam selecionada nao encontrada. Atualize os dispositivos.');
       Exit;
     end;
-    for J := I + 1 to L.Count - 1 do
-      if SameText(L[J], L[I]) then
-      begin
-        SetError('Drivers de camera com nomes identicos; selecao ambigua.');
-        Exit;
-      end;
     SourceKind := cskCameraLocal;
     CameraIndex := PtrInt(L.Objects[I]);
     DeviceName := L[I];
