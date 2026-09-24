@@ -175,6 +175,8 @@ object frmmain: Tfrmmain
           ParentBackground = False
           ParentColor = False
           TabOrder = 0
+          Visible = False
+          Visible = False
           object lblProjectTitle: TLabel
             Left = 16
             Height = 32
@@ -184,7 +186,7 @@ object frmmain: Tfrmmain
             BorderSpacing.Top = 6
             BorderSpacing.Left = 16
             BorderSpacing.Right = 16
-            Caption = 'PROFESSOR VIRTUAL'
+            Caption = 'Como posso ajudar?'
             Font.Color = 16761152
             Font.Height = -18
             Font.Style = [fsBold]
@@ -199,7 +201,8 @@ object frmmain: Tfrmmain
             Align = alClient
             BorderSpacing.Left = 16
             BorderSpacing.Right = 16
-            Caption = 'Projetos de Pesquisa e Extensão da FATEC Ribeirão Preto'
+            Caption = ''
+            Visible = False
             Font.Color = 12632256
             Font.Height = -13
             ParentColor = False
@@ -230,7 +233,7 @@ object frmmain: Tfrmmain
             BorderSpacing.Right = 16
             Layout = tlCenter
             WordWrap = True
-            Caption = '"Aproxime-se para conhecer as pesquisas desenvolvidas em nossa instituição..."'
+            Caption = '"Olá! Sou o Professor Virtual da FATEC Ribeirão Preto. Como posso ajudar?"'
             Font.Color = clWhite
             Font.Height = -14
             Font.Style = [fsItalic]
@@ -289,7 +292,7 @@ object frmmain: Tfrmmain
             Alignment = taCenter
             Layout = tlCenter
             WordWrap = True
-            Caption = 'Conteúdo visual da apresentação em preparação'
+            Caption = 'Pergunte sobre os projetos, tecnologias ou demonstrações disponíveis.'
             Font.Color = 7368816
             Font.Height = -15
             ParentColor = False
