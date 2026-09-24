@@ -42,6 +42,13 @@ TD_ASSISTENTE=Install ASSISTENTE
 [Files]
 ; Executável principal
 Source: "D:\projetos\maurinsoft\ASSISTENTE\src\assistente.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Bibliotecas SSL
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\libcrypto-1_1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\libssl-1_1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\libcrypto-1_1-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\libssl-1_1-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\projetos\maurinsoft\ASSISTENTE\src\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 
 

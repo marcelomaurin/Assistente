@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "preferred": "1.1.1.10",
+  "windows": {
+    "x86": ["1.1.1.10/X86/libssl-1_1.dll", "1.1.1.10/X86/libcrypto-1_1.dll"],
+    "x86_64": ["1.1.1.10/x64/libssl-1_1-x64.dll", "1.1.1.10/x64/libcrypto-1_1-x64.dll"]
+  },
+  "linux": {
+    "x86": "system:libssl1.1",
+    "x86_64": "system:libssl1.1",
+    "armhf": "system:libssl1.1",
+    "aarch64": "system:libssl1.1"
+  }
+}
