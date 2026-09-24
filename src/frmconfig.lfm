@@ -490,32 +490,104 @@ object frmConfig: TfrmConfig
       end
     end
     object tsVisao: TTabSheet
-      Caption = 'Visão'
+      Caption = 'Visão / Kinect'
       ClientHeight = 412
       ClientWidth = 382
       object lblVer: TLabel
         Left = 10
         Height = 15
-        Top = 15
-        Width = 124
-        Caption = 'Visão - Servidor (IP / Porta):'
+        Top = 12
+        Width = 145
+        Caption = 'Servidor de Visão Legado (IP / Porta):'
         ParentColor = False
       end
       object edVerIP: TEdit
         Left = 10
         Height = 23
-        Top = 35
-        Width = 160
+        Top = 30
+        Width = 150
         TabOrder = 0
         Text = '127.0.0.1'
       end
       object edVerPort: TEdit
-        Left = 180
+        Left = 168
         Height = 23
-        Top = 35
-        Width = 70
+        Top = 30
+        Width = 60
         TabOrder = 1
         Text = '8097'
+      end
+      object chkKinectEnabled: TCheckBox
+        Left = 10
+        Height = 19
+        Top = 64
+        Width = 180
+        Caption = 'Habilitar Sensor Kinect v1'
+        TabOrder = 2
+      end
+      object chkKinectSeated: TCheckBox
+        Left = 10
+        Height = 19
+        Top = 88
+        Width = 200
+        Caption = 'Modo Sentado (Seated Mode)'
+        TabOrder = 3
+      end
+      object lblKinectDist: TLabel
+        Left = 10
+        Height = 15
+        Top = 118
+        Width = 240
+        Caption = 'Distância Operacional Mín / Máx (metros):'
+        ParentColor = False
+      end
+      object edKinectMinDist: TEdit
+        Left = 10
+        Height = 23
+        Top = 136
+        Width = 75
+        TabOrder = 4
+        Text = '0.8'
+      end
+      object edKinectMaxDist: TEdit
+        Left = 95
+        Height = 23
+        Top = 136
+        Width = 75
+        TabOrder = 5
+        Text = '3.5'
+      end
+      object lblKinectTargets: TLabel
+        Left = 10
+        Height = 15
+        Top = 170
+        Width = 270
+        Caption = 'Alvos de Apontamento (Esquerda / Direita / Centro):'
+        ParentColor = False
+      end
+      object edKinectTargetLeft: TEdit
+        Left = 10
+        Height = 23
+        Top = 188
+        Width = 85
+        TabOrder = 6
+        Text = 'ecg'
+      end
+      object edKinectTargetRight: TEdit
+        Left = 102
+        Height = 23
+        Top = 188
+        Width = 85
+        TabOrder = 7
+        Text = 'robotinics'
+      end
+      object edKinectTargetCenter: TEdit
+        Left = 194
+        Height = 23
+        Top = 188
+        Width = 85
+        TabOrder = 8
+        Text = 'hemacias'
       end
     end
     object tsBanco: TTabSheet

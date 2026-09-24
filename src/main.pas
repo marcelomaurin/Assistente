@@ -1601,153 +1601,247 @@ procedure Tfrmmain.btAbrirConfigClick(Sender: TObject);
 var
   FormCfg: TfrmConfig;
 begin
+  if FSetMain = nil then
+    FSetMain := TSetMain.create();
+
   FormCfg := TfrmConfig.Create(Self);
   try
-    // Abrir diretamente a primeira aba (Geral)
-    FormCfg.pcConfig.ActivePageIndex := 0;
+    try
+      // Abrir diretamente a primeira aba (Geral)
+      if Assigned(FormCfg.pcConfig) then
+        FormCfg.pcConfig.ActivePageIndex := 0;
 
-    // Aba JARVIS
-    FormCfg.edJarvisURL.Text := FSetMain.JarvisURL;
-    FormCfg.edJarvisKey.Text := FSetMain.JarvisAPIKey;
-    if FSetMain.JarvisIAMode = 'local_only' then
-      FormCfg.cbJarvisMode.ItemIndex := 1
-    else if FSetMain.JarvisIAMode = 'cloud_only' then
-      FormCfg.cbJarvisMode.ItemIndex := 2
-    else
-      FormCfg.cbJarvisMode.ItemIndex := 0;
-    FormCfg.chkMinimizeTray.Checked := FSetMain.MinimizeToTray;
-    FormCfg.chkAutoSpeak.Checked := FSetMain.AutoSpeak;
+      // Aba JARVIS
+      if Assigned(FormCfg.edJarvisURL) then
+        FormCfg.edJarvisURL.Text := FSetMain.JarvisURL;
+      if Assigned(FormCfg.edJarvisKey) then
+        FormCfg.edJarvisKey.Text := FSetMain.JarvisAPIKey;
+      if Assigned(FormCfg.cbJarvisMode) then
+      begin
+        if FSetMain.JarvisIAMode = 'local_only' then
+          FormCfg.cbJarvisMode.ItemIndex := 1
+        else if FSetMain.JarvisIAMode = 'cloud_only' then
+          FormCfg.cbJarvisMode.ItemIndex := 2
+        else
+          FormCfg.cbJarvisMode.ItemIndex := 0;
+      end;
+      if Assigned(FormCfg.chkMinimizeTray) then
+        FormCfg.chkMinimizeTray.Checked := FSetMain.MinimizeToTray;
+      if Assigned(FormCfg.chkAutoSpeak) then
+        FormCfg.chkAutoSpeak.Checked := FSetMain.AutoSpeak;
 
-    // Aba IA Legada
-    FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
-    if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
-      FormCfg.cbProvider.ItemIndex := 0;
-    FormCfg.CarregaModelosDoProvedor;
-    if Trim(FSetMain.ChatGPTModel) <> '' then
-      FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
-    FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
-    FormCfg.edURL.Text := FSetMain.ChatGPTURL;
+      // Aba IA Legada
+      if Assigned(FormCfg.cbProvider) then
+      begin
+        FormCfg.cbProvider.ItemIndex := FSetMain.ChatGPTProvider;
+        if (FormCfg.cbProvider.ItemIndex < 0) or (FormCfg.cbProvider.ItemIndex >= FormCfg.cbProvider.Items.Count) then
+          FormCfg.cbProvider.ItemIndex := 0;
+      end;
+      FormCfg.CarregaModelosDoProvedor;
+      if Assigned(FormCfg.cbModel) and (Trim(FSetMain.ChatGPTModel) <> '') then
+        FormCfg.cbModel.Text := FSetMain.ChatGPTModel;
+      if Assigned(FormCfg.edTokenGPT) then
+        FormCfg.edTokenGPT.Text := FSetMain.CHATGPT;
+      if Assigned(FormCfg.edURL) then
+        FormCfg.edURL.Text := FSetMain.ChatGPTURL;
 
-    // Aba Output Voice
-    FormCfg.cbSynthEngine.ItemIndex := FSetMain.SynthEngine;
-    if (FormCfg.cbSynthEngine.ItemIndex < 0) or (FormCfg.cbSynthEngine.ItemIndex >= FormCfg.cbSynthEngine.Items.Count) then
-      FormCfg.cbSynthEngine.ItemIndex := 1;
-    FormCfg.CarregaVozesDoSintetizador;
-    if Trim(FSetMain.SynthVoice) <> '' then
-      FormCfg.cbSynthVoice.Text := FSetMain.SynthVoice;
-    FormCfg.tbSynthVolume.Position := FSetMain.SynthVolume;
-    FormCfg.tbSynthVolumeChange(Self);
-    FormCfg.tbSynthRate.Position := FSetMain.SynthRate;
-    FormCfg.tbSynthRateChange(Self);
-    FormCfg.chkSynthAsync.Checked := FSetMain.SynthAsync;
+      // Aba Output Voice
+      if Assigned(FormCfg.cbSynthEngine) then
+      begin
+        FormCfg.cbSynthEngine.ItemIndex := FSetMain.SynthEngine;
+        if (FormCfg.cbSynthEngine.ItemIndex < 0) or (FormCfg.cbSynthEngine.ItemIndex >= FormCfg.cbSynthEngine.Items.Count) then
+          FormCfg.cbSynthEngine.ItemIndex := 1;
+      end;
+      FormCfg.CarregaVozesDoSintetizador;
+      if Assigned(FormCfg.cbSynthVoice) and (Trim(FSetMain.SynthVoice) <> '') then
+        FormCfg.cbSynthVoice.Text := FSetMain.SynthVoice;
+      if Assigned(FormCfg.tbSynthVolume) then
+      begin
+        FormCfg.tbSynthVolume.Position := FSetMain.SynthVolume;
+        FormCfg.tbSynthVolumeChange(Self);
+      end;
+      if Assigned(FormCfg.tbSynthRate) then
+      begin
+        FormCfg.tbSynthRate.Position := FSetMain.SynthRate;
+        FormCfg.tbSynthRateChange(Self);
+      end;
+      if Assigned(FormCfg.chkSynthAsync) then
+        FormCfg.chkSynthAsync.Checked := FSetMain.SynthAsync;
 
-    // Aba Reconhecimento de Voz / Microfone (CHATGPT)
-    FormCfg.cbRecogEngine.ItemIndex := FSetMain.RecogEngine;
-    FormCfg.edRecogLanguage.Text := FSetMain.RecogLanguage;
-    if FSetMain.AudioSampleRate = 44100 then
-      FormCfg.cbAudioSampleRate.ItemIndex := 1
-    else
-      FormCfg.cbAudioSampleRate.ItemIndex := 0;
-    if FSetMain.AudioChannels = 2 then
-      FormCfg.cbAudioChannels.ItemIndex := 1
-    else
-      FormCfg.cbAudioChannels.ItemIndex := 0;
+      // Aba Reconhecimento de Voz / Microfone (CHATGPT)
+      if Assigned(FormCfg.cbRecogEngine) then
+        FormCfg.cbRecogEngine.ItemIndex := FSetMain.RecogEngine;
+      if Assigned(FormCfg.edRecogLanguage) then
+        FormCfg.edRecogLanguage.Text := FSetMain.RecogLanguage;
+      if Assigned(FormCfg.cbAudioSampleRate) then
+      begin
+        if FSetMain.AudioSampleRate = 44100 then
+          FormCfg.cbAudioSampleRate.ItemIndex := 1
+        else
+          FormCfg.cbAudioSampleRate.ItemIndex := 0;
+      end;
+      if Assigned(FormCfg.cbAudioChannels) then
+      begin
+        if FSetMain.AudioChannels = 2 then
+          FormCfg.cbAudioChannels.ItemIndex := 1
+        else
+          FormCfg.cbAudioChannels.ItemIndex := 0;
+      end;
 
-    // Aba Avatar 3D (Tarefa 123)
-    FormCfg.edAvatarModel.Text := FSetMain.Avatar3DModel;
-    FormCfg.chkAvatarAutoIdle.Checked := FSetMain.Avatar3DAutoIdle;
-    FormCfg.chkAvatarAutoBlink.Checked := FSetMain.Avatar3DAutoBlink;
-    FormCfg.chkAvatarLipSync.Checked := FSetMain.Avatar3DLipSync;
-    FormCfg.cbAvatarQuality.Text := FSetMain.Avatar3DQuality;
+      // Aba Avatar 3D
+      if Assigned(FormCfg.edAvatarModel) then
+        FormCfg.edAvatarModel.Text := FSetMain.Avatar3DModel;
+      if Assigned(FormCfg.chkAvatarAutoIdle) then
+        FormCfg.chkAvatarAutoIdle.Checked := FSetMain.Avatar3DAutoIdle;
+      if Assigned(FormCfg.chkAvatarAutoBlink) then
+        FormCfg.chkAvatarAutoBlink.Checked := FSetMain.Avatar3DAutoBlink;
+      if Assigned(FormCfg.chkAvatarLipSync) then
+        FormCfg.chkAvatarLipSync.Checked := FSetMain.Avatar3DLipSync;
+      if Assigned(FormCfg.cbAvatarQuality) then
+        FormCfg.cbAvatarQuality.Text := FSetMain.Avatar3DQuality;
 
-    // Aba Banco
-    FormCfg.edMyHost.Text := FSetMain.HostnameMy;
-    FormCfg.edMyDb.Text := FSetMain.BancoMy;
-    FormCfg.edMyUser.Text := FSetMain.UsernameMy;
-    FormCfg.edMyPass.Text := FSetMain.PasswordMy;
-    FormCfg.edPostHost.Text := FSetMain.HostnamePost;
-    FormCfg.edPostDb.Text := FSetMain.BancoPOST;
-    FormCfg.edPostUser.Text := FSetMain.UsernamePost;
-    FormCfg.edPostPass.Text := FSetMain.PasswordPost;
-    FormCfg.edPostSchema.Text := FSetMain.SchemaPost;
+      // Aba Banco
+      if Assigned(FormCfg.edMyHost) then FormCfg.edMyHost.Text := FSetMain.HostnameMy;
+      if Assigned(FormCfg.edMyDb) then FormCfg.edMyDb.Text := FSetMain.BancoMy;
+      if Assigned(FormCfg.edMyUser) then FormCfg.edMyUser.Text := FSetMain.UsernameMy;
+      if Assigned(FormCfg.edMyPass) then FormCfg.edMyPass.Text := FSetMain.PasswordMy;
+      if Assigned(FormCfg.edPostHost) then FormCfg.edPostHost.Text := FSetMain.HostnamePost;
+      if Assigned(FormCfg.edPostDb) then FormCfg.edPostDb.Text := FSetMain.BancoPOST;
+      if Assigned(FormCfg.edPostUser) then FormCfg.edPostUser.Text := FSetMain.UsernamePost;
+      if Assigned(FormCfg.edPostPass) then FormCfg.edPostPass.Text := FSetMain.PasswordPost;
+      if Assigned(FormCfg.edPostSchema) then FormCfg.edPostSchema.Text := FSetMain.SchemaPost;
 
       // Aba Visao / Kinect
-      FormCfg.chkKinectEnabled.Checked := FSetMain.KinectEnabled;
-      FormCfg.chkKinectSeated.Checked := FSetMain.KinectSeatedMode;
-      FormCfg.edKinectMinDist.Text := FloatToStr(FSetMain.KinectMinDistance);
-      FormCfg.edKinectMaxDist.Text := FloatToStr(FSetMain.KinectMaxDistance);
-      FormCfg.edKinectTargetLeft.Text := FSetMain.KinectTargetLeft;
-      FormCfg.edKinectTargetRight.Text := FSetMain.KinectTargetRight;
-      FormCfg.edKinectTargetCenter.Text := FSetMain.KinectTargetCenter;
+      if Assigned(FormCfg.chkKinectEnabled) then
+        FormCfg.chkKinectEnabled.Checked := FSetMain.KinectEnabled;
+      if Assigned(FormCfg.chkKinectSeated) then
+        FormCfg.chkKinectSeated.Checked := FSetMain.KinectSeatedMode;
+      if Assigned(FormCfg.edKinectMinDist) then
+        FormCfg.edKinectMinDist.Text := FloatToStr(FSetMain.KinectMinDistance);
+      if Assigned(FormCfg.edKinectMaxDist) then
+        FormCfg.edKinectMaxDist.Text := FloatToStr(FSetMain.KinectMaxDistance);
+      if Assigned(FormCfg.edKinectTargetLeft) then
+        FormCfg.edKinectTargetLeft.Text := FSetMain.KinectTargetLeft;
+      if Assigned(FormCfg.edKinectTargetRight) then
+        FormCfg.edKinectTargetRight.Text := FSetMain.KinectTargetRight;
+      if Assigned(FormCfg.edKinectTargetCenter) then
+        FormCfg.edKinectTargetCenter.Text := FSetMain.KinectTargetCenter;
 
-    if FormCfg.ShowModal = mrOk then
-    begin
-      // Salva JARVIS
-      FSetMain.JarvisURL := Trim(FormCfg.edJarvisURL.Text);
-      FSetMain.JarvisAPIKey := Trim(FormCfg.edJarvisKey.Text);
-      case FormCfg.cbJarvisMode.ItemIndex of
-        1: FSetMain.JarvisIAMode := 'local_only';
-        2: FSetMain.JarvisIAMode := 'cloud_only';
-      else
-        FSetMain.JarvisIAMode := 'auto';
+      if FormCfg.ShowModal = mrOk then
+      begin
+        // Salva JARVIS
+        if Assigned(FormCfg.edJarvisURL) then
+          FSetMain.JarvisURL := Trim(FormCfg.edJarvisURL.Text);
+        if Assigned(FormCfg.edJarvisKey) then
+          FSetMain.JarvisAPIKey := Trim(FormCfg.edJarvisKey.Text);
+        if Assigned(FormCfg.cbJarvisMode) then
+        begin
+          case FormCfg.cbJarvisMode.ItemIndex of
+            1: FSetMain.JarvisIAMode := 'local_only';
+            2: FSetMain.JarvisIAMode := 'cloud_only';
+          else
+            FSetMain.JarvisIAMode := 'auto';
+          end;
+        end;
+        if Assigned(FormCfg.chkMinimizeTray) then
+          FSetMain.MinimizeToTray := FormCfg.chkMinimizeTray.Checked;
+        if Assigned(FormCfg.chkAutoSpeak) then
+          FSetMain.AutoSpeak := FormCfg.chkAutoSpeak.Checked;
+
+        // Salva IA
+        if Assigned(FormCfg.cbProvider) then
+          FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
+        if Assigned(FormCfg.cbModel) then
+          FSetMain.ChatGPTModel := Trim(FormCfg.cbModel.Text);
+        if Assigned(FormCfg.edTokenGPT) then
+          FSetMain.CHATGPT := Trim(FormCfg.edTokenGPT.Text);
+        if Assigned(FormCfg.edURL) then
+          FSetMain.ChatGPTURL := Trim(FormCfg.edURL.Text);
+
+        // Salva Output Voice
+        if Assigned(FormCfg.cbSynthEngine) then
+          FSetMain.SynthEngine := FormCfg.cbSynthEngine.ItemIndex;
+        if Assigned(FormCfg.cbSynthVoice) then
+          FSetMain.SynthVoice := Trim(FormCfg.cbSynthVoice.Text);
+        if Assigned(FormCfg.tbSynthVolume) then
+          FSetMain.SynthVolume := FormCfg.tbSynthVolume.Position;
+        if Assigned(FormCfg.tbSynthRate) then
+          FSetMain.SynthRate := FormCfg.tbSynthRate.Position;
+        if Assigned(FormCfg.chkSynthAsync) then
+          FSetMain.SynthAsync := FormCfg.chkSynthAsync.Checked;
+
+        // Salva Reconhecimento de Voz
+        if Assigned(FormCfg.cbRecogEngine) then
+          FSetMain.RecogEngine := FormCfg.cbRecogEngine.ItemIndex;
+        if Assigned(FormCfg.edRecogLanguage) then
+          FSetMain.RecogLanguage := Trim(FormCfg.edRecogLanguage.Text);
+        if Assigned(FormCfg.cbAudioSampleRate) then
+        begin
+          if FormCfg.cbAudioSampleRate.ItemIndex = 1 then
+            FSetMain.AudioSampleRate := 44100
+          else
+            FSetMain.AudioSampleRate := 16000;
+        end;
+        if Assigned(FormCfg.cbAudioChannels) then
+        begin
+          if FormCfg.cbAudioChannels.ItemIndex = 1 then
+            FSetMain.AudioChannels := 2
+          else
+            FSetMain.AudioChannels := 1;
+        end;
+
+        // Salva Banco
+        if Assigned(FormCfg.edMyHost) then FSetMain.HostnameMy := Trim(FormCfg.edMyHost.Text);
+        if Assigned(FormCfg.edMyDb) then FSetMain.BancoMy := Trim(FormCfg.edMyDb.Text);
+        if Assigned(FormCfg.edMyUser) then FSetMain.UsernameMy := Trim(FormCfg.edMyUser.Text);
+        if Assigned(FormCfg.edMyPass) then FSetMain.PasswordMy := Trim(FormCfg.edMyPass.Text);
+        if Assigned(FormCfg.edPostHost) then FSetMain.HostnamePost := Trim(FormCfg.edPostHost.Text);
+        if Assigned(FormCfg.edPostDb) then FSetMain.BancoPOST := Trim(FormCfg.edPostDb.Text);
+        if Assigned(FormCfg.edPostUser) then FSetMain.UsernamePost := Trim(FormCfg.edPostUser.Text);
+        if Assigned(FormCfg.edPostPass) then FSetMain.PasswordPost := Trim(FormCfg.edPostPass.Text);
+        if Assigned(FormCfg.edPostSchema) then FSetMain.SchemaPost := Trim(FormCfg.edPostSchema.Text);
+
+        // Salva Visao / Kinect
+        if Assigned(FormCfg.chkKinectEnabled) then
+          FSetMain.KinectEnabled := FormCfg.chkKinectEnabled.Checked;
+        if Assigned(FormCfg.chkKinectSeated) then
+          FSetMain.KinectSeatedMode := FormCfg.chkKinectSeated.Checked;
+        if Assigned(FormCfg.edKinectMinDist) then
+          FSetMain.KinectMinDistance := StrToFloatDef(Trim(FormCfg.edKinectMinDist.Text), 0.8);
+        if Assigned(FormCfg.edKinectMaxDist) then
+          FSetMain.KinectMaxDistance := StrToFloatDef(Trim(FormCfg.edKinectMaxDist.Text), 3.5);
+        if Assigned(FormCfg.edKinectTargetLeft) then
+          FSetMain.KinectTargetLeft := Trim(FormCfg.edKinectTargetLeft.Text);
+        if Assigned(FormCfg.edKinectTargetRight) then
+          FSetMain.KinectTargetRight := Trim(FormCfg.edKinectTargetRight.Text);
+        if Assigned(FormCfg.edKinectTargetCenter) then
+          FSetMain.KinectTargetCenter := Trim(FormCfg.edKinectTargetCenter.Text);
+
+        // Salva Avatar 3D
+        if Assigned(FormCfg.edAvatarModel) then
+          FSetMain.Avatar3DModel := Trim(FormCfg.edAvatarModel.Text);
+        if Assigned(FormCfg.chkAvatarAutoIdle) then
+          FSetMain.Avatar3DAutoIdle := FormCfg.chkAvatarAutoIdle.Checked;
+        if Assigned(FormCfg.chkAvatarAutoBlink) then
+          FSetMain.Avatar3DAutoBlink := FormCfg.chkAvatarAutoBlink.Checked;
+        if Assigned(FormCfg.chkAvatarLipSync) then
+          FSetMain.Avatar3DLipSync := FormCfg.chkAvatarLipSync.Checked;
+        if Assigned(FormCfg.cbAvatarQuality) then
+          FSetMain.Avatar3DQuality := Trim(FormCfg.cbAvatarQuality.Text);
+
+        FSetMain.SalvaContexto(False);
+        AplicaConfiguracoes();
+        CarregaIcones();
+        AdicionaMensagemHistorico('Configurações', 'Configurações salvas e aplicadas.');
       end;
-      FSetMain.MinimizeToTray := FormCfg.chkMinimizeTray.Checked;
-      FSetMain.AutoSpeak := FormCfg.chkAutoSpeak.Checked;
-
-      // Salva IA Legada
-      FSetMain.ChatGPTProvider := FormCfg.cbProvider.ItemIndex;
-      FSetMain.ChatGPTModel := Trim(FormCfg.cbModel.Text);
-      FSetMain.CHATGPT := Trim(FormCfg.edTokenGPT.Text);
-      FSetMain.ChatGPTURL := Trim(FormCfg.edURL.Text);
-
-      // Salva Voz
-      FSetMain.SynthEngine := FormCfg.cbSynthEngine.ItemIndex;
-      FSetMain.SynthVoice := Trim(FormCfg.cbSynthVoice.Text);
-      FSetMain.SynthVolume := FormCfg.tbSynthVolume.Position;
-      FSetMain.SynthRate := FormCfg.tbSynthRate.Position;
-      FSetMain.SynthAsync := FormCfg.chkSynthAsync.Checked;
-
-      // Salva Entrada de Voz / Audio (CHATGPT)
-      FSetMain.RecogEngine := FormCfg.cbRecogEngine.ItemIndex;
-      FSetMain.RecogLanguage := Trim(FormCfg.edRecogLanguage.Text);
-      if FormCfg.cbAudioSampleRate.ItemIndex = 1 then
-        FSetMain.AudioSampleRate := 44100
-      else
-        FSetMain.AudioSampleRate := 16000;
-      if FormCfg.cbAudioChannels.ItemIndex = 1 then
-        FSetMain.AudioChannels := 2
-      else
-        FSetMain.AudioChannels := 1;
-
-      // Salva Banco
-      FSetMain.HostnameMy := Trim(FormCfg.edMyHost.Text);
-      FSetMain.BancoMy := Trim(FormCfg.edMyDb.Text);
-      FSetMain.UsernameMy := Trim(FormCfg.edMyUser.Text);
-      FSetMain.PasswordMy := Trim(FormCfg.edMyPass.Text);
-      FSetMain.HostnamePost := Trim(FormCfg.edPostHost.Text);
-      FSetMain.BancoPOST := Trim(FormCfg.edPostDb.Text);
-      FSetMain.UsernamePost := Trim(FormCfg.edPostUser.Text);
-      FSetMain.PasswordPost := Trim(FormCfg.edPostPass.Text);
-
-      // Salva Visao / Kinect
-      FSetMain.KinectEnabled := FormCfg.chkKinectEnabled.Checked;
-      FSetMain.KinectSeatedMode := FormCfg.chkKinectSeated.Checked;
-      FSetMain.KinectMinDistance := StrToFloatDef(Trim(FormCfg.edKinectMinDist.Text), 0.8);
-      FSetMain.KinectMaxDistance := StrToFloatDef(Trim(FormCfg.edKinectMaxDist.Text), 2.5);
-      FSetMain.KinectTargetLeft := Trim(FormCfg.edKinectTargetLeft.Text);
-      FSetMain.KinectTargetRight := Trim(FormCfg.edKinectTargetRight.Text);
-      FSetMain.KinectTargetCenter := Trim(FormCfg.edKinectTargetCenter.Text);
-      FSetMain.SchemaPost := Trim(FormCfg.edPostSchema.Text);
-
-      FSetMain.SalvaContexto(False);
-      AplicaConfiguracoes();
-      CheckJarvisOnline();
+    except
+      on E: Exception do
+        ShowMessage('Erro ao carregar formulário de configurações: ' + E.Message);
     end;
   finally
     FormCfg.Free;
   end;
 end;
-
 
 procedure Tfrmmain.OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
 begin
