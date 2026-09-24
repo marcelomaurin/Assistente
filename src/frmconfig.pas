@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls,
-  chatgpt, aivoicesynthesizer, jarvis_api;
+  chatgpt, aivoicesynthesizer, jarvis_api, vision_types, webcam_vision, aikinectsensor, aikinect_types;
 
 type
 
@@ -29,7 +29,14 @@ type
     tsOutputVoice: TTabSheet;
     tsVoz: TTabSheet;
     tsVisao: TTabSheet;
-    chkKinectEnabled: TCheckBox;
+    cbVisionSource: TComboBox;
+    cbKinectDevice: TComboBox;
+    cbCameraDevice: TComboBox;
+    lblVisionSource: TLabel;
+    lblVisionStatus: TLabel;
+    btRefreshVisionDevices: TButton;
+    btTestVisionDevice: TButton;
+    imgVisionPreview: TImage;
     chkKinectSeated: TCheckBox;
     lblKinectDist: TLabel;
     edKinectMinDist: TEdit;
@@ -87,9 +94,6 @@ type
     cbAudioChannels: TComboBox;
 
     // Aba Visão
-    lblVer: TLabel;
-    edVerIP: TEdit;
-    edVerPort: TEdit;
 
     // Aba Banco de Dados
     lblMyTitle: TLabel;
@@ -118,6 +122,9 @@ type
     btSalvar: TButton;
     btCancelar: TButton;
 
+    procedure VisionSourceChange(Sender: TObject);
+    procedure RefreshVisionDevices(Sender: TObject);
+    procedure TestVisionDevice(Sender: TObject);
     procedure btVerChaveClick(Sender: TObject);
     procedure btTestarJarvisClick(Sender: TObject);
     procedure cbProviderChange(Sender: TObject);
@@ -131,7 +138,11 @@ type
     procedure FormCreate(Sender: TObject);
   private
     FLoading: Boolean;
+    FTestCamera: TWebcamVision;
   public
+    procedure LoadVision(Source: TVisionSource; KinectIndex: Integer; const Camera: string);
+    procedure StopVisionTest;
+    destructor Destroy; override;
     procedure CarregaModelosDoProvedor;
     procedure CarregaVozesDoSintetizador;
   end;
@@ -144,6 +155,107 @@ implementation
 {$R *.lfm}
 
 { TfrmConfig }
+
+destructor TfrmConfig.Destroy;
+begin
+  StopVisionTest;
+  inherited Destroy;
+end;
+
+procedure TfrmConfig.StopVisionTest;
+begin
+  FreeAndNil(FTestCamera);
+end;
+
+procedure TfrmConfig.LoadVision(Source: TVisionSource; KinectIndex: Integer; const Camera: string);
+begin
+  cbVisionSource.ItemIndex := Ord(Source);
+  VisionSourceChange(nil);
+  if (KinectIndex >= 0) and (KinectIndex < cbKinectDevice.Items.Count) then
+    cbKinectDevice.ItemIndex := KinectIndex;
+  if cbCameraDevice.Items.IndexOf(Camera) >= 0 then
+    cbCameraDevice.ItemIndex := cbCameraDevice.Items.IndexOf(Camera);
+end;
+
+procedure TfrmConfig.VisionSourceChange(Sender: TObject);
+var IsKinect: Boolean;
+begin
+  StopVisionTest;
+  IsKinect := cbVisionSource.ItemIndex = Ord(vsKinect);
+  cbKinectDevice.Enabled := IsKinect;
+  cbKinectDevice.Visible := IsKinect;
+  cbCameraDevice.Visible := cbVisionSource.ItemIndex = Ord(vsWebcam);
+  chkKinectSeated.Enabled := IsKinect;
+  edKinectMinDist.Enabled := IsKinect;
+  edKinectMaxDist.Enabled := IsKinect;
+  edKinectTargetLeft.Enabled := IsKinect;
+  edKinectTargetRight.Enabled := IsKinect;
+  edKinectTargetCenter.Enabled := IsKinect;
+  lblKinectDist.Enabled := IsKinect;
+  lblKinectTargets.Enabled := IsKinect;
+  btTestVisionDevice.Enabled := cbVisionSource.ItemIndex > 0;
+  RefreshVisionDevices(nil);
+end;
+
+procedure TfrmConfig.RefreshVisionDevices(Sender: TObject);
+var Sensor: TAIKinectSensor; L: TStringList; Old: string; I: Integer;
+begin
+  StopVisionTest;
+  imgVisionPreview.Picture.Clear;
+  lblVisionStatus.Caption := 'Visao desativada';
+  L := nil;
+  try
+    if cbVisionSource.ItemIndex = Ord(vsKinect) then
+    begin
+      I := cbKinectDevice.ItemIndex;
+      Sensor := TAIKinectSensor.Create(nil);
+      try L := Sensor.ListDevices finally Sensor.Free end;
+      cbKinectDevice.Items.Assign(L);
+      if (I < 0) or (I >= L.Count) then I := 0;
+      if L.Count > 0 then cbKinectDevice.ItemIndex := I;
+      lblVisionStatus.Caption := Format('Kinect encontrados: %d', [L.Count]);
+    end
+    else if cbVisionSource.ItemIndex = Ord(vsWebcam) then
+    begin
+      Old := cbCameraDevice.Text;
+      L := TWebcamVision.Devices;
+      cbCameraDevice.Items.Assign(L);
+      cbCameraDevice.ItemIndex := L.IndexOf(Old);
+      if L.Count = 1 then cbCameraDevice.ItemIndex := 0;
+      lblVisionStatus.Caption := Format('Câmeras VFW: %d. Somente RGB; sem depth, skeleton ou gestos Kinect.', [L.Count]);
+    end;
+  except on E: Exception do lblVisionStatus.Caption := 'Erro: ' + E.Message end;
+  L.Free;
+end;
+
+procedure TfrmConfig.TestVisionDevice(Sender: TObject);
+var Sensor: TAIKinectSensor;
+begin
+  StopVisionTest;
+  try
+    if cbVisionSource.ItemIndex = Ord(vsKinect) then
+    begin
+      if cbKinectDevice.ItemIndex < 0 then
+      begin lblVisionStatus.Caption := 'Kinect não detectado.'; Exit end;
+      Sensor := TAIKinectSensor.Create(nil);
+      try
+        Sensor.DeviceIndex := cbKinectDevice.ItemIndex;
+        Sensor.Backend := kbKinectSDK10;
+        Sensor.KinectModel := kmXbox360;
+        if Sensor.Open then
+          lblVisionStatus.Caption := 'Kinect detectado e inicializado: Kinect v1 / Xbox 360. RGB, depth e skeleton disponiveis.'
+        else lblVisionStatus.Caption := 'Erro: ' + Sensor.LastError;
+      finally Sensor.Free end;
+    end
+    else if cbVisionSource.ItemIndex = Ord(vsWebcam) then
+    begin
+      FTestCamera := TWebcamVision.Create(nil);
+      if FTestCamera.OpenDevice(cbCameraDevice.Text, tsVisao, imgVisionPreview) then
+        lblVisionStatus.Caption := 'Webcam inicializada: RGB disponivel.'
+      else lblVisionStatus.Caption := 'Erro: ' + FTestCamera.LastError;
+    end;
+  except on E: Exception do lblVisionStatus.Caption := 'Erro: ' + E.Message end;
+end;
 
 procedure TfrmConfig.FormCreate(Sender: TObject);
 begin

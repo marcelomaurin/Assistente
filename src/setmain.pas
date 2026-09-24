@@ -10,7 +10,7 @@ unit setmain;
 interface
 
 uses
-  Classes, SysUtils, funcoes, graphics, aivoicecredentialstore;
+  Classes, SysUtils, funcoes, graphics, aivoicecredentialstore, vision_types;
 
 const filename = 'Setmain.cfg';
 
@@ -85,9 +85,6 @@ type
         FVoiceRecogIP : String;
         FVoiceRecogPort : integer;
 
-        // Endereço do serviço de visão (ToolsVer)
-        FVerIP : String;
-        FVerPort : integer;
 
         // Configurações do Output Voice (TAIVoiceSynthesizer)
         FSynthEngine : integer; // 0=seSystemDefault, 1=seSAPI, 2=seEspeak, 3=seOpenAI
@@ -113,7 +110,9 @@ type
         FAudioChannels : integer;
 
         { Kinect v1 / Percepcao }
-        FKinectEnabled : Boolean;
+        FVisionSource: TVisionSource;
+        FKinectDeviceIndex: Integer;
+        FCameraDevice: string;
         FKinectMinDistance : Double;
         FKinectMaxDistance : Double;
         FKinectSeatedMode : Boolean;
@@ -201,8 +200,6 @@ type
         property VoiceSynthPort : integer read FVoiceSynthPort write FVoiceSynthPort;
         property VoiceRecogIP : String read FVoiceRecogIP write FVoiceRecogIP;
         property VoiceRecogPort : integer read FVoiceRecogPort write FVoiceRecogPort;
-        property VerIP : String read FVerIP write FVerIP;
-        property VerPort : integer read FVerPort write FVerPort;
 
         property SynthEngine : integer read FSynthEngine write FSynthEngine;
         property SynthVoice : String read FSynthVoice write FSynthVoice;
@@ -232,7 +229,9 @@ type
         property Avatar3DQuality: string read FAvatar3DQuality write FAvatar3DQuality;
 
         { Kinect v1 / Percepcao }
-        property KinectEnabled : Boolean read FKinectEnabled write FKinectEnabled;
+        property VisionSource: TVisionSource read FVisionSource write FVisionSource;
+        property KinectDeviceIndex: Integer read FKinectDeviceIndex write FKinectDeviceIndex;
+        property CameraDevice: string read FCameraDevice write FCameraDevice;
         property KinectMinDistance : Double read FKinectMinDistance write FKinectMinDistance;
         property KinectMaxDistance : Double read FKinectMaxDistance write FKinectMaxDistance;
         property KinectSeatedMode : Boolean read FKinectSeatedMode write FKinectSeatedMode;
@@ -336,8 +335,6 @@ begin
     FVoiceSynthPort := 8096;
     FVoiceRecogIP := '127.0.0.1';
     FVoiceRecogPort := 8097;
-    FVerIP := '127.0.0.1';
-    FVerPort := 8097;
 
     FSynthEngine := 1; // seSAPI no Windows
     FSynthVoice := '';
@@ -366,7 +363,9 @@ begin
     FAvatar3DIntensity := 0.8;
     FAvatar3DQuality := 'auto';
 
-    FKinectEnabled := True;
+    FVisionSource := vsNone;
+    FKinectDeviceIndex := 0;
+    FCameraDevice := '';
     FKinectMinDistance := 0.8;
     FKinectMaxDistance := 2.5;
     FKinectSeatedMode := True;
@@ -589,14 +588,6 @@ begin
     begin
       FVoiceRecogPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
     end;
-    if  BuscaChave(arquivo,'VERIP:',posicao) then
-    begin
-      FVerIP := RetiraInfo(arquivo.Strings[posicao]);
-    end;
-    if  BuscaChave(arquivo,'VERPORT:',posicao) then
-    begin
-      FVerPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
-    end;
 
     if  BuscaChave(arquivo,'SYNTHENGINE:',posicao) then
     begin
@@ -682,6 +673,31 @@ begin
     if BuscaChave(arquivo,'STT_ENDPOINT:',posicao) then
       FSTTEndpoint := RetiraInfo(arquivo.Strings[posicao]);
 
+    if BuscaChave(arquivo,'VISION_SOURCE:',posicao) then
+      FVisionSource := ParseVisionSource(RetiraInfo(arquivo.Strings[posicao]))
+    else if BuscaChave(arquivo,'KINECT_ENABLED:',posicao) then
+    begin
+      if SameText(RetiraInfo(arquivo.Strings[posicao]), 'true') or
+         (RetiraInfo(arquivo.Strings[posicao]) = '1') then FVisionSource := vsKinect
+      else FVisionSource := vsNone;
+    end;
+    if BuscaChave(arquivo,'KINECT_DEVICE_INDEX:',posicao) then
+      FKinectDeviceIndex := StrToIntDef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    if BuscaChave(arquivo,'CAMERA_DEVICE:',posicao) then
+      FCameraDevice := RetiraInfo(arquivo.Strings[posicao]);
+    if BuscaChave(arquivo,'KINECT_MINDIST:',posicao) then
+      FKinectMinDistance := StrToFloatDef(RetiraInfo(arquivo.Strings[posicao]), FKinectMinDistance);
+    if BuscaChave(arquivo,'KINECT_MAXDIST:',posicao) then
+      FKinectMaxDistance := StrToFloatDef(RetiraInfo(arquivo.Strings[posicao]), FKinectMaxDistance);
+    if BuscaChave(arquivo,'KINECT_SEATED:',posicao) then
+      FKinectSeatedMode := StrToBoolDef(RetiraInfo(arquivo.Strings[posicao]), True);
+    if BuscaChave(arquivo,'KINECT_TARGET_LEFT:',posicao) then
+      FKinectTargetLeft := RetiraInfo(arquivo.Strings[posicao]);
+    if BuscaChave(arquivo,'KINECT_TARGET_RIGHT:',posicao) then
+      FKinectTargetRight := RetiraInfo(arquivo.Strings[posicao]);
+    if BuscaChave(arquivo,'KINECT_TARGET_CENTER:',posicao) then
+      FKinectTargetCenter := RetiraInfo(arquivo.Strings[posicao]);
+
     // Fallback: se STTToken vazio, reaproveita FCHATGPT
     if (Trim(FSTTToken) = '') and (Trim(FCHATGPT) <> '') then
       FSTTToken := FCHATGPT;
@@ -711,6 +727,14 @@ begin
     inherited create();
     arquivo := TStringList.create();
     FFONT := TFont.create();
+    FVisionSource := vsNone;
+    FKinectDeviceIndex := 0;
+    FKinectMinDistance := 0.8;
+    FKinectMaxDistance := 2.5;
+    FKinectSeatedMode := True;
+    FKinectTargetLeft := 'ECG';
+    FKinectTargetRight := 'Hemacias';
+    FKinectTargetCenter := 'Robotinics';
     IdentificaArquivo(true);
 end;
 
@@ -768,8 +792,6 @@ begin
   arquivo.Append('VOICESYNTHPORT:'+inttostr(FVoiceSynthPort));
   arquivo.Append('VOICERECOGIP:'+FVoiceRecogIP);
   arquivo.Append('VOICERECOGPORT:'+inttostr(FVoiceRecogPort));
-  arquivo.Append('VERIP:'+FVerIP);
-  arquivo.Append('VERPORT:'+inttostr(FVerPort));
 
   arquivo.Append('SYNTHENGINE:'+inttostr(FSynthEngine));
   arquivo.Append('SYNTHVOICE:'+FSynthVoice);
@@ -782,7 +804,9 @@ begin
   arquivo.Append('AUDIOSAMPLERATE:'+inttostr(FAudioSampleRate));
   arquivo.Append('AUDIOCHANNELS:'+inttostr(FAudioChannels));
 
-  arquivo.Append('KINECT_ENABLED:'+iif(FKinectEnabled, '1', '0'));
+  arquivo.Append('VISION_SOURCE:'+VisionSourceName(FVisionSource));
+  arquivo.Append('KINECT_DEVICE_INDEX:'+IntToStr(FKinectDeviceIndex));
+  arquivo.Append('CAMERA_DEVICE:'+FCameraDevice);
   arquivo.Append('KINECT_MINDIST:'+FloatToStr(FKinectMinDistance));
   arquivo.Append('KINECT_MAXDIST:'+FloatToStr(FKinectMaxDistance));
   arquivo.Append('KINECT_SEATED:'+iif(FKinectSeatedMode, '1', '0'));

@@ -469,13 +469,13 @@ object frmmain: Tfrmmain
         Font.Height = -12
         OnClick = OnAdminNavClick
       end
-      object btNavKinect: TSpeedButton
+      object btNavVision: TSpeedButton
         Left = 0
         Height = 38
         Top = 114
         Width = 185
         Align = alTop
-        Caption = '  👁️ Sensores Kinect'
+        Caption = '  👁️ Visão'
         Flat = True
         Font.Color = clSilver
         Font.Height = -12
@@ -594,12 +594,12 @@ object frmmain: Tfrmmain
           Font.Style = [fsBold]
           ParentColor = False
         end
-        object lblStatKinect: TLabel
+        object lblStatVision: TLabel
           Left = 24
           Height = 20
           Top = 80
           Width = 300
-          Caption = '● Sensores Kinect: Aguardando detecção...'
+          Caption = '● Visão: Aguardando detecção...'
           Font.Color = 16761152
           Font.Height = -13
           Font.Style = [fsBold]
@@ -718,7 +718,7 @@ object frmmain: Tfrmmain
           TabOrder = 0
         end
       end
-      object pnlSecKinect: TPanel
+      object pnlSecVision: TPanel
         Left = 0
         Height = 664
         Top = 0
@@ -728,15 +728,15 @@ object frmmain: Tfrmmain
         Color = 1183756
         TabOrder = 3
         Visible = False
-        object btAdminTestKinect: TBitBtn
+        object btAdminTestVision: TBitBtn
           Left = 24
           Height = 36
           Top = 24
           Width = 220
-          Caption = '👁️ Testar / Diagnosticar Kinect'
+          Caption = '👁️ Testar / Diagnosticar Visão'
           Color = 2500134
           Font.Color = clWhite
-          OnClick = btAdminTestKinectClick
+          OnClick = btAdminTestVisionClick
           ParentFont = False
           TabOrder = 0
         end

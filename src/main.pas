@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, fpjson, jsonparser, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, LCLType,
-  Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
+  Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig, vision_types, webcam_vision,
   aivoiceprovider_types, aivoicesynthesizer, aivoicerecognizer, aicontinuouslistener, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
 
 type
@@ -28,7 +28,7 @@ type
     asGeneral,
     asAI,
     asVoice,
-    asKinect,
+    asVision,
     asAvatar,
     asProjects,
     asRAG,
@@ -73,7 +73,7 @@ type
     btNavGeneral: TSpeedButton;
     btNavAI: TSpeedButton;
     btNavVoice: TSpeedButton;
-    btNavKinect: TSpeedButton;
+    btNavVision: TSpeedButton;
     btNavAvatar: TSpeedButton;
     btNavProjects: TSpeedButton;
     btNavRAG: TSpeedButton;
@@ -84,7 +84,7 @@ type
     pnlSecGeneral: TPanel;
     pnlSecAI: TPanel;
     pnlSecVoice: TPanel;
-    pnlSecKinect: TPanel;
+    pnlSecVision: TPanel;
     pnlSecAvatar: TPanel;
     pnlSecProjects: TPanel;
     pnlSecRAG: TPanel;
@@ -93,7 +93,7 @@ type
     pnlSecLogs: TPanel;
     lblStatIA: TLabel;
     lblStatVoice: TLabel;
-    lblStatKinect: TLabel;
+    lblStatVision: TLabel;
     lblStatAvatar: TLabel;
     lblStatRAG: TLabel;
     lblExpCurrentProject: TLabel;
@@ -102,7 +102,7 @@ type
     btQuickConfig: TBitBtn;
     btAdminTestAI: TBitBtn;
     btAdminTestVoice: TBitBtn;
-    btAdminTestKinect: TBitBtn;
+    btAdminTestVision: TBitBtn;
     btAdminTestAvatar: TBitBtn;
     pnlTop: TPanel;
     imgAvatar: TImage;
@@ -164,7 +164,7 @@ type
     procedure btAdminLogsClick(Sender: TObject);
     procedure OnAdminNavClick(Sender: TObject);
     procedure btAdminTestVoiceClick(Sender: TObject);
-    procedure btAdminTestKinectClick(Sender: TObject);
+    procedure btAdminTestVisionClick(Sender: TObject);
     procedure btAdminTestAvatarClick(Sender: TObject);
     procedure btAdminTestAIClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -210,6 +210,10 @@ type
     FDisplayedResourceID: string;
 
     { Percepcao Kinect v1 }
+    FWebcam: TWebcamVision;
+    FVisionStatus: string;
+    FVisionState: TVisionState;
+    FVisionCapabilities: TVisionCapabilities;
     FKinectSensor: TAIKinectSensor;
     FKinectSkeleton: TAIKinectSkeleton;
     FKinectPerception: TAIKinectPerception;
@@ -235,6 +239,8 @@ type
     procedure OnPresentationNarrativeSpoken(Sender: TObject; const ANarrative, AEmotion, AGesture: string);
     procedure OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
 
+    procedure InitVision;
+    procedure ShutdownVision;
     procedure InitKinect;
     procedure ShutdownKinect;
     procedure OnKinectPersonEntered(Sender: TObject; ATrackingID: Integer; ADistance: Single; const APosition: string);
@@ -412,11 +418,79 @@ end;
 
 { Kinect Perception & Multi-Modal Adapter Implementation }
 
+procedure Tfrmmain.InitVision;
+begin
+  ShutdownVision;
+  FVisionState := vstSelected;
+  FVisionStatus := 'Visao: desativada';
+  if FSetMain = nil then Exit;
+  try
+    case FSetMain.VisionSource of
+      vsKinect: InitKinect;
+      vsWebcam:
+        begin
+          FWebcam := TWebcamVision.Create(Self);
+          if FWebcam.OpenDevice(FSetMain.CameraDevice, Self, nil) then
+          begin
+            FSetMain.CameraDevice := FWebcam.DeviceName;
+            FVisionState := vstInitialized;
+            FVisionCapabilities := VisionCapabilities(vsWebcam);
+            FVisionStatus := 'Visao: Webcam - ' + FWebcam.DeviceName;
+          end
+          else
+          begin
+            FVisionState := vstError;
+            FVisionStatus := 'Visao: Webcam - ' + FWebcam.LastError;
+            FreeAndNil(FWebcam);
+          end;
+        end;
+    end;
+  except
+    on E: Exception do
+    begin
+      ShutdownVision;
+      FVisionState := vstError;
+      FVisionStatus := 'Visao: erro - ' + E.Message;
+    end;
+  end;
+  AdicionaMensagemHistorico('Visao', FVisionStatus);
+  UpdateAdminStatusIndicators;
+end;
+
+procedure Tfrmmain.ShutdownVision;
+begin
+  FreeAndNil(FWebcam);
+  ShutdownKinect;
+  FVisionCapabilities := [];
+end;
+
 procedure Tfrmmain.InitKinect;
-var
-  DevList: TStringList;
+var DevList: TStringList;
 begin
   FKinectSensor := TAIKinectSensor.Create(Self);
+  DevList := FKinectSensor.ListDevices;
+  try
+    AdicionaMensagemHistorico('Visao', Format('[VISION] Kinect encontrados: %d', [DevList.Count]));
+    if DevList.Count = 0 then
+    begin
+      FVisionStatus := 'Visao: Kinect selecionado - Kinect nao detectado.';
+      FreeAndNil(FKinectSensor);
+      Exit;
+    end;
+    FVisionState := vstDetected;
+    if (FSetMain.KinectDeviceIndex < 0) or (FSetMain.KinectDeviceIndex >= DevList.Count) then
+      FSetMain.KinectDeviceIndex := 0;
+    FKinectSensor.DeviceIndex := FSetMain.KinectDeviceIndex;
+    FKinectSensor.Backend := kbKinectSDK10;
+    FKinectSensor.KinectModel := kmXbox360;
+    if not FKinectSensor.Open then
+    begin
+      FVisionState := vstError;
+      FVisionStatus := 'Visao: Kinect - ' + FKinectSensor.LastError;
+      FreeAndNil(FKinectSensor);
+      Exit;
+    end;
+  finally DevList.Free end;
   FKinectSkeleton := TAIKinectSkeleton.Create(Self);
   FKinectPerception := TAIKinectPerception.Create(Self);
   FKinectAdapter := TAIKinectInteractionAdapter.Create(Self);
@@ -448,44 +522,35 @@ begin
   if FConversationOrchestrator <> nil then
     FConversationOrchestrator.OnGestureDetected := @OnKinectGestureDetected;
 
-  // Deteccao nao-bloqueante de hardware fisico
-  DevList := FKinectSensor.ListDevices;
-  try
-    if (DevList.Count > 0) and ((FSetMain = nil) or FSetMain.KinectEnabled) then
-    begin
-      FKinectSensor.DeviceIndex := 0;
-      FKinectSensor.Backend := kbKinectSDK10;
-      FKinectSensor.KinectModel := kmXbox360;
-      if FKinectSensor.Open then
-      begin
-        if FSetMain <> nil then
-          FKinectSkeleton.SeatedMode := FSetMain.KinectSeatedMode;
-        FKinectSkeleton.Active := True;
-        AdicionaMensagemHistorico('Sensor Visual', 'Kinect v1 online: sensor primario de presenca e gestos ativado.');
-      end
-      else
-        AdicionaMensagemHistorico('Sensor Visual', 'Falha ao conectar Kinect v1: ' + FKinectSensor.LastError);
-    end
-    else
-    begin
-      AdicionaMensagemHistorico('Sensor Visual', 'Kinect v1 offline (sem hardware fisico). Percepcao em modo prontidao/simulacao.');
-    end;
-  finally
-    DevList.Free;
+
+  FKinectSkeleton.SeatedMode := FSetMain.KinectSeatedMode;
+  if not FKinectSkeleton.StartTracking then
+  begin
+    FVisionStatus := 'Visao: erro no skeleton Kinect - ' + FKinectSkeleton.LastError;
+    FVisionState := vstError;
+    ShutdownKinect;
+    Exit;
   end;
+  FVisionState := vstInitialized;
+  FVisionCapabilities := VisionCapabilities(vsKinect);
+  FVisionStatus := 'Visao: Kinect v1 - conectado';
 end;
 
 procedure Tfrmmain.ShutdownKinect;
 begin
-  if Assigned(FKinectSkeleton) then
-    FKinectSkeleton.Active := False;
-  if Assigned(FKinectSensor) and FKinectSensor.IsConnected then
-    FKinectSensor.Close;
+  if Assigned(FConversationOrchestrator) then
+    FConversationOrchestrator.OnGestureDetected := nil;
+  if Assigned(FKinectSkeleton) then FKinectSkeleton.Active := False;
+  FreeAndNil(FKinectAdapter);
+  FreeAndNil(FKinectPerception);
+  FreeAndNil(FKinectSkeleton);
+  FreeAndNil(FKinectSensor);
 end;
 
 procedure Tfrmmain.OnKinectPersonEntered(Sender: TObject; ATrackingID: Integer;
   ADistance: Single; const APosition: string);
 begin
+  if not (vcPersonTracking in FVisionCapabilities) then Exit;
   AdicionaMensagemHistorico('Sensor Visual', Format('Visitante aproximou-se (ID #%d, %.2fm, %s).', [ATrackingID, ADistance, APosition]));
 
   // Orientacao do Olhar (Gaze) e Saudacao do Avatar 3D
@@ -511,6 +576,7 @@ end;
 
 procedure Tfrmmain.OnKinectPersonLeft(Sender: TObject; ATrackingID: Integer);
 begin
+  if not (vcPersonTracking in FVisionCapabilities) then Exit;
   AdicionaMensagemHistorico('Sensor Visual', Format('Visitante #%d afastou-se da zona de apresentacao.', [ATrackingID]));
 
   if FAvatar3D <> nil then
@@ -522,6 +588,7 @@ end;
 
 procedure Tfrmmain.OnKinectDeicticResolved(Sender: TObject; const AGesture, ATarget: string);
 begin
+  if not (vcPointing in FVisionCapabilities) then Exit;
   AdicionaMensagemHistorico('Gesto Fisico', Format('Visitante apontou para %s (%s).', [ATarget, AGesture]));
 
   // Avatar confirma o apontamento e orienta o olhar para o projeto alvo
@@ -544,6 +611,7 @@ end;
 
 procedure Tfrmmain.OnKinectGestureDetected(Sender: TObject; const AGestureName, ATargetObject: string);
 begin
+  if not (vcGesture in FVisionCapabilities) then Exit;
   // Reconhecimento de mao levantada (Aluno quer fazer pergunta)
   if (AGestureName = 'raise_hand') or (AGestureName = 'raise_right_hand') or (AGestureName = 'raise_left_hand') then
   begin
@@ -641,8 +709,8 @@ begin
     ShowAdminSection(asAI)
   else if Sender = btNavVoice then
     ShowAdminSection(asVoice)
-  else if Sender = btNavKinect then
-    ShowAdminSection(asKinect)
+  else if Sender = btNavVision then
+    ShowAdminSection(asVision)
   else if Sender = btNavAvatar then
     ShowAdminSection(asAvatar)
   else if Sender = btNavProjects then
@@ -678,14 +746,16 @@ begin
   ShowMessage('Mecanismo de IA ativo e respondendo aos comandos do orquestrador.');
 end;
 
-procedure Tfrmmain.btAdminTestKinectClick(Sender: TObject);
+procedure Tfrmmain.btAdminTestVisionClick(Sender: TObject);
 begin
   UpdateAdminStatusIndicators;
-  ShowMessage('Diagnóstico de sensores executado. Verifique os indicadores de status.');
+  InitVision;
+  ShowMessage(FVisionStatus);
 end;
 
 procedure Tfrmmain.UpdateAdminStatusIndicators;
 begin
+  if Assigned(lblStatVision) then lblStatVision.Caption := FVisionStatus;
   if Assigned(lblStatIA) then
   begin
     if (FAssistantManager <> nil) then
@@ -739,7 +809,7 @@ begin
   if Assigned(pnlSecGeneral) then pnlSecGeneral.Visible := False;
   if Assigned(pnlSecAI) then pnlSecAI.Visible := False;
   if Assigned(pnlSecVoice) then pnlSecVoice.Visible := False;
-  if Assigned(pnlSecKinect) then pnlSecKinect.Visible := False;
+  if Assigned(pnlSecVision) then pnlSecVision.Visible := False;
   if Assigned(pnlSecAvatar) then pnlSecAvatar.Visible := False;
   if Assigned(pnlSecProjects) then pnlSecProjects.Visible := False;
   if Assigned(pnlSecRAG) then pnlSecRAG.Visible := False;
@@ -751,7 +821,7 @@ begin
   ResetNavButton(btNavGeneral, ASection = asGeneral);
   ResetNavButton(btNavAI, ASection = asAI);
   ResetNavButton(btNavVoice, ASection = asVoice);
-  ResetNavButton(btNavKinect, ASection = asKinect);
+  ResetNavButton(btNavVision, ASection = asVision);
   ResetNavButton(btNavAvatar, ASection = asAvatar);
   ResetNavButton(btNavProjects, ASection = asProjects);
   ResetNavButton(btNavRAG, ASection = asRAG);
@@ -767,8 +837,8 @@ begin
       if Assigned(pnlSecAI) then pnlSecAI.Visible := True;
     asVoice:
       if Assigned(pnlSecVoice) then pnlSecVoice.Visible := True;
-    asKinect:
-      if Assigned(pnlSecKinect) then pnlSecKinect.Visible := True;
+    asVision:
+      if Assigned(pnlSecVision) then pnlSecVision.Visible := True;
     asAvatar:
       if Assigned(pnlSecAvatar) then pnlSecAvatar.Visible := True;
     asProjects:
@@ -1312,21 +1382,21 @@ begin
   SetProfessorState('idle');
 
   // Inicializa Percepcao Semantica Kinect v1
-  InitKinect;
+  InitVision;
 end;
 
 procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   if Assigned(FContinuousListener) then
     FContinuousListener.StopListening;
-  ShutdownKinect;
   if (FSetMain <> nil) and FSetMain.MinimizeToTray and (CloseAction <> caFree) then
   begin
     CloseAction := caNone;
     Hide;
     trayIcon.Show;
     trayIcon.ShowBalloonHint;
-  end;
+  end
+  else ShutdownVision;
 end;
 
 procedure Tfrmmain.CarregaIcones();
@@ -2064,8 +2134,7 @@ begin
       if Assigned(FormCfg.edPostSchema) then FormCfg.edPostSchema.Text := FSetMain.SchemaPost;
 
       // Aba Visao / Kinect
-      if Assigned(FormCfg.chkKinectEnabled) then
-        FormCfg.chkKinectEnabled.Checked := FSetMain.KinectEnabled;
+      FormCfg.LoadVision(FSetMain.VisionSource, FSetMain.KinectDeviceIndex, FSetMain.CameraDevice);
       if Assigned(FormCfg.chkKinectSeated) then
         FormCfg.chkKinectSeated.Checked := FSetMain.KinectSeatedMode;
       if Assigned(FormCfg.edKinectMinDist) then
@@ -2079,6 +2148,7 @@ begin
       if Assigned(FormCfg.edKinectTargetCenter) then
         FormCfg.edKinectTargetCenter.Text := FSetMain.KinectTargetCenter;
 
+      ShutdownVision;
       if FormCfg.ShowModal = mrOk then
       begin
         // Salva JARVIS
@@ -2154,8 +2224,12 @@ begin
         if Assigned(FormCfg.edPostSchema) then FSetMain.SchemaPost := Trim(FormCfg.edPostSchema.Text);
 
         // Salva Visao / Kinect
-        if Assigned(FormCfg.chkKinectEnabled) then
-          FSetMain.KinectEnabled := FormCfg.chkKinectEnabled.Checked;
+        FormCfg.StopVisionTest;
+        FSetMain.VisionSource := TVisionSource(FormCfg.cbVisionSource.ItemIndex);
+        if FormCfg.cbKinectDevice.ItemIndex >= 0 then
+          FSetMain.KinectDeviceIndex := FormCfg.cbKinectDevice.ItemIndex;
+        if FormCfg.cbCameraDevice.ItemIndex >= 0 then
+          FSetMain.CameraDevice := FormCfg.cbCameraDevice.Text;
         if Assigned(FormCfg.chkKinectSeated) then
           FSetMain.KinectSeatedMode := FormCfg.chkKinectSeated.Checked;
         if Assigned(FormCfg.edKinectMinDist) then
@@ -2192,6 +2266,7 @@ begin
     end;
   finally
     FormCfg.Free;
+    InitVision;
   end;
 end;
 
