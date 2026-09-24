@@ -201,7 +201,7 @@ object frmConfig: TfrmConfig
         Height = 32
         Top = 232
         Width = 358
-        Caption = 'ðŸ” Testar ConexÃ£o com JARVIS'
+        Caption = ' Testar ConexÃ£o com JARVIS'
         OnClick = btTestarJarvisClick
         TabOrder = 6
       end
@@ -418,20 +418,20 @@ object frmConfig: TfrmConfig
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
-          'OpenAI Whisper (Nuvem / Alta Precisão)'
+          'OpenAI Whisper (Nuvem / Alta Preciso)'
           'Windows SAPI (Local / Sem Nuvem)'
-          'Padrão do Sistema'
+          'Padro do Sistema'
         )
         Style = csDropDownList
         TabOrder = 0
-        Text = 'OpenAI Whisper (Nuvem / Alta Precisão)'
+        Text = 'OpenAI Whisper (Nuvem / Alta Preciso)'
       end
       object lblRecogLanguage: TLabel
         Left = 10
         Height = 15
         Top = 75
         Width = 150
-        Caption = 'Idioma de Transcrição:'
+        Caption = 'Idioma de Transcrio:'
         ParentColor = False
       end
       object edRecogLanguage: TEdit
@@ -470,7 +470,7 @@ object frmConfig: TfrmConfig
         Height = 15
         Top = 195
         Width = 120
-        Caption = 'Canais de Áudio:'
+        Caption = 'Canais de udio:'
         ParentColor = False
       end
       object cbAudioChannels: TComboBox
@@ -482,7 +482,7 @@ object frmConfig: TfrmConfig
         ItemIndex = 0
         Items.Strings = (
           '1 - Mono'
-          '2 - Estéreo'
+          '2 - Estreo'
         )
         Style = csDropDownList
         TabOrder = 3
@@ -514,6 +514,7 @@ object frmConfig: TfrmConfig
         Width = 195
         Height = 24
         Style = csDropDownList
+        OnChange = VisionSourceChange
       end
       object chkEnableCamera: TCheckBox
         Left = 10
@@ -529,6 +530,7 @@ object frmConfig: TfrmConfig
         Width = 195
         Height = 24
         Style = csDropDownList
+        OnChange = VisionSourceChange
       end
       object btRefreshVisionDevices: TButton
         Left = 10
