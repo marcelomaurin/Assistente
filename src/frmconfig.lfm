@@ -578,51 +578,19 @@ object frmConfig: TfrmConfig
         TabOrder = 5
         Text = '3.5'
       end
-      object lblKinectTargets: TLabel
-        Left = 10
-        Height = 15
-        Top = 206
-        Width = 270
-        Caption = 'Alvos de Apontamento (Esquerda / Direita / Centro):'
-        ParentColor = False
-      end
-      object edKinectTargetLeft: TEdit
-        Left = 10
-        Height = 23
-        Top = 224
-        Width = 85
-        TabOrder = 6
-        Text = 'ecg'
-      end
-      object edKinectTargetRight: TEdit
-        Left = 102
-        Height = 23
-        Top = 224
-        Width = 85
-        TabOrder = 7
-        Text = 'robotinics'
-      end
-      object edKinectTargetCenter: TEdit
-        Left = 194
-        Height = 23
-        Top = 224
-        Width = 85
-        TabOrder = 8
-        Text = 'hemacias'
-      end
       object lblVisionStatus: TLabel
         Left = 10
-        Top = 252
+        Top = 206
         Width = 350
-        Height = 48
+        Height = 44
         AutoSize = False
         WordWrap = True
       end
       object imgVisionPreview: TImage
         Left = 10
-        Top = 302
-        Width = 150
-        Height = 100
+        Top = 254
+        Width = 220
+        Height = 150
         Proportional = True
         Stretch = True
       end

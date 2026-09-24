@@ -384,9 +384,9 @@ begin
     FKinectMinDistance := 0.8;
     FKinectMaxDistance := 3.5;
     FKinectSeatedMode := True;
-    FKinectTargetLeft := 'ECG';
-    FKinectTargetRight := 'Hemacias';
-    FKinectTargetCenter := 'Robotinics';
+    FKinectTargetLeft := '';
+    FKinectTargetRight := '';
+    FKinectTargetCenter := '';
 
     FContinuousListening := True;
     FVoiceThreshold := 0.015;
@@ -717,9 +717,7 @@ begin
       FKinectTargetRight := RetiraInfo(arquivo.Strings[posicao]);
     if BuscaChave(arquivo,'KINECT_TARGET_CENTER:',posicao) then
       FKinectTargetCenter := RetiraInfo(arquivo.Strings[posicao]);
-    if Trim(FKinectTargetLeft) = '' then FKinectTargetLeft := 'ECG';
-    if Trim(FKinectTargetRight) = '' then FKinectTargetRight := 'Hemacias';
-    if Trim(FKinectTargetCenter) = '' then FKinectTargetCenter := 'Robotinics';
+
 
     // Fallback: se STTToken vazio, reaproveita FCHATGPT
     if (Trim(FSTTToken) = '') and (Trim(FCHATGPT) <> '') then
@@ -755,9 +753,9 @@ begin
     FKinectMinDistance := 0.8;
     FKinectMaxDistance := 3.5;
     FKinectSeatedMode := True;
-    FKinectTargetLeft := 'ECG';
-    FKinectTargetRight := 'Hemacias';
-    FKinectTargetCenter := 'Robotinics';
+    FKinectTargetLeft := '';
+    FKinectTargetRight := '';
+    FKinectTargetCenter := '';
     IdentificaArquivo(true);
 end;
 
