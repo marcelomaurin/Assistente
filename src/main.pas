@@ -5,15 +5,39 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, LCLType,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
+  aivoiceprovider_types, aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
 
 type
 
   { Tfrmmain }
 
   Tfrmmain = class(TForm)
+    { Modo Exposicao / Professor Virtual (Publico) }
+    pnlRoot: TPanel;
+    pnlHeader: TPanel;
+    lblInstitution: TLabel;
+    lblAppTitle: TLabel;
+    pnlFooter: TPanel;
+    lblProfessorStatus: TLabel;
+    pnlMain: TPanel;
+    pnlAvatarStage: TPanel;
+    imgAvatarStage: TImage;
+    pnlPresentationArea: TPanel;
+    pnlProjectHeader: TPanel;
+    lblProjectTitle: TLabel;
+    lblTopicSubtitle: TLabel;
+    pnlNarrativeContainer: TPanel;
+    lblNarrative: TLabel;
+    pnlResourceHolder: TPanel;
+    imgResource: TImage;
+    lblResourceCaption: TLabel;
+    lblResourcePlaceholder: TLabel;
+
+    { Modo Administrativo (Oculto) }
+    pnlAdminRoot: TPanel;
+    btVoltarExposicao: TBitBtn;
     pnlTop: TPanel;
     imgAvatar: TImage;
     pnlTopControls: TPanel;
@@ -64,6 +88,10 @@ type
     miSair: TMenuItem;
 
     procedure FormCreate(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure pnlHeaderDblClick(Sender: TObject);
+    procedure btVoltarExposicaoClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure btIniciarClick(Sender: TObject);
     procedure btAbrirConfigClick(Sender: TObject);
@@ -118,6 +146,16 @@ type
     btAdminToggle: TBitBtn;
 
     procedure InitExposicaoUI;
+    procedure UpdateExhibitionLayout;
+    procedure EnterExhibitionMode;
+    procedure EnterAdminMode;
+    procedure ExitAdminMode;
+    procedure ShowPresentationResource(const ATitle, ASubtitle, AImagePath, ANarrative: string);
+    procedure ClearPresentationResource;
+    procedure SetProfessorState(const AState: string);
+    procedure SetNarrativeText(const AText: string);
+    procedure OnVoiceSpeechStart(Sender: TObject);
+    procedure OnVoiceSpeechEnd(Sender: TObject);
     procedure btExposicaoContinuarClick(Sender: TObject);
     procedure btExposicaoProximoClick(Sender: TObject);
     procedure btAdminToggleClick(Sender: TObject);
@@ -462,91 +500,225 @@ begin
   lblJarvisSub.Caption := 'Projeto em foco: ' + ANewProject;
 end;
 
+
+procedure Tfrmmain.FormResize(Sender: TObject);
+begin
+  UpdateExhibitionLayout;
+end;
+
+procedure Tfrmmain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  // Atalho secreto Ctrl+Alt+A para alternar entre Exposição e Administração
+  if (ssCtrl in Shift) and (ssAlt in Shift) and ((Key = VK_A) or (Key = ord('A')) or (Key = ord('a'))) then
+  begin
+    if Assigned(pnlAdminRoot) and pnlAdminRoot.Visible then
+      ExitAdminMode
+    else
+      EnterAdminMode;
+    Key := 0;
+  end;
+end;
+
+procedure Tfrmmain.pnlHeaderDblClick(Sender: TObject);
+begin
+  if Assigned(pnlAdminRoot) and pnlAdminRoot.Visible then
+    ExitAdminMode
+  else
+    EnterAdminMode;
+end;
+
+procedure Tfrmmain.btVoltarExposicaoClick(Sender: TObject);
+begin
+  ExitAdminMode;
+end;
+
+procedure Tfrmmain.UpdateExhibitionLayout;
+var
+  AvWidth: Integer;
+begin
+  if not Assigned(pnlMain) or not Assigned(pnlAvatarStage) then Exit;
+  // Avatar ocupa ~38% da tela, conteúdo ocupa ~62%
+  AvWidth := Round(pnlMain.ClientWidth * 0.38);
+  if AvWidth < 280 then AvWidth := 280;
+  if AvWidth > 620 then AvWidth := 620;
+  pnlAvatarStage.Width := AvWidth;
+end;
+
+procedure Tfrmmain.EnterExhibitionMode;
+begin
+  if Assigned(pnlAdminRoot) then
+    pnlAdminRoot.Visible := False;
+  if Assigned(pnlRoot) then
+    pnlRoot.Visible := True;
+  UpdateExhibitionLayout;
+  SetProfessorState('idle');
+end;
+
+procedure Tfrmmain.EnterAdminMode;
+begin
+  if Assigned(pnlRoot) then
+    pnlRoot.Visible := False;
+  if Assigned(pnlAdminRoot) then
+    pnlAdminRoot.Visible := True;
+end;
+
+procedure Tfrmmain.ExitAdminMode;
+begin
+  EnterExhibitionMode;
+end;
+
+procedure Tfrmmain.SetNarrativeText(const AText: string);
+var
+  CleanText: string;
+begin
+  CleanText := Trim(AText);
+  if not Assigned(lblNarrative) then Exit;
+  if CleanText = '' then
+    lblNarrative.Caption := ''
+  else
+  begin
+    if Length(CleanText) > 240 then
+      CleanText := Copy(CleanText, 1, 237) + '...';
+    lblNarrative.Caption := '"' + CleanText + '"';
+  end;
+end;
+
+procedure Tfrmmain.SetProfessorState(const AState: string);
+var
+  S: string;
+begin
+  if not Assigned(lblProfessorStatus) then Exit;
+  S := LowerCase(Trim(AState));
+  if (S = 'listening') or (S = 'ouvir') or (S = 'ouvindo') then
+  begin
+    lblProfessorStatus.Font.Color := $0000FF99;
+    lblProfessorStatus.Caption := '🎤 Ouvindo o visitante...';
+    if FAvatar3D <> nil then
+      FAvatar3D.SetState(avListening);
+  end
+  else if (S = 'thinking') or (S = 'pensando') then
+  begin
+    lblProfessorStatus.Font.Color := $00FFC040;
+    lblProfessorStatus.Caption := '🧠 Pensando na resposta...';
+    if FAvatar3D <> nil then
+      FAvatar3D.SetState(avThinking);
+  end
+  else if (S = 'presenting') or (S = 'apresentando') or (S = 'speaking') or (S = 'falando') then
+  begin
+    lblProfessorStatus.Font.Color := $0000D4FF;
+    lblProfessorStatus.Caption := '🗣️ Apresentando conteúdo...';
+    if FAvatar3D <> nil then
+      FAvatar3D.SetState(avSpeaking);
+  end
+  else if (S = 'greeting') or (S = 'saudacao') then
+  begin
+    lblProfessorStatus.Font.Color := $00FFAA00;
+    lblProfessorStatus.Caption := '👋 Boas-vindas ao visitante!';
+    if FAvatar3D <> nil then
+    begin
+      FAvatar3D.SetState(avActing);
+      FAvatar3D.PlayGesture(agWave, 2.0);
+    end;
+  end
+  else if (S = 'error') or (S = 'erro') then
+  begin
+    lblProfessorStatus.Font.Color := $005050FF;
+    lblProfessorStatus.Caption := '⚠️ Aguardando interação...';
+  end
+  else
+  begin
+    lblProfessorStatus.Font.Color := $0000FF99;
+    lblProfessorStatus.Caption := '● Pronto para conversar';
+    if FAvatar3D <> nil then
+      FAvatar3D.SetState(avIdle);
+  end;
+end;
+
+procedure Tfrmmain.ShowPresentationResource(const ATitle, ASubtitle, AImagePath, ANarrative: string);
+begin
+  if Assigned(lblProjectTitle) and (Trim(ATitle) <> '') then
+  begin
+    lblProjectTitle.Caption := UpperCase(Trim(ATitle));
+    lblProjectTitle.Visible := True;
+  end;
+  if Assigned(lblTopicSubtitle) and (Trim(ASubtitle) <> '') then
+  begin
+    lblTopicSubtitle.Caption := Trim(ASubtitle);
+    lblTopicSubtitle.Visible := True;
+  end;
+  if Trim(ANarrative) <> '' then
+    SetNarrativeText(ANarrative);
+
+  if Assigned(imgResource) and (Trim(AImagePath) <> '') and FileExists(AImagePath) then
+  begin
+    try
+      imgResource.Picture.LoadFromFile(AImagePath);
+      imgResource.Visible := True;
+      if Assigned(lblResourcePlaceholder) then
+        lblResourcePlaceholder.Visible := False;
+      if Assigned(lblResourceCaption) then
+      begin
+        lblResourceCaption.Caption := Trim(ATitle) + ' - ' + Trim(ASubtitle);
+        lblResourceCaption.Visible := True;
+      end;
+    except
+      imgResource.Visible := False;
+      if Assigned(lblResourcePlaceholder) then
+        lblResourcePlaceholder.Visible := True;
+      if Assigned(lblResourceCaption) then
+        lblResourceCaption.Visible := False;
+    end;
+  end
+  else
+  begin
+    if Assigned(imgResource) then
+      imgResource.Visible := False;
+    if Assigned(lblResourcePlaceholder) then
+      lblResourcePlaceholder.Visible := True;
+    if Assigned(lblResourceCaption) then
+      lblResourceCaption.Visible := False;
+  end;
+end;
+
+procedure Tfrmmain.ClearPresentationResource;
+begin
+  if Assigned(imgResource) then
+  begin
+    imgResource.Picture.Clear;
+    imgResource.Visible := False;
+  end;
+  if Assigned(lblResourcePlaceholder) then
+    lblResourcePlaceholder.Visible := True;
+  if Assigned(lblResourceCaption) then
+  begin
+    lblResourceCaption.Caption := '';
+    lblResourceCaption.Visible := False;
+  end;
+  if Assigned(lblProjectTitle) then
+    lblProjectTitle.Caption := 'PROFESSOR VIRTUAL';
+  if Assigned(lblTopicSubtitle) then
+    lblTopicSubtitle.Caption := 'Projetos desenvolvidos na FATEC Ribeirão Preto';
+  SetNarrativeText('Aproxime-se para conhecer os projetos desenvolvidos pelos nossos pesquisadores...');
+end;
+
+procedure Tfrmmain.OnVoiceSpeechStart(Sender: TObject);
+begin
+  if FAvatar3D <> nil then
+    FAvatar3D.SetState(avSpeaking);
+  SetProfessorState('presenting');
+end;
+
+procedure Tfrmmain.OnVoiceSpeechEnd(Sender: TObject);
+begin
+  if FAvatar3D <> nil then
+    FAvatar3D.SetState(avIdle);
+  SetProfessorState('idle');
+end;
+
 procedure Tfrmmain.InitExposicaoUI;
 begin
-  pnlExposicao := TPanel.Create(Self);
-  pnlExposicao.Parent := pnlChat;
-  pnlExposicao.Align := alClient;
-  pnlExposicao.BevelOuter := bvNone;
-  pnlExposicao.Color := $001A1816;
-  pnlExposicao.Visible := True;
-
-  lblFatecHeader := TLabel.Create(Self);
-  lblFatecHeader.Parent := pnlExposicao;
-  lblFatecHeader.Align := alTop;
-  lblFatecHeader.Alignment := taCenter;
-  lblFatecHeader.Caption := '🎓 FATEC RIBEIRÃO PRETO - EXPOSIÇÃO CIENTÍFICA & TECNOLÓGICA';
-  lblFatecHeader.Font.Color := $00FFC040;
-  lblFatecHeader.Font.Height := -14;
-  lblFatecHeader.Font.Style := [fsBold];
-  lblFatecHeader.BorderSpacing.Top := 8;
-  lblFatecHeader.BorderSpacing.Bottom := 4;
-
-  lblNarrativaExposicao := TLabel.Create(Self);
-  lblNarrativaExposicao.Parent := pnlExposicao;
-  lblNarrativaExposicao.Align := alTop;
-  lblNarrativaExposicao.Alignment := taCenter;
-  lblNarrativaExposicao.WordWrap := True;
-  lblNarrativaExposicao.Caption := '"Aproxime-se para conhecer os projetos desenvolvidos pelos nossos pesquisadores..."';
-  lblNarrativaExposicao.Font.Color := clWhite;
-  lblNarrativaExposicao.Font.Height := -13;
-  lblNarrativaExposicao.BorderSpacing.Around := 8;
-
-  pnlExposicaoFooter := TPanel.Create(Self);
-  pnlExposicaoFooter.Parent := pnlExposicao;
-  pnlExposicaoFooter.Align := alBottom;
-  pnlExposicaoFooter.Height := 38;
-  pnlExposicaoFooter.BevelOuter := bvNone;
-  pnlExposicaoFooter.Color := $00242220;
-
-  btExposicaoContinuar := TBitBtn.Create(Self);
-  btExposicaoContinuar.Parent := pnlExposicaoFooter;
-  btExposicaoContinuar.Left := 10;
-  btExposicaoContinuar.Top := 4;
-  btExposicaoContinuar.Width := 150;
-  btExposicaoContinuar.Height := 30;
-  btExposicaoContinuar.Caption := '▶ Continuar Tópico';
-  btExposicaoContinuar.OnClick := @btExposicaoContinuarClick;
-
-  btExposicaoProximo := TBitBtn.Create(Self);
-  btExposicaoProximo.Parent := pnlExposicaoFooter;
-  btExposicaoProximo.Left := 170;
-  btExposicaoProximo.Top := 4;
-  btExposicaoProximo.Width := 150;
-  btExposicaoProximo.Height := 30;
-  btExposicaoProximo.Caption := '⏭ Próximo Projeto';
-  btExposicaoProximo.OnClick := @btExposicaoProximoClick;
-
-  btAdminToggle := TBitBtn.Create(Self);
-  btAdminToggle.Parent := pnlExposicaoFooter;
-  btAdminToggle.Align := alRight;
-  btAdminToggle.Width := 120;
-  btAdminToggle.Caption := '⚙ Admin / Logs';
-  btAdminToggle.OnClick := @btAdminToggleClick;
-
-  lblRecursoDescricao := TLabel.Create(Self);
-  lblRecursoDescricao.Parent := pnlExposicao;
-  lblRecursoDescricao.Align := alBottom;
-  lblRecursoDescricao.Alignment := taCenter;
-  lblRecursoDescricao.Caption := 'Recurso Selecionado: Aguardando início...';
-  lblRecursoDescricao.Font.Color := $0000FF99;
-  lblRecursoDescricao.Font.Height := -11;
-  lblRecursoDescricao.Font.Style := [fsBold];
-  lblRecursoDescricao.BorderSpacing.Bottom := 6;
-
-  pnlRecursoMoldura := TPanel.Create(Self);
-  pnlRecursoMoldura.Parent := pnlExposicao;
-  pnlRecursoMoldura.Align := alClient;
-  pnlRecursoMoldura.BevelOuter := bvNone;
-  pnlRecursoMoldura.Color := $00101010;
-  pnlRecursoMoldura.BorderSpacing.Around := 8;
-
-  imgRecursoExposicao := TImage.Create(Self);
-  imgRecursoExposicao.Parent := pnlRecursoMoldura;
-  imgRecursoExposicao.Align := alClient;
-  imgRecursoExposicao.Center := True;
-  imgRecursoExposicao.Proportional := True;
-  imgRecursoExposicao.Stretch := True;
+  // Estrutura declarada nativamente no form (pnlRoot)
+  EnterExhibitionMode;
 end;
 
 procedure Tfrmmain.btExposicaoContinuarClick(Sender: TObject);
@@ -581,7 +753,8 @@ var
   ImgFile: string;
 begin
   if AResource = nil then Exit;
-  lblRecursoDescricao.Caption := 'Recurso Selecionado: ' + AResource.Title + ' - ' + AResource.Description;
+  if Assigned(lblRecursoDescricao) then
+    lblRecursoDescricao.Caption := 'Recurso Selecionado: ' + AResource.Title + ' - ' + AResource.Description;
 
   ImgFile := AResource.FilePath;
   if not FileExists(ImgFile) then
@@ -591,17 +764,14 @@ begin
   if not FileExists(ImgFile) then
     ImgFile := 'D:\projetos\maurinsoft\Assistente\img\' + ExtractFileName(AResource.FilePath);
 
-  if FileExists(ImgFile) and (imgRecursoExposicao <> nil) then
-  begin
-    try
-      imgRecursoExposicao.Picture.LoadFromFile(ImgFile);
-    except
-    end;
-  end;
+  ShowPresentationResource(AResource.Title, AResource.Description, ImgFile, '');
 end;
 
 procedure Tfrmmain.OnPresentationNarrativeSpoken(Sender: TObject; const ANarrative, AEmotion, AGesture: string);
 begin
+  SetNarrativeText(ANarrative);
+  SetProfessorState('presenting');
+
   if lblNarrativaExposicao <> nil then
     lblNarrativaExposicao.Caption := '"' + ANarrative + '"';
 
@@ -631,6 +801,16 @@ end;
 procedure Tfrmmain.OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
 begin
   if APackage = nil then Exit;
+  if Assigned(lblProjectTitle) then
+  begin
+    lblProjectTitle.Caption := 'PROJETO ' + UpperCase(APackage.ProjectCode);
+    lblProjectTitle.Visible := True;
+  end;
+  if Assigned(lblTopicSubtitle) then
+  begin
+    lblTopicSubtitle.Caption := APackage.Title;
+    lblTopicSubtitle.Visible := True;
+  end;
   lblJarvisStatusBadge.Caption := '● EXPOSIÇÃO: ' + UpperCase(APackage.ProjectCode);
   lblJarvisSub.Caption := APackage.Title;
   if FAssistantManager <> nil then
@@ -669,6 +849,8 @@ begin
   FAudioInput := TAIAudioInput.Create(Self);
   FAudioPlayer := TAIAudioPlayer.Create(Self);
   FVoiceSynth := TAIVoiceSynthesizer.Create(Self);
+  FVoiceSynth.OnSpeechStart := @OnVoiceSpeechStart;
+  FVoiceSynth.OnSpeechEnd := @OnVoiceSpeechEnd;
   FVoiceRecog := TAIVoiceRecognizer.Create(Self);
   FVoiceRecog.OnRecognized := @VoiceRecognized;
 
@@ -721,9 +903,12 @@ begin
   begin
     try
       imgAvatar.Picture.LoadFromFile(ImgPath);
+      if Assigned(imgAvatarStage) then
+        imgAvatarStage.Picture.LoadFromFile(ImgPath);
     except
     end;
   end;
+  EnterExhibitionMode;
 
   AdicionaMensagemHistorico('Sistema', 'JARVIS Desktop Client inicializado com sucesso no Windows.');
   CheckJarvisOnline();
@@ -851,7 +1036,16 @@ begin
     FVoiceSynth.Volume := FSetMain.SynthVolume;
     FVoiceSynth.Rate := FSetMain.SynthRate;
     FVoiceSynth.Asynchronous := FSetMain.SynthAsync;
-    FVoiceSynth.OpenAIToken := FSetMain.CHATGPT;
+
+    // Provedor Remoto Independente
+    FVoiceSynth.Provider := TAIVoiceProvider(FSetMain.VoiceProvider);
+    FVoiceSynth.APIToken := FSetMain.VoiceAPIToken;
+    FVoiceSynth.Model := FSetMain.VoiceModel;
+    FVoiceSynth.Endpoint := FSetMain.VoiceEndpoint;
+    FVoiceSynth.RemoteVoice := FSetMain.VoiceRemoteVoice;
+    FVoiceSynth.Language := FSetMain.VoiceLanguage;
+    FVoiceSynth.OutputFormat := FSetMain.VoiceOutputFormat;
+    FVoiceSynth.Speed := FSetMain.VoiceSpeed;
   end;
 
   AtualizaEstadoSpeaker();

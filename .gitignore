@@ -17,3 +17,6 @@ backup/
 
 *.db
 output/
+
+cache/
+src/cache/

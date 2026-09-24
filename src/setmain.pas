@@ -10,7 +10,7 @@ unit setmain;
 interface
 
 uses
-  Classes, SysUtils, funcoes, graphics;
+  Classes, SysUtils, funcoes, graphics, aivoicecredentialstore;
 
 const filename = 'Setmain.cfg';
 
@@ -94,6 +94,16 @@ type
         FSynthVolume : integer;
         FSynthRate : integer;
         FSynthAsync : boolean;
+
+        // Provedor Remoto de Voz (TAIVoiceSynthesizer)
+        FVoiceProvider : integer;
+        FVoiceAPIToken : String;
+        FVoiceModel : String;
+        FVoiceEndpoint : String;
+        FVoiceRemoteVoice : String;
+        FVoiceLanguage : String;
+        FVoiceOutputFormat : String;
+        FVoiceSpeed : Double;
 
         // Configurações do Input Audio / Reconhecedor (TAIAudioInput / TAIVoiceRecognizer)
         FRecogEngine : integer; // 0=vreOpenAIWhisper, 1=vreSAPI, 2=vreSystemDefault
@@ -184,6 +194,15 @@ type
         property SynthVolume : integer read FSynthVolume write FSynthVolume;
         property SynthRate : integer read FSynthRate write FSynthRate;
         property SynthAsync : boolean read FSynthAsync write FSynthAsync;
+
+        property VoiceProvider : integer read FVoiceProvider write FVoiceProvider;
+        property VoiceAPIToken : String read FVoiceAPIToken write FVoiceAPIToken;
+        property VoiceModel : String read FVoiceModel write FVoiceModel;
+        property VoiceEndpoint : String read FVoiceEndpoint write FVoiceEndpoint;
+        property VoiceRemoteVoice : String read FVoiceRemoteVoice write FVoiceRemoteVoice;
+        property VoiceLanguage : String read FVoiceLanguage write FVoiceLanguage;
+        property VoiceOutputFormat : String read FVoiceOutputFormat write FVoiceOutputFormat;
+        property VoiceSpeed : Double read FVoiceSpeed write FVoiceSpeed;
 
         property RecogEngine : integer read FRecogEngine write FRecogEngine;
         property RecogLanguage : String read FRecogLanguage write FRecogLanguage;
@@ -295,6 +314,15 @@ begin
     FSynthVolume := 100;
     FSynthRate := 0;
     FSynthAsync := true;
+
+    FVoiceProvider := 0;
+    FVoiceAPIToken := '';
+    FVoiceModel := 'gpt-4o-mini-tts';
+    FVoiceEndpoint := 'https://api.openai.com/v1/audio/speech';
+    FVoiceRemoteVoice := 'alloy';
+    FVoiceLanguage := 'pt-BR';
+    FVoiceOutputFormat := 'mp3';
+    FVoiceSpeed := 1.0;
 
     FRecogEngine := 0; // 0=vreOpenAIWhisper, 1=vreSAPI
     FRecogLanguage := 'pt';
@@ -547,6 +575,30 @@ begin
     if  BuscaChave(arquivo,'SYNTHASYNC:',posicao) then
     begin
       FSynthAsync := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
+    end;
+
+    if  BuscaChave(arquivo,'VOICEPROVIDER:',posicao) then
+      FVoiceProvider := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
+    if  BuscaChave(arquivo,'VOICEAPITOKEN:',posicao) then
+      FVoiceAPIToken := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
+    if  BuscaChave(arquivo,'VOICEMODEL:',posicao) then
+      FVoiceModel := RetiraInfo(arquivo.Strings[posicao]);
+    if  BuscaChave(arquivo,'VOICEENDPOINT:',posicao) then
+      FVoiceEndpoint := RetiraInfo(arquivo.Strings[posicao]);
+    if  BuscaChave(arquivo,'VOICEREMOTEVOICE:',posicao) then
+      FVoiceRemoteVoice := RetiraInfo(arquivo.Strings[posicao]);
+    if  BuscaChave(arquivo,'VOICELANGUAGE:',posicao) then
+      FVoiceLanguage := RetiraInfo(arquivo.Strings[posicao]);
+    if  BuscaChave(arquivo,'VOICEOUTPUTFORMAT:',posicao) then
+      FVoiceOutputFormat := RetiraInfo(arquivo.Strings[posicao]);
+    if  BuscaChave(arquivo,'VOICESPEED:',posicao) then
+      FVoiceSpeed := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 1.0);
+
+    // Migracao/fallback de configuracao antiga (tarefa 27)
+    if (Trim(FVoiceAPIToken) = '') and (FSynthEngine = 3) and (Trim(FCHATGPT) <> '') then
+    begin
+      FVoiceAPIToken := FCHATGPT;
+      FVoiceProvider := 1;
     end;
 
     if  BuscaChave(arquivo,'RECOGENGINE:',posicao) then

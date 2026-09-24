@@ -1,383 +1,665 @@
 object frmmain: Tfrmmain
-  Left = 450
-  Height = 700
-  Top = 100
-  Width = 860
-  Caption = 'Maurinsoft Assistente 2.0 - Central Cognitiva & Automação'
-  ClientHeight = 700
-  ClientWidth = 860
-  Color = 1052688
+  Left = 250
+  Height = 720
+  Top = 80
+  Width = 1100
+  Caption = 'Professor Virtual - FATEC Ribeirão Preto'
+  ClientHeight = 720
+  ClientWidth = 1100
+  Color = 1183760
+  KeyPreview = True
   LCLVersion = '4.4.0.0'
   OnClose = FormClose
   OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
+  OnResize = FormResize
   Position = poScreenCenter
-  object pnlSidebar: TPanel
+  object pnlRoot: TPanel
     Left = 0
-    Height = 700
+    Height = 720
     Top = 0
-    Width = 240
-    Align = alLeft
+    Width = 1100
+    Align = alClient
     BevelOuter = bvNone
-    Color = 1381653
-    ClientHeight = 700
-    ClientWidth = 240
+    Color = 1183760
+    DoubleBuffered = True
     ParentBackground = False
     ParentColor = False
     TabOrder = 0
-    object lblProjetosHeader: TLabel
-      Left = 12
-      Height = 16
-      Top = 12
-      Width = 216
-      AutoSize = False
-      Caption = '📁 PROJETOS ATIVOS'
-      Font.Color = clWhite
-      Font.Height = -12
-      Font.Style = [fsBold]
+    object pnlHeader: TPanel
+      Left = 0
+      Height = 56
+      Top = 0
+      Width = 1100
+      Align = alTop
+      BevelOuter = bvNone
+      Color = 1446934
+      DoubleBuffered = True
+      OnDblClick = pnlHeaderDblClick
+      ParentBackground = False
       ParentColor = False
-      ParentFont = False
-    end
-    object lstProjetos: TListBox
-      Left = 10
-      Height = 220
-      Top = 36
-      Width = 220
-      Color = 1052688
-      Font.Color = clWhite
-      Font.Height = -12
-      ItemHeight = 26
-      OnSelectionChange = lstProjetosSelectionChange
-      ParentFont = False
       TabOrder = 0
+      object lblInstitution: TLabel
+        Left = 24
+        Height = 25
+        Top = 15
+        Width = 240
+        Caption = 'FATEC RIBEIRÃO PRETO'
+        Font.Color = 4243711
+        Font.Height = -18
+        Font.Style = [fsBold]
+        OnDblClick = pnlHeaderDblClick
+        ParentColor = False
+        ParentFont = False
+      end
+      object lblAppTitle: TLabel
+        Left = 870
+        Height = 25
+        Top = 15
+        Width = 206
+        Alignment = taRightJustify
+        Anchors = [akTop, akRight]
+        Caption = 'PROFESSOR VIRTUAL'
+        Font.Color = clWhite
+        Font.Height = -18
+        Font.Style = [fsBold]
+        OnDblClick = pnlHeaderDblClick
+        ParentColor = False
+        ParentFont = False
+      end
     end
-    object lblMemoriaHeader: TLabel
-      Left = 12
-      Height = 16
-      Top = 270
-      Width = 216
-      AutoSize = False
-      Caption = '🧠 CONTEXTO & MEMÓRIA'
-      Font.Color = clWhite
-      Font.Height = -12
-      Font.Style = [fsBold]
+    object pnlFooter: TPanel
+      Left = 0
+      Height = 44
+      Top = 676
+      Width = 1100
+      Align = alBottom
+      BevelOuter = bvNone
+      Color = 1446934
+      DoubleBuffered = True
+      ParentBackground = False
       ParentColor = False
-      ParentFont = False
-    end
-    object memProjetoInfo: TMemo
-      Left = 10
-      Height = 400
-      Top = 292
-      Width = 220
-      Align = alCustom
-      Color = 1052688
-      Font.Color = 13421772
-      Font.Height = -11
-      ParentFont = False
-      ReadOnly = True
-      ScrollBars = ssVertical
       TabOrder = 1
+      object lblProfessorStatus: TLabel
+        Left = 0
+        Height = 44
+        Top = 0
+        Width = 1100
+        Align = alClient
+        Alignment = taCenter
+        Layout = tlCenter
+        Caption = '● Pronto para conversar'
+        Font.Color = 65433
+        Font.Height = -14
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+    end
+    object pnlMain: TPanel
+      Left = 0
+      Height = 620
+      Top = 56
+      Width = 1100
+      Align = alClient
+      BevelOuter = bvNone
+      Color = 1183760
+      DoubleBuffered = True
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 2
+      object pnlAvatarStage: TPanel
+        Left = 0
+        Height = 620
+        Top = 0
+        Width = 420
+        Align = alLeft
+        BevelOuter = bvNone
+        Color = 1315348
+        DoubleBuffered = True
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object imgAvatarStage: TImage
+          Left = 0
+          Height = 620
+          Top = 0
+          Width = 420
+          Align = alClient
+          Center = True
+          Proportional = True
+          Stretch = True
+        end
+      end
+      object pnlPresentationArea: TPanel
+        Left = 420
+        Height = 620
+        Top = 0
+        Width = 680
+        Align = alClient
+        BevelOuter = bvNone
+        Color = 1183760
+        DoubleBuffered = True
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object pnlProjectHeader: TPanel
+          Left = 0
+          Height = 72
+          Top = 0
+          Width = 680
+          Align = alTop
+          BevelOuter = bvNone
+          Color = 1183760
+          DoubleBuffered = True
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 0
+          object lblProjectTitle: TLabel
+            Left = 24
+            Height = 32
+            Top = 8
+            Width = 630
+            Anchors = [akTop, akLeft, akRight]
+            Caption = 'PROJETO ECG'
+            Font.Color = clWhite
+            Font.Height = -24
+            Font.Style = [fsBold]
+            ParentColor = False
+            ParentFont = False
+          end
+          object lblTopicSubtitle: TLabel
+            Left = 24
+            Height = 20
+            Top = 44
+            Width = 630
+            Anchors = [akTop, akLeft, akRight]
+            Caption = 'Aquisição do sinal cardíaco e inteligência artificial'
+            Font.Color = 13421772
+            Font.Height = -14
+            ParentColor = False
+            ParentFont = False
+          end
+        end
+        object pnlNarrativeContainer: TPanel
+          Left = 0
+          Height = 88
+          Top = 532
+          Width = 680
+          Align = alBottom
+          BevelOuter = bvNone
+          Color = 1446934
+          DoubleBuffered = True
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          object lblNarrative: TLabel
+            Left = 20
+            Height = 68
+            Top = 10
+            Width = 640
+            Align = alClient
+            BorderSpacing.Around = 10
+            Caption = '"Aproxime-se para conhecer os projetos desenvolvidos pelos nossos pesquisadores..."'
+            Font.Color = clWhite
+            Font.Height = -16
+            Layout = tlCenter
+            ParentColor = False
+            ParentFont = False
+            WordWrap = True
+          end
+        end
+        object pnlResourceHolder: TPanel
+          Left = 0
+          Height = 460
+          Top = 72
+          Width = 680
+          Align = alClient
+          BevelOuter = bvNone
+          Color = 1052688
+          DoubleBuffered = True
+          BorderSpacing.Around = 12
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 2
+          object imgResource: TImage
+            Left = 0
+            Height = 428
+            Top = 0
+            Width = 656
+            Align = alClient
+            Center = True
+            Proportional = True
+            Stretch = True
+          end
+          object lblResourceCaption: TLabel
+            Left = 0
+            Height = 28
+            Top = 428
+            Width = 656
+            Align = alBottom
+            Alignment = taCenter
+            Layout = tlCenter
+            Caption = ''
+            Font.Color = 10066329
+            Font.Height = -13
+            ParentColor = False
+            ParentFont = False
+          end
+          object lblResourcePlaceholder: TLabel
+            Left = 0
+            Height = 428
+            Top = 0
+            Width = 656
+            Align = alClient
+            Alignment = taCenter
+            Layout = tlCenter
+            Caption = 'Professor Virtual FATEC Ribeirão Preto'#13#10'Aproxime-se para interagir'
+            Font.Color = 4473924
+            Font.Height = -20
+            Font.Style = [fsBold]
+            ParentColor = False
+            ParentFont = False
+          end
+        end
+      end
     end
   end
-  object pnlTop: TPanel
-    Left = 240
-    Height = 150
+  object pnlAdminRoot: TPanel
+    Left = 0
+    Height = 720
     Top = 0
-    Width = 620
-    Align = alTop
+    Width = 1100
+    Align = alClient
     BevelOuter = bvNone
-    Color = 1579032
-    ClientHeight = 150
-    ClientWidth = 620
-    ParentBackground = False
-    ParentColor = False
+    Color = 1052688
     TabOrder = 1
-    object imgAvatar: TImage
-      Left = 14
-      Height = 122
-      Top = 14
-      Width = 122
-      Center = True
-      Proportional = True
-      Stretch = True
-    end
-    object pnlTopControls: TPanel
-      Left = 150
-      Height = 150
+    Visible = False
+    object pnlSidebar: TPanel
+      Left = 0
+      Height = 720
       Top = 0
-      Width = 470
-      Align = alRight
+      Width = 240
+      Align = alLeft
       BevelOuter = bvNone
-      ClientHeight = 150
-      ClientWidth = 470
+      Color = 1381653
+      ClientHeight = 720
+      ClientWidth = 240
+      ParentBackground = False
+      ParentColor = False
       TabOrder = 0
-      object lblJarvisStatusBadge: TLabel
-        Left = 10
-        Height = 18
-        Top = 14
-        Width = 450
+      object lblProjetosHeader: TLabel
+        Left = 12
+        Height = 16
+        Top = 12
+        Width = 216
         AutoSize = False
-        Caption = '● CONECTANDO AO AGENTE...'
-        Font.Color = 3407616
+        Caption = '📁 PROJETOS ATIVOS'
+        Font.Color = clWhite
         Font.Height = -12
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
       end
-      object lblJarvisSub: TLabel
+      object lstProjetos: TListBox
         Left = 10
-        Height = 16
-        Top = 34
-        Width = 450
-        AutoSize = False
-        Caption = 'Central de Automação & Multi-IA'
-        Font.Color = 11184810
-        Font.Height = -11
-        ParentColor = False
-        ParentFont = False
-      end
-      object btIniciar: TBitBtn
-        Left = 10
-        Height = 32
-        Top = 58
-        Width = 130
-        Caption = '▶ Ouvir Voz'
-        Font.Style = [fsBold]
-        OnClick = btIniciarClick
+        Height = 220
+        Top = 36
+        Width = 220
+        Color = 1052688
+        Font.Color = clWhite
+        Font.Height = -12
+        ItemHeight = 26
+        OnSelectionChange = lstProjetosSelectionChange
         ParentFont = False
         TabOrder = 0
       end
-      object btAbrirConfig: TBitBtn
-        Left = 150
-        Height = 32
-        Top = 58
-        Width = 130
-        Caption = '⚙ Configurar'
-        OnClick = btAbrirConfigClick
+      object lblMemoriaHeader: TLabel
+        Left = 12
+        Height = 16
+        Top = 270
+        Width = 216
+        AutoSize = False
+        Caption = '🧠 CONTEXTO & MEMÓRIA'
+        Font.Color = clWhite
+        Font.Height = -12
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object memProjetoInfo: TMemo
+        Left = 10
+        Height = 420
+        Top = 292
+        Width = 220
+        Align = alCustom
+        Color = 1052688
+        Font.Color = 13421772
+        Font.Height = -11
+        ParentFont = False
+        ReadOnly = True
+        ScrollBars = ssVertical
         TabOrder = 1
       end
-      object btStatusResidencia: TButton
-        Left = 10
-        Height = 28
-        Top = 98
-        Width = 130
-        Caption = '🛡️ Status Geral'
-        OnClick = btStatusResidenciaClick
-        TabOrder = 2
-      end
-      object btClima: TButton
-        Left = 150
-        Height = 28
-        Top = 98
-        Width = 130
-        Caption = '☀️ Clima & Chuva'
-        OnClick = btClimaClick
-        TabOrder = 3
-      end
     end
-  end
-  object pnlQuickBar: TPanel
-    Left = 240
-    Height = 38
-    Top = 150
-    Width = 620
-    Align = alTop
-    BevelOuter = bvNone
-    Color = 2368548
-    ClientHeight = 38
-    ClientWidth = 620
-    ParentBackground = False
-    ParentColor = False
-    TabOrder = 2
-    object lblQuick: TLabel
-      Left = 12
-      Height = 14
-      Top = 12
-      Width = 85
-      Caption = 'Atalhos Rápidos:'
-      Font.Color = 13421772
-      Font.Height = -11
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
-    end
-    object btLuzSala: TButton
-      Left = 105
-      Height = 26
-      Top = 6
-      Width = 105
-      Caption = '💡 Luz Sala'
-      OnClick = btLuzSalaClick
-      TabOrder = 0
-    end
-    object btIrrigacao: TButton
-      Left = 216
-      Height = 26
-      Top = 6
-      Width = 115
-      Caption = '💧 Piscina'
-      OnClick = btIrrigacaoClick
-      TabOrder = 1
-    end
-    object btAuditarSeguranca: TButton
-      Left = 337
-      Height = 26
-      Top = 6
-      Width = 112
-      Caption = '🔒 Firewall'
-      OnClick = btAuditarSegurancaClick
-      TabOrder = 2
-    end
-  end
-  object pnlChat: TPanel
-    Left = 240
-    Height = 372
-    Top = 188
-    Width = 620
-    Align = alClient
-    BevelOuter = bvNone
-    ClientHeight = 372
-    ClientWidth = 620
-    Color = 1381653
-    ParentBackground = False
-    ParentColor = False
-    TabOrder = 3
-    object pnlHistoricoHeader: TPanel
-      Left = 0
-      Height = 32
+    object pnlTop: TPanel
+      Left = 240
+      Height = 150
       Top = 0
-      Width = 620
+      Width = 860
       Align = alTop
       BevelOuter = bvNone
-      Color = 1710618
-      ClientHeight = 32
-      ClientWidth = 620
+      Color = 1579032
+      ClientHeight = 150
+      ClientWidth = 860
       ParentBackground = False
       ParentColor = False
-      TabOrder = 0
-      object lblHistorico: TLabel
+      TabOrder = 1
+      object imgAvatar: TImage
+        Left = 14
+        Height = 122
+        Top = 14
+        Width = 122
+        Center = True
+        Proportional = True
+        Stretch = True
+      end
+      object pnlTopControls: TPanel
+        Left = 150
+        Height = 150
+        Top = 0
+        Width = 710
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 150
+        ClientWidth = 710
+        TabOrder = 0
+        object lblJarvisStatusBadge: TLabel
+          Left = 10
+          Height = 18
+          Top = 14
+          Width = 450
+          AutoSize = False
+          Caption = '● PAINEL ADMINISTRATIVO & DEBUG'
+          Font.Color = 3407616
+          Font.Height = -12
+          Font.Style = [fsBold]
+          ParentColor = False
+          ParentFont = False
+        end
+        object lblJarvisSub: TLabel
+          Left = 10
+          Height = 16
+          Top = 34
+          Width = 450
+          AutoSize = False
+          Caption = 'Configurações Técnicas e Logs'
+          Font.Color = 11184810
+          Font.Height = -11
+          ParentColor = False
+          ParentFont = False
+        end
+        object btIniciar: TBitBtn
+          Left = 10
+          Height = 32
+          Top = 58
+          Width = 120
+          Caption = '▶ Ouvir Voz'
+          Font.Style = [fsBold]
+          OnClick = btIniciarClick
+          ParentFont = False
+          TabOrder = 0
+        end
+        object btAbrirConfig: TBitBtn
+          Left = 140
+          Height = 32
+          Top = 58
+          Width = 120
+          Caption = '⚙ Configurar'
+          OnClick = btAbrirConfigClick
+          TabOrder = 1
+        end
+        object btVoltarExposicao: TBitBtn
+          Left = 270
+          Height = 32
+          Top = 58
+          Width = 160
+          Caption = '🖥 Voltar à Exposição'
+          Font.Style = [fsBold]
+          OnClick = btVoltarExposicaoClick
+          TabOrder = 2
+        end
+        object btStatusResidencia: TButton
+          Left = 10
+          Height = 28
+          Top = 98
+          Width = 120
+          Caption = '🛡️ Status Geral'
+          OnClick = btStatusResidenciaClick
+          TabOrder = 3
+        end
+        object btClima: TButton
+          Left = 140
+          Height = 28
+          Top = 98
+          Width = 120
+          Caption = '☀️ Clima & Chuva'
+          OnClick = btClimaClick
+          TabOrder = 4
+        end
+      end
+    end
+    object pnlQuickBar: TPanel
+      Left = 240
+      Height = 38
+      Top = 150
+      Width = 860
+      Align = alTop
+      BevelOuter = bvNone
+      Color = 2368548
+      ClientHeight = 38
+      ClientWidth = 860
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 2
+      object lblQuick: TLabel
+        Left = 12
+        Height = 14
+        Top = 12
+        Width = 85
+        Caption = 'Atalhos Rápidos:'
+        Font.Color = 13421772
+        Font.Height = -11
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object btLuzSala: TButton
+        Left = 105
+        Height = 26
+        Top = 6
+        Width = 105
+        Caption = '💡 Luz Sala'
+        OnClick = btLuzSalaClick
+        TabOrder = 0
+      end
+      object btIrrigacao: TButton
+        Left = 216
+        Height = 26
+        Top = 6
+        Width = 115
+        Caption = '💧 Piscina'
+        OnClick = btIrrigacaoClick
+        TabOrder = 1
+      end
+      object btAuditarSeguranca: TButton
+        Left = 337
+        Height = 26
+        Top = 6
+        Width = 112
+        Caption = '🔒 Firewall'
+        OnClick = btAuditarSegurancaClick
+        TabOrder = 2
+      end
+    end
+    object pnlChat: TPanel
+      Left = 240
+      Height = 392
+      Top = 188
+      Width = 860
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 392
+      ClientWidth = 860
+      Color = 1381653
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 3
+      object pnlHistoricoHeader: TPanel
+        Left = 0
+        Height = 32
+        Top = 0
+        Width = 860
+        Align = alTop
+        BevelOuter = bvNone
+        Color = 1710618
+        ClientHeight = 32
+        ClientWidth = 860
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object lblHistorico: TLabel
+          Left = 12
+          Height = 15
+          Top = 8
+          Width = 133
+          Caption = 'Histórico de Interação:'
+          Font.Color = clWhite
+          Font.Style = [fsBold]
+          ParentColor = False
+          ParentFont = False
+        end
+        object btSpeaker: TBitBtn
+          Left = 740
+          Height = 24
+          Top = 4
+          Width = 105
+          Anchors = [akTop, akRight]
+          Caption = '🔊 Voz ON'
+          OnClick = btSpeakerClick
+          TabOrder = 0
+        end
+        object btLimparChat: TButton
+          Left = 650
+          Height = 24
+          Top = 4
+          Width = 80
+          Anchors = [akTop, akRight]
+          Caption = 'Limpar'
+          OnClick = btLimparChatClick
+          TabOrder = 1
+        end
+      end
+      object memHistorico: TMemo
+        Left = 0
+        Height = 360
+        Top = 32
+        Width = 860
+        Align = alClient
+        Color = 1052688
+        Font.Color = 15724527
+        Font.Height = -12
+        Font.Name = 'Segoe UI'
+        ParentFont = False
+        ReadOnly = True
+        ScrollBars = ssVertical
+        TabOrder = 1
+      end
+    end
+    object pnlPergunta: TPanel
+      Left = 240
+      Height = 140
+      Top = 580
+      Width = 860
+      Align = alBottom
+      BevelOuter = bvNone
+      Color = 1579032
+      ClientHeight = 140
+      ClientWidth = 860
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 4
+      object lblPergunta: TLabel
         Left = 12
         Height = 15
         Top = 8
-        Width = 133
-        Caption = 'Histórico de Interação:'
-        Font.Color = clWhite
+        Width = 175
+        Caption = 'Comando em Linguagem Natural:'
+        Font.Color = 13421772
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
       end
-      object btSpeaker: TBitBtn
-        Left = 505
-        Height = 24
-        Top = 4
-        Width = 105
-        Caption = '🔊 Voz ON'
-        OnClick = btSpeakerClick
+      object memPergunta: TMemo
+        Left = 12
+        Height = 90
+        Top = 28
+        Width = 670
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Color = 1052688
+        Font.Color = clWhite
+        Font.Height = -12
+        OnKeyPress = memPerguntaKeyPress
+        ParentFont = False
+        ScrollBars = ssVertical
         TabOrder = 0
       end
-      object btLimparChat: TButton
-        Left = 420
-        Height = 24
-        Top = 4
-        Width = 80
-        Caption = 'Limpar'
-        OnClick = btLimparChatClick
+      object btEnviar: TBitBtn
+        Left = 690
+        Height = 42
+        Top = 28
+        Width = 75
+        Anchors = [akTop, akRight]
+        Caption = '✈ Enviar'
+        Font.Color = clWhite
+        Font.Style = [fsBold]
+        OnClick = btEnviarClick
+        ParentFont = False
         TabOrder = 1
       end
-    end
-    object memHistorico: TMemo
-      Left = 0
-      Height = 340
-      Top = 32
-      Width = 620
-      Align = alClient
-      Color = 1052688
-      Font.Color = 15724527
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      ParentFont = False
-      ReadOnly = True
-      ScrollBars = ssVertical
-      TabOrder = 1
-    end
-  end
-  object pnlPergunta: TPanel
-    Left = 240
-    Height = 140
-    Top = 560
-    Width = 620
-    Align = alBottom
-    BevelOuter = bvNone
-    Color = 1579032
-    ClientHeight = 140
-    ClientWidth = 620
-    ParentBackground = False
-    ParentColor = False
-    TabOrder = 4
-    object lblPergunta: TLabel
-      Left = 12
-      Height = 15
-      Top = 8
-      Width = 175
-      Caption = 'Comando em Linguagem Natural:'
-      Font.Color = 13421772
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
-    end
-    object memPergunta: TMemo
-      Left = 12
-      Height = 90
-      Top = 28
-      Width = 430
-      Color = 1052688
-      Font.Color = clWhite
-      Font.Height = -12
-      OnKeyPress = memPerguntaKeyPress
-      ParentFont = False
-      ScrollBars = ssVertical
-      TabOrder = 0
-    end
-    object btEnviar: TBitBtn
-      Left = 450
-      Height = 42
-      Top = 28
-      Width = 75
-      Caption = '✈ Enviar'
-      Font.Color = clWhite
-      Font.Style = [fsBold]
-      OnClick = btEnviarClick
-      ParentFont = False
-      TabOrder = 1
-    end
-    object btParar: TBitBtn
-      Left = 530
-      Height = 42
-      Top = 28
-      Width = 75
-      Caption = '■ Parar'
-      Font.Color = clRed
-      Font.Style = [fsBold]
-      OnClick = btPararClick
-      ParentFont = False
-      TabOrder = 2
-    end
-    object btAnexar: TBitBtn
-      Left = 450
-      Height = 42
-      Top = 76
-      Width = 75
-      Caption = '📎 Anexar'
-      OnClick = btAnexarClick
-      TabOrder = 3
-    end
-    object btMic: TBitBtn
-      Left = 530
-      Height = 42
-      Top = 76
-      Width = 75
-      Caption = '🎤 Falar'
-      OnClick = btMicClick
-      TabOrder = 4
+      object btParar: TBitBtn
+        Left = 770
+        Height = 42
+        Top = 28
+        Width = 75
+        Anchors = [akTop, akRight]
+        Caption = '■ Parar'
+        Font.Color = clRed
+        Font.Style = [fsBold]
+        OnClick = btPararClick
+        ParentFont = False
+        TabOrder = 2
+      end
+      object btAnexar: TBitBtn
+        Left = 690
+        Height = 42
+        Top = 76
+        Width = 75
+        Anchors = [akTop, akRight]
+        Caption = '📎 Anexar'
+        OnClick = btAnexarClick
+        TabOrder = 3
+      end
+      object btMic: TBitBtn
+        Left = 770
+        Height = 42
+        Top = 76
+        Width = 75
+        Anchors = [akTop, akRight]
+        Caption = '🎤 Falar'
+        OnClick = btMicClick
+        TabOrder = 4
+      end
     end
   end
   object tmrCheckOnline: TTimer
