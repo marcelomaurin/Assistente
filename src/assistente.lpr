@@ -3,6 +3,7 @@ program assistente;
 {$mode objfpc}{$H+}
 
 uses
+  Classes, SysUtils,
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
@@ -18,6 +19,21 @@ begin
   RequireDerivedFormResource:=True;
   Application.Scaled:=True;
   Application.Initialize;
-  Application.CreateForm(Tfrmmain, frmmain);
-  Application.Run;
+  try
+    Application.CreateForm(Tfrmmain, frmmain);
+    Application.Run;
+  except
+    on E: Exception do
+    begin
+      with TStringList.Create do
+      try
+        Add('Exception class: ' + E.ClassName);
+        Add('Exception message: ' + E.Message);
+        SaveToFile('crash.log');
+      finally
+        Free;
+      end;
+      raise;
+    end;
+  end;
 end.

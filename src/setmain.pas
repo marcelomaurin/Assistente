@@ -22,6 +22,7 @@ type
 
   private
         FAvatar3DModel: string;
+        FAdminPIN: string;
         FAvatar3DAutoIdle: Boolean;
         FAvatar3DAutoBlink: Boolean;
         FAvatar3DLipSync: Boolean;
@@ -209,6 +210,7 @@ type
         property AudioSampleRate : integer read FAudioSampleRate write FAudioSampleRate;
         property AudioChannels : integer read FAudioChannels write FAudioChannels;
         property Avatar3DModel: string read FAvatar3DModel write FAvatar3DModel;
+        property AdminPIN: string read FAdminPIN write FAdminPIN;
         property Avatar3DAutoIdle: Boolean read FAvatar3DAutoIdle write FAvatar3DAutoIdle;
         property Avatar3DAutoBlink: Boolean read FAvatar3DAutoBlink write FAvatar3DAutoBlink;
         property Avatar3DLipSync: Boolean read FAvatar3DLipSync write FAvatar3DLipSync;
@@ -329,6 +331,7 @@ begin
     FAudioSampleRate := 16000;
     FAudioChannels := 1;
     FAvatar3DModel := '';
+    FAdminPIN := '';
     FAvatar3DAutoIdle := True;
     FAvatar3DAutoBlink := True;
     FAvatar3DLipSync := True;

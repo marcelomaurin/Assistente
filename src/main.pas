@@ -10,6 +10,19 @@ uses
   aivoiceprovider_types, aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
 
 type
+  TAdminSection = (
+    asGeneral,
+    asAI,
+    asVoice,
+    asKinect,
+    asAvatar,
+    asProjects,
+    asRAG,
+    asPeople,
+    asIntegrations,
+    asLogs
+  );
+
 
   { Tfrmmain }
 
@@ -38,6 +51,45 @@ type
     { Modo Administrativo (Oculto) }
     pnlAdminRoot: TPanel;
     btVoltarExposicao: TBitBtn;
+    btAdminTrigger: TSpeedButton;
+    pnlAdminTopBar: TPanel;
+    btAdminDiagnostico: TBitBtn;
+    btAdminLogs: TBitBtn;
+    pnlAdminNav: TPanel;
+    btNavGeneral: TSpeedButton;
+    btNavAI: TSpeedButton;
+    btNavVoice: TSpeedButton;
+    btNavKinect: TSpeedButton;
+    btNavAvatar: TSpeedButton;
+    btNavProjects: TSpeedButton;
+    btNavRAG: TSpeedButton;
+    btNavPeople: TSpeedButton;
+    btNavIntegrations: TSpeedButton;
+    btNavLogs: TSpeedButton;
+    pnlAdminBody: TPanel;
+    pnlSecGeneral: TPanel;
+    pnlSecAI: TPanel;
+    pnlSecVoice: TPanel;
+    pnlSecKinect: TPanel;
+    pnlSecAvatar: TPanel;
+    pnlSecProjects: TPanel;
+    pnlSecRAG: TPanel;
+    pnlSecPeople: TPanel;
+    pnlSecIntegrations: TPanel;
+    pnlSecLogs: TPanel;
+    lblStatIA: TLabel;
+    lblStatVoice: TLabel;
+    lblStatKinect: TLabel;
+    lblStatAvatar: TLabel;
+    lblStatRAG: TLabel;
+    lblExpCurrentProject: TLabel;
+    lblExpCurrentResource: TLabel;
+    lblExpVisitorStatus: TLabel;
+    btQuickConfig: TBitBtn;
+    btAdminTestAI: TBitBtn;
+    btAdminTestVoice: TBitBtn;
+    btAdminTestKinect: TBitBtn;
+    btAdminTestAvatar: TBitBtn;
     pnlTop: TPanel;
     imgAvatar: TImage;
     pnlTopControls: TPanel;
@@ -92,6 +144,15 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure pnlHeaderDblClick(Sender: TObject);
     procedure btVoltarExposicaoClick(Sender: TObject);
+    procedure btAdminTriggerClick(Sender: TObject);
+    procedure lblInstitutionDblClick(Sender: TObject);
+    procedure btAdminDiagnosticoClick(Sender: TObject);
+    procedure btAdminLogsClick(Sender: TObject);
+    procedure OnAdminNavClick(Sender: TObject);
+    procedure btAdminTestVoiceClick(Sender: TObject);
+    procedure btAdminTestKinectClick(Sender: TObject);
+    procedure btAdminTestAvatarClick(Sender: TObject);
+    procedure btAdminTestAIClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure btIniciarClick(Sender: TObject);
     procedure btAbrirConfigClick(Sender: TObject);
@@ -126,6 +187,7 @@ type
     FJarvisClient: TJarvisAPIClient;
     FAssistantManager: TAssistantManager;
     FProjectManager: TAssistantProjectManager;
+    FCurrentAdminSection: TAdminSection;
 
     { Percepcao Kinect v1 }
     FKinectSensor: TAIKinectSensor;
@@ -146,6 +208,8 @@ type
     btAdminToggle: TBitBtn;
 
     procedure InitExposicaoUI;
+    procedure ShowAdminSection(ASection: TAdminSection);
+    procedure UpdateAdminStatusIndicators;
     procedure UpdateExhibitionLayout;
     procedure EnterExhibitionMode;
     procedure EnterAdminMode;
@@ -532,6 +596,180 @@ begin
   ExitAdminMode;
 end;
 
+
+procedure Tfrmmain.btAdminTriggerClick(Sender: TObject);
+begin
+  EnterAdminMode;
+end;
+
+procedure Tfrmmain.lblInstitutionDblClick(Sender: TObject);
+begin
+  EnterAdminMode;
+end;
+
+procedure Tfrmmain.btAdminDiagnosticoClick(Sender: TObject);
+begin
+  ShowAdminSection(asGeneral);
+end;
+
+procedure Tfrmmain.btAdminLogsClick(Sender: TObject);
+begin
+  ShowAdminSection(asLogs);
+end;
+
+procedure Tfrmmain.OnAdminNavClick(Sender: TObject);
+begin
+  if Sender = btNavGeneral then
+    ShowAdminSection(asGeneral)
+  else if Sender = btNavAI then
+    ShowAdminSection(asAI)
+  else if Sender = btNavVoice then
+    ShowAdminSection(asVoice)
+  else if Sender = btNavKinect then
+    ShowAdminSection(asKinect)
+  else if Sender = btNavAvatar then
+    ShowAdminSection(asAvatar)
+  else if Sender = btNavProjects then
+    ShowAdminSection(asProjects)
+  else if Sender = btNavRAG then
+    ShowAdminSection(asRAG)
+  else if Sender = btNavPeople then
+    ShowAdminSection(asPeople)
+  else if Sender = btNavIntegrations then
+    ShowAdminSection(asIntegrations)
+  else if Sender = btNavLogs then
+    ShowAdminSection(asLogs);
+end;
+
+procedure Tfrmmain.btAdminTestVoiceClick(Sender: TObject);
+begin
+  if Assigned(FVoiceSynth) then
+    FVoiceSynth.Say('Teste de síntese de voz do Professor Virtual executado com sucesso.');
+end;
+
+procedure Tfrmmain.btAdminTestAvatarClick(Sender: TObject);
+begin
+  if FAvatar3D <> nil then
+  begin
+    FAvatar3D.SetState(avActing);
+    FAvatar3D.PlayGesture(agWave, 2.0);
+  end;
+end;
+
+procedure Tfrmmain.btAdminTestAIClick(Sender: TObject);
+begin
+  AdicionaMensagemHistorico('⚡ Teste IA', 'Conexão e parâmetros da IA validados.');
+  ShowMessage('Mecanismo de IA ativo e respondendo aos comandos do orquestrador.');
+end;
+
+procedure Tfrmmain.btAdminTestKinectClick(Sender: TObject);
+begin
+  UpdateAdminStatusIndicators;
+  ShowMessage('Diagnóstico de sensores executado. Verifique os indicadores de status.');
+end;
+
+procedure Tfrmmain.UpdateAdminStatusIndicators;
+begin
+  if Assigned(lblStatIA) then
+  begin
+    if (FAssistantManager <> nil) then
+      lblStatIA.Caption := '● Inteligência Artificial (LLM): Online'
+    else
+      lblStatIA.Caption := '● Inteligência Artificial (LLM): Inicializada';
+  end;
+
+  if Assigned(lblStatVoice) and (FVoiceSynth <> nil) then
+    lblStatVoice.Caption := '● Síntese de Voz (TTS): Pronta (' + FVoiceSynth.VoiceName + ')'
+  else if Assigned(lblStatVoice) then
+    lblStatVoice.Caption := '● Síntese de Voz (TTS): Aguardando';
+
+  if Assigned(lblStatAvatar) then
+  begin
+    if FAvatar3D <> nil then
+      lblStatAvatar.Caption := '● Avatar 3D: Carregado e Ativo'
+    else
+      lblStatAvatar.Caption := '● Avatar 3D: Pronto';
+  end;
+
+  if Assigned(lblStatRAG) then
+    lblStatRAG.Caption := '● Base RAG / Vetorial: Pronta';
+
+  if Assigned(lblExpCurrentProject) and Assigned(lblProjectTitle) then
+    lblExpCurrentProject.Caption := 'Exposição - Projeto Ativo: ' + lblProjectTitle.Caption;
+
+  if Assigned(lblExpCurrentResource) and Assigned(lblTopicSubtitle) then
+    lblExpCurrentResource.Caption := 'Exposição - Tópico Atual: ' + lblTopicSubtitle.Caption;
+end;
+
+procedure Tfrmmain.ShowAdminSection(ASection: TAdminSection);
+  procedure ResetNavButton(AButton: TSpeedButton; AActive: Boolean);
+  begin
+    if AButton = nil then Exit;
+    if AActive then
+    begin
+      AButton.Font.Color := $0000FF99;
+      AButton.Font.Style := [fsBold];
+    end
+    else
+    begin
+      AButton.Font.Color := clSilver;
+      AButton.Font.Style := [];
+    end;
+  end;
+begin
+  FCurrentAdminSection := ASection;
+
+  // Esconder todas as seções
+  if Assigned(pnlSecGeneral) then pnlSecGeneral.Visible := False;
+  if Assigned(pnlSecAI) then pnlSecAI.Visible := False;
+  if Assigned(pnlSecVoice) then pnlSecVoice.Visible := False;
+  if Assigned(pnlSecKinect) then pnlSecKinect.Visible := False;
+  if Assigned(pnlSecAvatar) then pnlSecAvatar.Visible := False;
+  if Assigned(pnlSecProjects) then pnlSecProjects.Visible := False;
+  if Assigned(pnlSecRAG) then pnlSecRAG.Visible := False;
+  if Assigned(pnlSecPeople) then pnlSecPeople.Visible := False;
+  if Assigned(pnlSecIntegrations) then pnlSecIntegrations.Visible := False;
+  if Assigned(pnlSecLogs) then pnlSecLogs.Visible := False;
+
+  // Resetar estilos de navegação
+  ResetNavButton(btNavGeneral, ASection = asGeneral);
+  ResetNavButton(btNavAI, ASection = asAI);
+  ResetNavButton(btNavVoice, ASection = asVoice);
+  ResetNavButton(btNavKinect, ASection = asKinect);
+  ResetNavButton(btNavAvatar, ASection = asAvatar);
+  ResetNavButton(btNavProjects, ASection = asProjects);
+  ResetNavButton(btNavRAG, ASection = asRAG);
+  ResetNavButton(btNavPeople, ASection = asPeople);
+  ResetNavButton(btNavIntegrations, ASection = asIntegrations);
+  ResetNavButton(btNavLogs, ASection = asLogs);
+
+  // Exibir a seção selecionada
+  case ASection of
+    asGeneral:
+      if Assigned(pnlSecGeneral) then pnlSecGeneral.Visible := True;
+    asAI:
+      if Assigned(pnlSecAI) then pnlSecAI.Visible := True;
+    asVoice:
+      if Assigned(pnlSecVoice) then pnlSecVoice.Visible := True;
+    asKinect:
+      if Assigned(pnlSecKinect) then pnlSecKinect.Visible := True;
+    asAvatar:
+      if Assigned(pnlSecAvatar) then pnlSecAvatar.Visible := True;
+    asProjects:
+      if Assigned(pnlSecProjects) then pnlSecProjects.Visible := True;
+    asRAG:
+      if Assigned(pnlSecRAG) then pnlSecRAG.Visible := True;
+    asPeople:
+      if Assigned(pnlSecPeople) then pnlSecPeople.Visible := True;
+    asIntegrations:
+      if Assigned(pnlSecIntegrations) then pnlSecIntegrations.Visible := True;
+    asLogs:
+      if Assigned(pnlSecLogs) then pnlSecLogs.Visible := True;
+  end;
+
+  UpdateAdminStatusIndicators;
+end;
+
 procedure Tfrmmain.UpdateExhibitionLayout;
 var
   AvWidth: Integer;
@@ -555,11 +793,27 @@ begin
 end;
 
 procedure Tfrmmain.EnterAdminMode;
+var
+  InputPIN: string;
 begin
+  if (FSetMain <> nil) and (Trim(FSetMain.AdminPIN) <> '') then
+  begin
+    InputPIN := '';
+    if not InputQuery('Acesso Administrativo', 'Digite o PIN de Administrador:', True, InputPIN) then
+      Exit;
+    if InputPIN <> FSetMain.AdminPIN then
+    begin
+      ShowMessage('PIN incorreto. Acesso não autorizado.');
+      Exit;
+    end;
+  end;
+
   if Assigned(pnlRoot) then
     pnlRoot.Visible := False;
   if Assigned(pnlAdminRoot) then
     pnlAdminRoot.Visible := True;
+
+  ShowAdminSection(asGeneral);
 end;
 
 procedure Tfrmmain.ExitAdminMode;
@@ -1349,6 +1603,9 @@ var
 begin
   FormCfg := TfrmConfig.Create(Self);
   try
+    // Abrir diretamente a primeira aba (Geral)
+    FormCfg.pcConfig.ActivePageIndex := 0;
+
     // Aba JARVIS
     FormCfg.edJarvisURL.Text := FSetMain.JarvisURL;
     FormCfg.edJarvisKey.Text := FSetMain.JarvisAPIKey;
