@@ -1,4 +1,4 @@
-param([switch]$Hardware, [string]$Lazarus = 'C:\lazarus')
+﻿param([switch]$Hardware, [string]$Lazarus = 'C:\lazarus')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $libraryRoot = Join-Path (Split-Path $projectRoot -Parent) 'CHATGPT\pacote'
@@ -8,9 +8,12 @@ $compilerArgs = @('-MObjFPC','-Scghi','-dLCL','-dLCLwin32', ('-Fu' + $projectRoo
 foreach ($relative in @('lcl\units\i386-win32\win32','lcl\units\i386-win32','components\lazutils\lib\i386-win32','packager\units\i386-win32')) {
     $compilerArgs += '-Fu' + (Join-Path $Lazarus $relative)
 }
-$compilerArgs += Get-ChildItem -LiteralPath $libraryRoot -Directory -Recurse |
-    Where-Object { $_.FullName -notmatch '\\samples\\|\\samples$|\\lib\\' } |
-    ForEach-Object { '-Fu' + $_.FullName }
+$dirs = Get-ChildItem -LiteralPath $libraryRoot -Directory -Recurse |
+    Where-Object { $_.FullName -notmatch '\\samples\\|\\samples$|\\lib\\' }
+foreach ($d in $dirs) {
+    $compilerArgs += '-Fu' + $d.FullName
+    $compilerArgs += '-Fi' + $d.FullName
+}
 $checks = @('vision_check')
 if ($Hardware) { $checks += 'webcam_check' }
 foreach ($check in $checks) {

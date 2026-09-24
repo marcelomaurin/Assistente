@@ -255,10 +255,25 @@ type
 
   end;
 
+  function SafeParseFloat(const AText: string; ADefault: Double): Double;
+
   var
     FSetMain : TSetMain;
 
 implementation
+
+function SafeParseFloat(const AText: string; ADefault: Double): Double;
+var
+  S: string;
+begin
+  S := Trim(AText);
+  if S = '' then Exit(ADefault);
+  if DefaultFormatSettings.DecimalSeparator = ',' then
+    S := StringReplace(S, '.', ',', [rfReplaceAll])
+  else
+    S := StringReplace(S, ',', '.', [rfReplaceAll]);
+  Result := StrToFloatDef(S, ADefault);
+end;
 
 procedure TSetMain.SetDevice(const Value : Boolean);
 begin
@@ -367,7 +382,7 @@ begin
     FKinectDeviceIndex := -1;
     FCameraDevice := '';
     FKinectMinDistance := 0.8;
-    FKinectMaxDistance := 2.5;
+    FKinectMaxDistance := 3.5;
     FKinectSeatedMode := True;
     FKinectTargetLeft := 'ECG';
     FKinectTargetRight := 'Hemacias';
@@ -686,9 +701,14 @@ begin
     if BuscaChave(arquivo,'CAMERA_DEVICE:',posicao) then
       FCameraDevice := RetiraInfo(arquivo.Strings[posicao]);
     if BuscaChave(arquivo,'KINECT_MINDIST:',posicao) then
-      FKinectMinDistance := StrToFloatDef(RetiraInfo(arquivo.Strings[posicao]), FKinectMinDistance);
+      FKinectMinDistance := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.8);
     if BuscaChave(arquivo,'KINECT_MAXDIST:',posicao) then
-      FKinectMaxDistance := StrToFloatDef(RetiraInfo(arquivo.Strings[posicao]), FKinectMaxDistance);
+      FKinectMaxDistance := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 3.5);
+    if (FKinectMinDistance <= 0) or (FKinectMaxDistance <= 0) or (FKinectMinDistance >= FKinectMaxDistance) then
+    begin
+      FKinectMinDistance := 0.8;
+      FKinectMaxDistance := 3.5;
+    end;
     if BuscaChave(arquivo,'KINECT_SEATED:',posicao) then
       FKinectSeatedMode := StrToBoolDef(RetiraInfo(arquivo.Strings[posicao]), True);
     if BuscaChave(arquivo,'KINECT_TARGET_LEFT:',posicao) then
@@ -697,6 +717,9 @@ begin
       FKinectTargetRight := RetiraInfo(arquivo.Strings[posicao]);
     if BuscaChave(arquivo,'KINECT_TARGET_CENTER:',posicao) then
       FKinectTargetCenter := RetiraInfo(arquivo.Strings[posicao]);
+    if Trim(FKinectTargetLeft) = '' then FKinectTargetLeft := 'ECG';
+    if Trim(FKinectTargetRight) = '' then FKinectTargetRight := 'Hemacias';
+    if Trim(FKinectTargetCenter) = '' then FKinectTargetCenter := 'Robotinics';
 
     // Fallback: se STTToken vazio, reaproveita FCHATGPT
     if (Trim(FSTTToken) = '') and (Trim(FCHATGPT) <> '') then
@@ -730,7 +753,7 @@ begin
     FVisionSource := vsNone;
     FKinectDeviceIndex := -1;
     FKinectMinDistance := 0.8;
-    FKinectMaxDistance := 2.5;
+    FKinectMaxDistance := 3.5;
     FKinectSeatedMode := True;
     FKinectTargetLeft := 'ECG';
     FKinectTargetRight := 'Hemacias';

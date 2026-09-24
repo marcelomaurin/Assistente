@@ -143,6 +143,11 @@ type
   public
     function SelectedVisionSource: TVisionSource;
     procedure LoadVision(Source: TVisionSource; KinectIndex: Integer; const Camera: string);
+    procedure ApplyDeviceList(AKinectDevices, ACameraDevices: TStrings;
+      ASavedKinectIndex: Integer; const ASavedCamera: string;
+      AWantKinect: Boolean; AWantCamera: Boolean);
+    procedure UpdateVisionControlsState;
+    procedure UpdateVisionStatusLabel;
     procedure StopVisionTest;
     destructor Destroy; override;
     procedure CarregaModelosDoProvedor;
@@ -169,116 +174,275 @@ begin
   FreeAndNil(FTestCamera);
 end;
 
-procedure TfrmConfig.LoadVision(Source: TVisionSource; KinectIndex: Integer; const Camera: string);
+procedure TfrmConfig.ApplyDeviceList(AKinectDevices, ACameraDevices: TStrings;
+  ASavedKinectIndex: Integer; const ASavedCamera: string;
+  AWantKinect: Boolean; AWantCamera: Boolean);
+var
+  HasKinect, HasCam: Boolean;
 begin
   FLoading := True;
   try
-    chkEnableKinect.Checked := Source in [vsKinect, vsBoth];
-    chkEnableCamera.Checked := Source in [vsWebcam, vsBoth];
-  finally FLoading := False end;
-  VisionSourceChange(nil);
-  if (KinectIndex >= 0) and (KinectIndex < cbKinectDevice.Items.Count) then
-    cbKinectDevice.ItemIndex := KinectIndex;
-  if Camera <> '' then
-    cbCameraDevice.ItemIndex := TWebcamVision.ResolveDevice(cbCameraDevice.Items, Camera);
+    // --- Kinect ---
+    cbKinectDevice.Items.Clear;
+    HasKinect := (AKinectDevices <> nil) and (AKinectDevices.Count > 0);
+    if not HasKinect then
+    begin
+      chkEnableKinect.Checked := False;
+      chkEnableKinect.Enabled := False;
+      cbKinectDevice.Items.Add('Nenhum Kinect detectado');
+      cbKinectDevice.ItemIndex := -1;
+      cbKinectDevice.Enabled := False;
+    end
+    else
+    begin
+      cbKinectDevice.Items.Assign(AKinectDevices);
+      chkEnableKinect.Enabled := True;
+      chkEnableKinect.Checked := AWantKinect;
+      if (ASavedKinectIndex >= 0) and (ASavedKinectIndex < AKinectDevices.Count) then
+        cbKinectDevice.ItemIndex := ASavedKinectIndex
+      else if AKinectDevices.Count = 1 then
+        cbKinectDevice.ItemIndex := 0
+      else
+        cbKinectDevice.ItemIndex := -1;
+      cbKinectDevice.Enabled := chkEnableKinect.Checked;
+    end;
+
+    // --- Câmera ---
+    cbCameraDevice.Items.Clear;
+    HasCam := (ACameraDevices <> nil) and (ACameraDevices.Count > 0);
+    if not HasCam then
+    begin
+      chkEnableCamera.Checked := False;
+      chkEnableCamera.Enabled := False;
+      cbCameraDevice.Items.Add('Nenhuma câmera detectada');
+      cbCameraDevice.ItemIndex := -1;
+      cbCameraDevice.Enabled := False;
+    end
+    else
+    begin
+      cbCameraDevice.Items.Assign(ACameraDevices);
+      chkEnableCamera.Enabled := True;
+      chkEnableCamera.Checked := AWantCamera;
+      if ACameraDevices.Count = 1 then
+        cbCameraDevice.ItemIndex := 0
+      else
+        cbCameraDevice.ItemIndex := TWebcamVision.ResolveDevice(ACameraDevices, ASavedCamera);
+      cbCameraDevice.Enabled := chkEnableCamera.Checked;
+    end;
+  finally
+    FLoading := False;
+  end;
+
+  UpdateVisionControlsState;
+  UpdateVisionStatusLabel;
+end;
+
+procedure TfrmConfig.LoadVision(Source: TVisionSource; KinectIndex: Integer; const Camera: string);
+var
+  Sensor: TAIKinectSensor;
+  LKinect, LCam: TStringList;
+begin
+  LKinect := TStringList.Create;
+  LCam := TStringList.Create;
+  try
+    try
+      Sensor := TAIKinectSensor.Create(nil);
+      try
+        Sensor.Backend := kbKinectSDK10;
+        Sensor.KinectModel := kmXbox360;
+        LKinect.Assign(Sensor.ListDevices);
+      finally
+        Sensor.Free;
+      end;
+    except
+      on E: Exception do LKinect.Clear;
+    end;
+
+    try
+      LCam.Assign(TWebcamVision.Devices);
+    except
+      on E: Exception do LCam.Clear;
+    end;
+
+    ApplyDeviceList(LKinect, LCam, KinectIndex, Camera,
+      Source in [vsKinect, vsBoth],
+      Source in [vsWebcam, vsBoth]);
+  finally
+    LKinect.Free;
+    LCam.Free;
+  end;
+end;
+
+procedure TfrmConfig.UpdateVisionControlsState;
+var
+  IsKinectValid, IsCamValid: Boolean;
+begin
+  IsKinectValid := (cbKinectDevice.Items.Count > 0) and
+                   (cbKinectDevice.Text <> 'Nenhum Kinect detectado') and
+                   (cbKinectDevice.ItemIndex >= 0);
+  cbKinectDevice.Enabled := chkEnableKinect.Checked and IsKinectValid;
+
+  chkKinectSeated.Enabled := chkEnableKinect.Checked;
+  edKinectMinDist.Enabled := chkEnableKinect.Checked;
+  edKinectMaxDist.Enabled := chkEnableKinect.Checked;
+  edKinectTargetLeft.Enabled := chkEnableKinect.Checked;
+  edKinectTargetRight.Enabled := chkEnableKinect.Checked;
+  edKinectTargetCenter.Enabled := chkEnableKinect.Checked;
+  lblKinectDist.Enabled := chkEnableKinect.Checked;
+  lblKinectTargets.Enabled := chkEnableKinect.Checked;
+
+  IsCamValid := (cbCameraDevice.Items.Count > 0) and
+                (cbCameraDevice.Text <> 'Nenhuma câmera detectada') and
+                (cbCameraDevice.ItemIndex >= 0);
+  cbCameraDevice.Enabled := chkEnableCamera.Checked and IsCamValid;
+
+  btTestVisionDevice.Enabled := (chkEnableKinect.Checked and IsKinectValid) or
+                                (chkEnableCamera.Checked and IsCamValid);
+end;
+
+procedure TfrmConfig.UpdateVisionStatusLabel;
+var
+  KinectMsg, CameraMsg: string;
+begin
+  if (cbKinectDevice.Items.Count > 0) and (cbKinectDevice.Text <> 'Nenhum Kinect detectado') and (cbKinectDevice.ItemIndex >= 0) then
+    KinectMsg := 'Kinect: ' + cbKinectDevice.Text
+  else
+    KinectMsg := 'Kinect: não detectado';
+
+  if (cbCameraDevice.Items.Count > 0) and (cbCameraDevice.Text <> 'Nenhuma câmera detectada') and (cbCameraDevice.ItemIndex >= 0) then
+    CameraMsg := 'Câmera: ' + cbCameraDevice.Text
+  else
+    CameraMsg := 'Câmera: não detectada';
+
+  lblVisionStatus.Caption := KinectMsg + ' | ' + CameraMsg;
 end;
 
 procedure TfrmConfig.VisionSourceChange(Sender: TObject);
-var IsKinect: Boolean;
 begin
   StopVisionTest;
   if FLoading then Exit;
-  IsKinect := chkEnableKinect.Checked;
-  cbKinectDevice.Enabled := IsKinect;
-  cbKinectDevice.Visible := True;
-  cbCameraDevice.Visible := True;
-  cbCameraDevice.Enabled := chkEnableCamera.Checked;
-  chkKinectSeated.Enabled := IsKinect;
-  edKinectMinDist.Enabled := IsKinect;
-  edKinectMaxDist.Enabled := IsKinect;
-  edKinectTargetLeft.Enabled := IsKinect;
-  edKinectTargetRight.Enabled := IsKinect;
-  edKinectTargetCenter.Enabled := IsKinect;
-  lblKinectDist.Enabled := IsKinect;
-  lblKinectTargets.Enabled := IsKinect;
-  btTestVisionDevice.Enabled := chkEnableKinect.Checked or chkEnableCamera.Checked;
-  RefreshVisionDevices(nil);
+  UpdateVisionControlsState;
+  UpdateVisionStatusLabel;
 end;
 
 function TfrmConfig.SelectedVisionSource: TVisionSource;
+var
+  KinectActive, CameraActive: Boolean;
 begin
-  if chkEnableKinect.Checked and chkEnableCamera.Checked then Result := vsBoth
-  else if chkEnableKinect.Checked then Result := vsKinect
-  else if chkEnableCamera.Checked then Result := vsWebcam
-  else Result := vsNone;
+  KinectActive := chkEnableKinect.Checked and
+                  (cbKinectDevice.Items.Count > 0) and
+                  (cbKinectDevice.Text <> 'Nenhum Kinect detectado') and
+                  (cbKinectDevice.ItemIndex >= 0);
+
+  CameraActive := chkEnableCamera.Checked and
+                  (cbCameraDevice.Items.Count > 0) and
+                  (cbCameraDevice.Text <> 'Nenhuma câmera detectada') and
+                  (cbCameraDevice.ItemIndex >= 0);
+
+  if KinectActive and CameraActive then
+    Result := vsBoth
+  else if KinectActive then
+    Result := vsKinect
+  else if CameraActive then
+    Result := vsWebcam
+  else
+    Result := vsNone;
 end;
 
 procedure TfrmConfig.RefreshVisionDevices(Sender: TObject);
-var Sensor: TAIKinectSensor; L: TStringList; Old: string; I: Integer;
+var
+  Sensor: TAIKinectSensor;
+  LKinect, LCam: TStringList;
+  SavedKinectIndex: Integer;
+  SavedCamera: string;
 begin
   StopVisionTest;
   imgVisionPreview.Picture.Clear;
   lblVisionStatus.Caption := '';
-  I := cbKinectDevice.ItemIndex;
-  cbKinectDevice.Items.Clear;
+
+  SavedKinectIndex := cbKinectDevice.ItemIndex;
+  SavedCamera := cbCameraDevice.Text;
+
+  LKinect := TStringList.Create;
+  LCam := TStringList.Create;
   try
-    Sensor := TAIKinectSensor.Create(nil);
     try
-      Sensor.Backend := kbKinectSDK10;
-      Sensor.KinectModel := kmXbox360;
-      L := Sensor.ListDevices;
+      Sensor := TAIKinectSensor.Create(nil);
       try
-        cbKinectDevice.Items.Assign(L);
-        if (I < 0) or (I >= L.Count) then I := -1;
-        if L.Count = 1 then I := 0;
-        cbKinectDevice.ItemIndex := I;
-        lblVisionStatus.Caption := Format('Kinect locais: %d.', [L.Count]);
-      finally L.Free end;
-    finally Sensor.Free end;
-  except on E: Exception do lblVisionStatus.Caption := 'Kinect: ' + E.Message end;
-  Old := cbCameraDevice.Text;
-  cbCameraDevice.Items.Clear;
-  try
-    L := TWebcamVision.Devices;
+        Sensor.Backend := kbKinectSDK10;
+        Sensor.KinectModel := kmXbox360;
+        LKinect.Assign(Sensor.ListDevices);
+      finally
+        Sensor.Free;
+      end;
+    except
+      on E: Exception do LKinect.Clear;
+    end;
+
     try
-      cbCameraDevice.Items.Assign(L);
-      cbCameraDevice.ItemIndex := TWebcamVision.ResolveDevice(L, Old);
-      lblVisionStatus.Caption := lblVisionStatus.Caption +
-        Format(' Câmeras locais: %d. Câmera fornece somente RGB.', [L.Count]);
-    finally L.Free end;
-  except on E: Exception do
-    lblVisionStatus.Caption := lblVisionStatus.Caption + ' Câmera: ' + E.Message;
+      LCam.Assign(TWebcamVision.Devices);
+    except
+      on E: Exception do LCam.Clear;
+    end;
+
+    ApplyDeviceList(LKinect, LCam, SavedKinectIndex, SavedCamera,
+      chkEnableKinect.Checked, chkEnableCamera.Checked);
+  finally
+    LKinect.Free;
+    LCam.Free;
   end;
 end;
 
 procedure TfrmConfig.TestVisionDevice(Sender: TObject);
-var Sensor: TAIKinectSensor; CameraStatus: string;
+var
+  Sensor: TAIKinectSensor;
+  CameraStatus, KinectStatus: string;
+  CanTestKinect, CanTestCam: Boolean;
 begin
   StopVisionTest;
   lblVisionStatus.Caption := '';
-  if chkEnableKinect.Checked then
-  try
-    if cbKinectDevice.ItemIndex < 0 then
-      lblVisionStatus.Caption := 'Kinect ausente ou não selecionado.'
-    else
-    begin
+  KinectStatus := '';
+  CameraStatus := '';
+
+  CanTestKinect := chkEnableKinect.Checked and
+                   (cbKinectDevice.Items.Count > 0) and
+                   (cbKinectDevice.Text <> 'Nenhum Kinect detectado') and
+                   (cbKinectDevice.ItemIndex >= 0);
+
+  CanTestCam := chkEnableCamera.Checked and
+                (cbCameraDevice.Items.Count > 0) and
+                (cbCameraDevice.Text <> 'Nenhuma câmera detectada') and
+                (cbCameraDevice.ItemIndex >= 0);
+
+  if CanTestKinect then
+  begin
+    try
       Sensor := TAIKinectSensor.Create(nil);
       try
         Sensor.DeviceIndex := cbKinectDevice.ItemIndex;
         Sensor.Backend := kbKinectSDK10;
         Sensor.KinectModel := kmXbox360;
         if Sensor.Open then
-          lblVisionStatus.Caption := 'Kinect local inicializado.'
-        else lblVisionStatus.Caption := 'Kinect: ' + Sensor.LastError;
-      finally Sensor.Free end;
+          KinectStatus := 'Kinect: inicializado com sucesso.'
+        else
+          KinectStatus := 'Kinect: ' + Sensor.LastError;
+      finally
+        Sensor.Free;
+      end;
+    except
+      on E: Exception do
+        KinectStatus := 'Kinect: ' + E.Message;
     end;
-  except on E: Exception do lblVisionStatus.Caption := 'Kinect: ' + E.Message end;
-  if chkEnableCamera.Checked then
+  end
+  else if chkEnableKinect.Checked then
+    KinectStatus := 'Kinect: não detectado ou inválido.';
+
+  if CanTestCam then
   begin
     try
       FTestCamera := TWebcamVision.Create(nil);
       if FTestCamera.OpenDevice(cbCameraDevice.Text, tsVisao, imgVisionPreview) then
-        CameraStatus := 'Câmera inicializada: RGB disponível.'
+        CameraStatus := 'Câmera: inicializada - RGB disponível.'
       else
       begin
         CameraStatus := 'Câmera: ' + FTestCamera.LastError;
@@ -291,8 +455,18 @@ begin
         FreeAndNil(FTestCamera);
       end;
     end;
-    lblVisionStatus.Caption := Trim(lblVisionStatus.Caption + ' ' + CameraStatus);
-  end;
+  end
+  else if chkEnableCamera.Checked then
+    CameraStatus := 'Câmera: não detectada ou inválida.';
+
+  if (KinectStatus <> '') and (CameraStatus <> '') then
+    lblVisionStatus.Caption := KinectStatus + ' | ' + CameraStatus
+  else if KinectStatus <> '' then
+    lblVisionStatus.Caption := KinectStatus
+  else if CameraStatus <> '' then
+    lblVisionStatus.Caption := CameraStatus
+  else
+    lblVisionStatus.Caption := 'Nenhum dispositivo habilitado para teste.';
 end;
 
 procedure TfrmConfig.FormCreate(Sender: TObject);

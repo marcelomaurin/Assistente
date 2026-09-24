@@ -5,7 +5,7 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils, fpjson, jsonparser, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, LCLType,
+  Classes, SysUtils, fpjson, jsonparser, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, LCLType, LCLIntf,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig, vision_types, webcam_vision,
   aivoiceprovider_types, aivoicesynthesizer, aivoicerecognizer, aicontinuouslistener, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
 
@@ -134,7 +134,7 @@ type
     memProjetoInfo: TMemo;
 
     pnlPergunta: TPanel;
-    lblPergunta: TLabel;
+    pnlBotoesPergunta: TPanel;
     memPergunta: TMemo;
     btEnviar: TBitBtn;
     btMic: TBitBtn;
@@ -183,6 +183,7 @@ type
     procedure trayIconClick(Sender: TObject);
     procedure miAbrirClick(Sender: TObject);
     procedure miSairClick(Sender: TObject);
+    procedure memPerguntaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure memPerguntaKeyPress(Sender: TObject; var Key: char);
     procedure lstProjetosSelectionChange(Sender: TObject; User: Boolean);
     procedure btAnexarClick(Sender: TObject);
@@ -420,13 +421,16 @@ end;
 { Kinect Perception & Multi-Modal Adapter Implementation }
 
 procedure Tfrmmain.InitVision;
-var KinectStatus: string;
+var
+  KinectStatus, CamStatus: string;
 begin
   ShutdownVision;
   FVisionState := vstSelected;
   FVisionStatus := 'Vídeo: desativado';
   if FSetMain = nil then Exit;
   KinectStatus := '';
+  CamStatus := '';
+
   if FSetMain.VisionSource in [vsKinect, vsBoth] then
   begin
     try
@@ -442,6 +446,7 @@ begin
     end;
     KinectStatus := FVisionStatus;
   end;
+
   if FSetMain.VisionSource in [vsWebcam, vsBoth] then
   begin
     try
@@ -454,15 +459,41 @@ begin
         FVisionStatus := 'Câmera: erro - ' + E.Message;
       end;
     end;
-    if KinectStatus <> '' then
-      FVisionStatus := KinectStatus + ' | ' + FVisionStatus;
+    CamStatus := FVisionStatus;
   end;
+
+  if (KinectStatus <> '') and (CamStatus <> '') then
+    FVisionStatus := KinectStatus + ' | ' + CamStatus
+  else if KinectStatus <> '' then
+    FVisionStatus := KinectStatus
+  else if CamStatus <> '' then
+    FVisionStatus := CamStatus;
+
   AdicionaMensagemHistorico('Vídeo', FVisionStatus);
   UpdateAdminStatusIndicators;
 end;
 
 procedure Tfrmmain.InitWebcam;
+var
+  Devs: TStringList;
 begin
+  if (Trim(FSetMain.CameraDevice) = '') or
+     SameText(FSetMain.CameraDevice, 'Nenhuma câmera detectada') then
+  begin
+    FVisionStatus := 'Câmera: nenhuma câmera configurada';
+    Exit;
+  end;
+  Devs := TWebcamVision.Devices;
+  try
+    if Devs.Count = 0 then
+    begin
+      FVisionStatus := 'Câmera: não detectada';
+      Exit;
+    end;
+  finally
+    Devs.Free;
+  end;
+
   FWebcam := TWebcamVision.Create(Self);
   if FWebcam.OpenDevice(FSetMain.CameraDevice, Self, nil) then
   begin
@@ -495,7 +526,7 @@ begin
     AdicionaMensagemHistorico('Visao', Format('[VISION] Kinect encontrados: %d', [DevList.Count]));
     if DevList.Count = 0 then
     begin
-      FVisionStatus := 'Visao: Kinect selecionado - Kinect nao detectado.';
+      FVisionStatus := 'Kinect: não detectado';
       FreeAndNil(FKinectSensor);
       Exit;
     end;
@@ -516,7 +547,7 @@ begin
     if not FKinectSensor.Open then
     begin
       FVisionState := vstError;
-      FVisionStatus := 'Visao: Kinect - ' + FKinectSensor.LastError;
+      FVisionStatus := 'Kinect: ' + FKinectSensor.LastError;
       FreeAndNil(FKinectSensor);
       Exit;
     end;
@@ -1413,6 +1444,12 @@ begin
 
   // Inicializa Percepcao Semantica Kinect v1
   InitVision;
+
+  if Assigned(memPergunta) then
+  begin
+    memPergunta.Text := '';
+    memPergunta.TextHint := 'Digite sua pergunta aqui...';
+  end;
 end;
 
 procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -1683,17 +1720,50 @@ procedure Tfrmmain.btEnviarClick(Sender: TObject);
 var
   Cmd: string;
 begin
-  Cmd := memPergunta.Text;
+  Cmd := Trim(memPergunta.Text);
+  if Cmd = '' then
+    Exit;
+
+  // Interrompe fala / TTS anterior (barge-in por teclado)
+  if Assigned(FVoiceSynth) then
+    FVoiceSynth.Stop;
+
+  if Assigned(FAudioPlayer) and FAudioPlayer.Playing then
+    FAudioPlayer.Stop;
+
+  if Assigned(FConversationOrchestrator) then
+    FConversationOrchestrator.StopSpeaking;
+
+  SetPublicViewMode(pvmConversation);
+  SetProfessorState('thinking');
+
   memPergunta.Clear;
   ExecutaComandoJarvis(Cmd);
 end;
 
+procedure Tfrmmain.memPerguntaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    if ssShift in Shift then
+    begin
+      // Shift + Enter: quebra de linha permitida no memo
+      Exit;
+    end
+    else
+    begin
+      // Enter simples: consome a tecla e envia
+      Key := 0;
+      btEnviarClick(Sender);
+    end;
+  end;
+end;
+
 procedure Tfrmmain.memPerguntaKeyPress(Sender: TObject; var Key: char);
 begin
-  if Key = #13 then
+  if (Key = #13) and not (LCLIntf.GetKeyState(VK_SHIFT) < 0) then
   begin
     Key := #0;
-    btEnviarClick(Sender);
   end;
 end;
 
@@ -2167,10 +2237,19 @@ begin
       FormCfg.LoadVision(FSetMain.VisionSource, FSetMain.KinectDeviceIndex, FSetMain.CameraDevice);
       if Assigned(FormCfg.chkKinectSeated) then
         FormCfg.chkKinectSeated.Checked := FSetMain.KinectSeatedMode;
+      if (FSetMain.KinectMinDistance <= 0) or (FSetMain.KinectMaxDistance <= 0) or
+         (FSetMain.KinectMinDistance >= FSetMain.KinectMaxDistance) then
+      begin
+        FSetMain.KinectMinDistance := 0.8;
+        FSetMain.KinectMaxDistance := 3.5;
+      end;
       if Assigned(FormCfg.edKinectMinDist) then
-        FormCfg.edKinectMinDist.Text := FloatToStr(FSetMain.KinectMinDistance);
+        FormCfg.edKinectMinDist.Text := FormatFloat('0.0', FSetMain.KinectMinDistance);
       if Assigned(FormCfg.edKinectMaxDist) then
-        FormCfg.edKinectMaxDist.Text := FloatToStr(FSetMain.KinectMaxDistance);
+        FormCfg.edKinectMaxDist.Text := FormatFloat('0.0', FSetMain.KinectMaxDistance);
+      if Trim(FSetMain.KinectTargetLeft) = '' then FSetMain.KinectTargetLeft := 'ECG';
+      if Trim(FSetMain.KinectTargetRight) = '' then FSetMain.KinectTargetRight := 'Hemacias';
+      if Trim(FSetMain.KinectTargetCenter) = '' then FSetMain.KinectTargetCenter := 'Robotinics';
       if Assigned(FormCfg.edKinectTargetLeft) then
         FormCfg.edKinectTargetLeft.Text := FSetMain.KinectTargetLeft;
       if Assigned(FormCfg.edKinectTargetRight) then
@@ -2256,21 +2335,35 @@ begin
         // Salva Visao / Kinect
         FormCfg.StopVisionTest;
         FSetMain.VisionSource := FormCfg.SelectedVisionSource;
-        if FormCfg.cbKinectDevice.ItemIndex >= 0 then
-          FSetMain.KinectDeviceIndex := FormCfg.cbKinectDevice.ItemIndex;
-        if FormCfg.cbCameraDevice.ItemIndex >= 0 then
-          FSetMain.CameraDevice := FormCfg.cbCameraDevice.Text;
+        if (FormCfg.cbKinectDevice.ItemIndex >= 0) and
+           (FormCfg.cbKinectDevice.Text <> 'Nenhum Kinect detectado') then
+          FSetMain.KinectDeviceIndex := FormCfg.cbKinectDevice.ItemIndex
+        else if not (FSetMain.VisionSource in [vsKinect, vsBoth]) then
+          FSetMain.KinectDeviceIndex := -1;
+
+        if (FormCfg.cbCameraDevice.ItemIndex >= 0) and
+           (FormCfg.cbCameraDevice.Text <> 'Nenhuma câmera detectada') then
+          FSetMain.CameraDevice := FormCfg.cbCameraDevice.Text
+        else if not (FSetMain.VisionSource in [vsWebcam, vsBoth]) then
+          FSetMain.CameraDevice := '';
+
         if Assigned(FormCfg.chkKinectSeated) then
           FSetMain.KinectSeatedMode := FormCfg.chkKinectSeated.Checked;
         if Assigned(FormCfg.edKinectMinDist) then
-          FSetMain.KinectMinDistance := StrToFloatDef(Trim(FormCfg.edKinectMinDist.Text), 0.8);
+          FSetMain.KinectMinDistance := SafeParseFloat(FormCfg.edKinectMinDist.Text, 0.8);
         if Assigned(FormCfg.edKinectMaxDist) then
-          FSetMain.KinectMaxDistance := StrToFloatDef(Trim(FormCfg.edKinectMaxDist.Text), 3.5);
-        if Assigned(FormCfg.edKinectTargetLeft) then
+          FSetMain.KinectMaxDistance := SafeParseFloat(FormCfg.edKinectMaxDist.Text, 3.5);
+        if (FSetMain.KinectMinDistance <= 0) or (FSetMain.KinectMaxDistance <= 0) or
+           (FSetMain.KinectMinDistance >= FSetMain.KinectMaxDistance) then
+        begin
+          FSetMain.KinectMinDistance := 0.8;
+          FSetMain.KinectMaxDistance := 3.5;
+        end;
+        if Assigned(FormCfg.edKinectTargetLeft) and (Trim(FormCfg.edKinectTargetLeft.Text) <> '') then
           FSetMain.KinectTargetLeft := Trim(FormCfg.edKinectTargetLeft.Text);
-        if Assigned(FormCfg.edKinectTargetRight) then
+        if Assigned(FormCfg.edKinectTargetRight) and (Trim(FormCfg.edKinectTargetRight.Text) <> '') then
           FSetMain.KinectTargetRight := Trim(FormCfg.edKinectTargetRight.Text);
-        if Assigned(FormCfg.edKinectTargetCenter) then
+        if Assigned(FormCfg.edKinectTargetCenter) and (Trim(FormCfg.edKinectTargetCenter.Text) <> '') then
           FSetMain.KinectTargetCenter := Trim(FormCfg.edKinectTargetCenter.Text);
 
         // Salva Avatar 3D
@@ -2445,6 +2538,8 @@ begin
 
   FAguardandoResposta := False;
   btEnviar.Enabled := True;
+  if Assigned(memPergunta) and memPergunta.CanFocus then
+    memPergunta.SetFocus;
   lblJarvisSub.Caption := 'Central de Automação & Multi-IA';
 end;
 
@@ -2540,6 +2635,8 @@ begin
 
   FAguardandoResposta := False;
   btEnviar.Enabled := True;
+  if Assigned(memPergunta) and memPergunta.CanFocus then
+    memPergunta.SetFocus;
   lblJarvisSub.Caption := '● Interrompido pelo usuário';
 end;
 

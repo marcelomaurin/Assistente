@@ -89,8 +89,8 @@ object frmmain: Tfrmmain
     end
     object pnlFooter: TPanel
       Left = 0
-      Height = 44
-      Top = 676
+      Height = 34
+      Top = 686
       Width = 1100
       Align = alBottom
       BevelOuter = bvNone
@@ -101,7 +101,7 @@ object frmmain: Tfrmmain
       TabOrder = 1
       object lblProfessorStatus: TLabel
         Left = 0
-        Height = 44
+        Height = 34
         Top = 0
         Width = 1100
         Align = alClient
@@ -109,10 +109,102 @@ object frmmain: Tfrmmain
         Layout = tlCenter
         Caption = '● Pronto para conversar'
         Font.Color = 65433
-        Font.Height = -14
+        Font.Height = -13
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
+      end
+    end
+    object pnlPergunta: TPanel
+      Left = 0
+      Height = 58
+      Top = 628
+      Width = 1100
+      Align = alBottom
+      BevelOuter = bvNone
+      Color = 1381653
+      DoubleBuffered = True
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 2
+      object pnlBotoesPergunta: TPanel
+        Left = 824
+        Height = 58
+        Top = 0
+        Width = 276
+        Align = alRight
+        BevelOuter = bvNone
+        Color = 1381653
+        DoubleBuffered = True
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object btEnviar: TBitBtn
+          Left = 175
+          Height = 44
+          Top = 7
+          Width = 94
+          Align = alRight
+          BorderSpacing.Around = 7
+          Caption = 'Enviar ▶'
+          Color = 3942428
+          Font.Color = clWhite
+          Font.Height = -13
+          Font.Style = [fsBold]
+          OnClick = btEnviarClick
+          ParentFont = False
+          TabOrder = 0
+        end
+        object btMic: TBitBtn
+          Left = 90
+          Height = 44
+          Top = 7
+          Width = 78
+          Align = alRight
+          BorderSpacing.Around = 7
+          Caption = '🎤 Falar'
+          Color = 2500134
+          Font.Color = clWhite
+          Font.Height = -12
+          OnClick = btMicClick
+          ParentFont = False
+          TabOrder = 1
+        end
+        object btParar: TBitBtn
+          Left = 14
+          Height = 44
+          Top = 7
+          Width = 69
+          Align = alRight
+          BorderSpacing.Around = 7
+          Caption = '⏹ Parar'
+          Color = 2105376
+          Font.Color = clWhite
+          Font.Height = -12
+          OnClick = btPararClick
+          ParentFont = False
+          TabOrder = 2
+        end
+      end
+      object memPergunta: TMemo
+        Left = 12
+        Height = 46
+        Top = 6
+        Width = 804
+        Align = alClient
+        BorderSpacing.Left = 12
+        BorderSpacing.Top = 6
+        BorderSpacing.Right = 8
+        BorderSpacing.Bottom = 6
+        Color = 1842204
+        Font.Color = clWhite
+        Font.Height = -13
+        Font.Name = 'Segoe UI'
+        OnKeyDown = memPerguntaKeyDown
+        OnKeyPress = memPerguntaKeyPress
+        ParentFont = False
+        ScrollBars = ssAutoVertical
+        TabOrder = 0
       end
     end
     object pnlMain: TPanel
@@ -1004,6 +1096,17 @@ object frmmain: Tfrmmain
               OnClick = btSpeakerClick
               TabOrder = 1
             end
+            object btAnexar: TBitBtn
+              Left = 580
+              Height = 28
+              Top = 4
+              Width = 96
+              Align = alRight
+              BorderSpacing.Around = 4
+              Caption = 'Anexar'
+              OnClick = btAnexarClick
+              TabOrder = 2
+            end
           end
           object memHistorico: TMemo
             Left = 8
@@ -1015,71 +1118,6 @@ object frmmain: Tfrmmain
             ReadOnly = True
             ScrollBars = ssAutoBoth
             TabOrder = 1
-          end
-        end
-        object pnlPergunta: TPanel
-          Left = 16
-          Height = 100
-          Top = 532
-          Width = 883
-          Align = alBottom
-          BorderSpacing.Around = 16
-          BevelOuter = bvNone
-          Color = 1578518
-          TabOrder = 1
-          object lblPergunta: TLabel
-            Left = 12
-            Height = 16
-            Top = 6
-            Width = 200
-            Caption = 'Entrada Manual de Testes (Admin):'
-            Font.Color = 12632256
-            Font.Height = -11
-            ParentColor = False
-          end
-          object memPergunta: TMemo
-            Left = 12
-            Height = 64
-            Top = 26
-            Width = 600
-            Align = alCustom
-            TabOrder = 0
-          end
-          object btEnviar: TBitBtn
-            Left = 620
-            Height = 30
-            Top = 26
-            Width = 90
-            Caption = 'Enviar'
-            OnClick = btEnviarClick
-            TabOrder = 1
-          end
-          object btParar: TBitBtn
-            Left = 720
-            Height = 30
-            Top = 26
-            Width = 80
-            Caption = 'Parar'
-            OnClick = btPararClick
-            TabOrder = 2
-          end
-          object btMic: TBitBtn
-            Left = 620
-            Height = 30
-            Top = 60
-            Width = 90
-            Caption = 'Ouvir Mic'
-            OnClick = btMicClick
-            TabOrder = 3
-          end
-          object btAnexar: TBitBtn
-            Left = 720
-            Height = 30
-            Top = 60
-            Width = 80
-            Caption = 'Anexar'
-            OnClick = btAnexarClick
-            TabOrder = 4
           end
         end
       end
