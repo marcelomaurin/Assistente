@@ -29,6 +29,15 @@ type
     tsOutputVoice: TTabSheet;
     tsVoz: TTabSheet;
     tsVisao: TTabSheet;
+    chkKinectEnabled: TCheckBox;
+    chkKinectSeated: TCheckBox;
+    lblKinectDist: TLabel;
+    edKinectMinDist: TEdit;
+    edKinectMaxDist: TEdit;
+    lblKinectTargets: TLabel;
+    edKinectTargetLeft: TEdit;
+    edKinectTargetRight: TEdit;
+    edKinectTargetCenter: TEdit;
     tsBanco: TTabSheet;
     
     // Aba JARVIS (API Segura v1)

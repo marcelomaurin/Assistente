@@ -201,7 +201,7 @@ object frmConfig: TfrmConfig
         Height = 32
         Top = 232
         Width = 358
-        Caption = '🔍 Testar Conexão com JARVIS'
+        Caption = '� Testar Conexão com JARVIS'
         OnClick = btTestarJarvisClick
         TabOrder = 6
       end

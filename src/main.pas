@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, ComCtrls, Menus, strutils, chatgpt, setmain, frmconfig,
-  aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, jarvis_api, agent_manager, project_manager;
+  aivoicesynthesizer, aivoicerecognizer, aiaudio, aiaudioplayback, aiavatartypes, aiavatar3d, aiinteractioncontext, aiconversationorchestrator, aipersonsession, aipresentation, aikinect_types, aikinectsensor, aikinectskeleton, aikinectperception, aikinectadapter, jarvis_api, agent_manager, project_manager;
 
 type
 
@@ -99,6 +99,12 @@ type
     FAssistantManager: TAssistantManager;
     FProjectManager: TAssistantProjectManager;
 
+    { Percepcao Kinect v1 }
+    FKinectSensor: TAIKinectSensor;
+    FKinectSkeleton: TAIKinectSkeleton;
+    FKinectPerception: TAIKinectPerception;
+    FKinectAdapter: TAIKinectInteractionAdapter;
+
     { Controles da Interface de Exposicao / Professor Virtual }
     pnlExposicao: TPanel;
     pnlRecursoMoldura: TPanel;
@@ -118,6 +124,13 @@ type
     procedure OnPresentationResourceSelected(Sender: TObject; AResource: TPresentationResource);
     procedure OnPresentationNarrativeSpoken(Sender: TObject; const ANarrative, AEmotion, AGesture: string);
     procedure OnPresentationProjectChanged(Sender: TObject; APackage: TPresentationPackage);
+
+    procedure InitKinect;
+    procedure ShutdownKinect;
+    procedure OnKinectPersonEntered(Sender: TObject; ATrackingID: Integer; ADistance: Single; const APosition: string);
+    procedure OnKinectPersonLeft(Sender: TObject; ATrackingID: Integer);
+    procedure OnKinectDeicticResolved(Sender: TObject; const AGesture, ATarget: string);
+    procedure OnKinectGestureDetected(Sender: TObject; const AGestureName, ATargetObject: string);
 
     procedure OnSpeechInterruption(Sender: TObject);
     procedure OnContextProjectChanged(Sender: TObject; const AOldProject, ANewProject: string);
@@ -276,6 +289,159 @@ end;
 
 { Tfrmmain }
 
+
+{ Kinect Perception & Multi-Modal Adapter Implementation }
+
+procedure Tfrmmain.InitKinect;
+var
+  DevList: TStringList;
+begin
+  FKinectSensor := TAIKinectSensor.Create(Self);
+  FKinectSkeleton := TAIKinectSkeleton.Create(Self);
+  FKinectPerception := TAIKinectPerception.Create(Self);
+  FKinectAdapter := TAIKinectInteractionAdapter.Create(Self);
+
+  FKinectSkeleton.Sensor := FKinectSensor;
+  FKinectPerception.Sensor := FKinectSensor;
+  FKinectPerception.Skeleton := FKinectSkeleton;
+
+  if FSetMain <> nil then
+  begin
+    FKinectPerception.MinDistanceMeters := FSetMain.KinectMinDistance;
+    FKinectPerception.MaxDistanceMeters := FSetMain.KinectMaxDistance;
+  end;
+
+  FKinectAdapter.Perception := FKinectPerception;
+  FKinectAdapter.Orchestrator := FConversationOrchestrator;
+
+  if FSetMain <> nil then
+  begin
+    FKinectAdapter.TargetLeft := FSetMain.KinectTargetLeft;
+    FKinectAdapter.TargetRight := FSetMain.KinectTargetRight;
+    FKinectAdapter.TargetCenter := FSetMain.KinectTargetCenter;
+  end;
+
+  FKinectAdapter.OnPersonEntered := @OnKinectPersonEntered;
+  FKinectAdapter.OnPersonLeft := @OnKinectPersonLeft;
+  FKinectAdapter.OnDeicticTargetResolved := @OnKinectDeicticResolved;
+
+  if FConversationOrchestrator <> nil then
+    FConversationOrchestrator.OnGestureDetected := @OnKinectGestureDetected;
+
+  // Deteccao nao-bloqueante de hardware fisico
+  DevList := FKinectSensor.ListDevices;
+  try
+    if (DevList.Count > 0) and ((FSetMain = nil) or FSetMain.KinectEnabled) then
+    begin
+      FKinectSensor.DeviceIndex := 0;
+      FKinectSensor.Backend := kbKinectSDK10;
+      FKinectSensor.KinectModel := kmXbox360;
+      if FKinectSensor.Open then
+      begin
+        if FSetMain <> nil then
+          FKinectSkeleton.SeatedMode := FSetMain.KinectSeatedMode;
+        FKinectSkeleton.Active := True;
+        AdicionaMensagemHistorico('Sensor Visual', 'Kinect v1 online: sensor primario de presenca e gestos ativado.');
+      end
+      else
+        AdicionaMensagemHistorico('Sensor Visual', 'Falha ao conectar Kinect v1: ' + FKinectSensor.LastError);
+    end
+    else
+    begin
+      AdicionaMensagemHistorico('Sensor Visual', 'Kinect v1 offline (sem hardware fisico). Percepcao em modo prontidao/simulacao.');
+    end;
+  finally
+    DevList.Free;
+  end;
+end;
+
+procedure Tfrmmain.ShutdownKinect;
+begin
+  if Assigned(FKinectSkeleton) then
+    FKinectSkeleton.Active := False;
+  if Assigned(FKinectSensor) and FKinectSensor.IsConnected then
+    FKinectSensor.Close;
+end;
+
+procedure Tfrmmain.OnKinectPersonEntered(Sender: TObject; ATrackingID: Integer;
+  ADistance: Single; const APosition: string);
+begin
+  AdicionaMensagemHistorico('Sensor Visual', Format('Visitante aproximou-se (ID #%d, %.2fm, %s).', [ATrackingID, ADistance, APosition]));
+
+  // Orientacao do Olhar (Gaze) e Saudacao do Avatar 3D
+  if FAvatar3D <> nil then
+  begin
+    if APosition = 'left' then
+      FAvatar3D.LookAt(ltLeft)
+    else if APosition = 'right' then
+      FAvatar3D.LookAt(ltRight)
+    else
+    begin
+      FAvatar3D.LookAt(ltCenter);
+      FAvatar3D.PlayGesture(agWave, 2.0);
+    end;
+  end;
+
+  // Inicia ou resume apresentacao autonoma caso o professor esteja ocioso
+  if (FPresentationAgent <> nil) and (FPresentationAgent.State = psIdle) then
+  begin
+    FPresentationAgent.StartPresentation(IntToStr(ATrackingID), 'Visitante');
+  end;
+end;
+
+procedure Tfrmmain.OnKinectPersonLeft(Sender: TObject; ATrackingID: Integer);
+begin
+  AdicionaMensagemHistorico('Sensor Visual', Format('Visitante #%d afastou-se da zona de apresentacao.', [ATrackingID]));
+
+  if FAvatar3D <> nil then
+  begin
+    FAvatar3D.LookAt(ltCenter);
+    FAvatar3D.SetState(avIdle);
+  end;
+end;
+
+procedure Tfrmmain.OnKinectDeicticResolved(Sender: TObject; const AGesture, ATarget: string);
+begin
+  AdicionaMensagemHistorico('Gesto Fisico', Format('Visitante apontou para %s (%s).', [ATarget, AGesture]));
+
+  // Avatar confirma o apontamento e orienta o olhar para o projeto alvo
+  if FAvatar3D <> nil then
+  begin
+    if AGesture = 'point_left' then
+      FAvatar3D.LookAt(ltLeft)
+    else if AGesture = 'point_right' then
+      FAvatar3D.LookAt(ltRight)
+    else
+      FAvatar3D.LookAt(ltCenter);
+
+    FAvatar3D.PlayGesture(agPoint, 2.0);
+  end;
+
+  // Apresentacao autonoma migra diretamente para o projeto apontado
+  if FPresentationAgent <> nil then
+  begin
+    FPresentationAgent.StartPresentation('visitante', 'Visitante', ATarget);
+  end;
+end;
+
+procedure Tfrmmain.OnKinectGestureDetected(Sender: TObject; const AGestureName, ATargetObject: string);
+begin
+  // Reconhecimento de mao levantada (Aluno quer fazer pergunta)
+  if (AGestureName = 'raise_hand') or (AGestureName = 'raise_right_hand') or (AGestureName = 'raise_left_hand') then
+  begin
+    AdicionaMensagemHistorico('Percepcao', 'Visitante levantou a mao para perguntar.');
+    if FPresentationAgent <> nil then
+    begin
+      FPresentationAgent.PausePresentation;
+    end;
+    if FAvatar3D <> nil then
+    begin
+      FAvatar3D.PlayGesture(agNod, 1.5);
+    end;
+    if (FSetMain <> nil) and FSetMain.AutoSpeak then
+      FalaTexto('Pode fazer sua pergunta! Estou ouvindo.');
+  end;
+end;
 
 procedure Tfrmmain.OnSpeechInterruption(Sender: TObject);
 begin
@@ -575,10 +741,14 @@ begin
 
   // Inicia exposicao autonoma do primeiro projeto de destaque
   FPresentationAgent.StartPresentation('', 'Visitante');
+
+  // Inicializa Percepcao Semantica Kinect v1
+  InitKinect;
 end;
 
 procedure Tfrmmain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
+  ShutdownKinect;
   if (FSetMain <> nil) and FSetMain.MinimizeToTray and (CloseAction <> caFree) then
   begin
     CloseAction := caNone;
@@ -1050,6 +1220,15 @@ begin
     FormCfg.edPostPass.Text := FSetMain.PasswordPost;
     FormCfg.edPostSchema.Text := FSetMain.SchemaPost;
 
+      // Aba Visao / Kinect
+      FormCfg.chkKinectEnabled.Checked := FSetMain.KinectEnabled;
+      FormCfg.chkKinectSeated.Checked := FSetMain.KinectSeatedMode;
+      FormCfg.edKinectMinDist.Text := FloatToStr(FSetMain.KinectMinDistance);
+      FormCfg.edKinectMaxDist.Text := FloatToStr(FSetMain.KinectMaxDistance);
+      FormCfg.edKinectTargetLeft.Text := FSetMain.KinectTargetLeft;
+      FormCfg.edKinectTargetRight.Text := FSetMain.KinectTargetRight;
+      FormCfg.edKinectTargetCenter.Text := FSetMain.KinectTargetCenter;
+
     if FormCfg.ShowModal = mrOk then
     begin
       // Salva JARVIS
@@ -1098,6 +1277,15 @@ begin
       FSetMain.BancoPOST := Trim(FormCfg.edPostDb.Text);
       FSetMain.UsernamePost := Trim(FormCfg.edPostUser.Text);
       FSetMain.PasswordPost := Trim(FormCfg.edPostPass.Text);
+
+      // Salva Visao / Kinect
+      FSetMain.KinectEnabled := FormCfg.chkKinectEnabled.Checked;
+      FSetMain.KinectSeatedMode := FormCfg.chkKinectSeated.Checked;
+      FSetMain.KinectMinDistance := StrToFloatDef(Trim(FormCfg.edKinectMinDist.Text), 0.8);
+      FSetMain.KinectMaxDistance := StrToFloatDef(Trim(FormCfg.edKinectMaxDist.Text), 2.5);
+      FSetMain.KinectTargetLeft := Trim(FormCfg.edKinectTargetLeft.Text);
+      FSetMain.KinectTargetRight := Trim(FormCfg.edKinectTargetRight.Text);
+      FSetMain.KinectTargetCenter := Trim(FormCfg.edKinectTargetCenter.Text);
       FSetMain.SchemaPost := Trim(FormCfg.edPostSchema.Text);
 
       FSetMain.SalvaContexto(False);

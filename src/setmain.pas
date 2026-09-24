@@ -101,6 +101,15 @@ type
         FAudioSampleRate : integer;
         FAudioChannels : integer;
 
+        { Kinect v1 / Percepcao }
+        FKinectEnabled : Boolean;
+        FKinectMinDistance : Double;
+        FKinectMaxDistance : Double;
+        FKinectSeatedMode : Boolean;
+        FKinectTargetLeft : string;
+        FKinectTargetRight : string;
+        FKinectTargetCenter : string;
+
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
         procedure SetPOSY(value : integer);
@@ -186,6 +195,15 @@ type
         property Avatar3DLipSync: Boolean read FAvatar3DLipSync write FAvatar3DLipSync;
         property Avatar3DIntensity: Double read FAvatar3DIntensity write FAvatar3DIntensity;
         property Avatar3DQuality: string read FAvatar3DQuality write FAvatar3DQuality;
+
+        { Kinect v1 / Percepcao }
+        property KinectEnabled : Boolean read FKinectEnabled write FKinectEnabled;
+        property KinectMinDistance : Double read FKinectMinDistance write FKinectMinDistance;
+        property KinectMaxDistance : Double read FKinectMaxDistance write FKinectMaxDistance;
+        property KinectSeatedMode : Boolean read FKinectSeatedMode write FKinectSeatedMode;
+        property KinectTargetLeft : string read FKinectTargetLeft write FKinectTargetLeft;
+        property KinectTargetRight : string read FKinectTargetRight write FKinectTargetRight;
+        property KinectTargetCenter : string read FKinectTargetCenter write FKinectTargetCenter;
 
   end;
 
@@ -288,6 +306,14 @@ begin
     FAvatar3DLipSync := True;
     FAvatar3DIntensity := 0.8;
     FAvatar3DQuality := 'auto';
+
+    FKinectEnabled := True;
+    FKinectMinDistance := 0.8;
+    FKinectMaxDistance := 2.5;
+    FKinectSeatedMode := True;
+    FKinectTargetLeft := 'ECG';
+    FKinectTargetRight := 'Hemacias';
+    FKinectTargetCenter := 'Robotinics';
 
 end;
 
@@ -635,6 +661,14 @@ begin
   arquivo.Append('RECOGLANGUAGE:'+FRecogLanguage);
   arquivo.Append('AUDIOSAMPLERATE:'+inttostr(FAudioSampleRate));
   arquivo.Append('AUDIOCHANNELS:'+inttostr(FAudioChannels));
+
+  arquivo.Append('KINECT_ENABLED:'+iif(FKinectEnabled, '1', '0'));
+  arquivo.Append('KINECT_MINDIST:'+FloatToStr(FKinectMinDistance));
+  arquivo.Append('KINECT_MAXDIST:'+FloatToStr(FKinectMaxDistance));
+  arquivo.Append('KINECT_SEATED:'+iif(FKinectSeatedMode, '1', '0'));
+  arquivo.Append('KINECT_TARGET_LEFT:'+FKinectTargetLeft);
+  arquivo.Append('KINECT_TARGET_RIGHT:'+FKinectTargetRight);
+  arquivo.Append('KINECT_TARGET_CENTER:'+FKinectTargetCenter);
 
   arquivo.SaveToFile(fpath+filename);
 end;
