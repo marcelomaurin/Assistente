@@ -155,6 +155,7 @@ type
 
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure pnlHeaderDblClick(Sender: TObject);
     procedure btVoltarExposicaoClick(Sender: TObject);
@@ -710,6 +711,14 @@ begin
 end;
 
 
+procedure Tfrmmain.FormShow(Sender: TObject);
+begin
+  if Assigned(pnlFooter) then
+    pnlFooter.Visible := False;
+  if Assigned(memPergunta) and memPergunta.CanFocus then
+    memPergunta.SetFocus;
+end;
+
 procedure Tfrmmain.FormResize(Sender: TObject);
 begin
   UpdateExhibitionLayout;
@@ -921,6 +930,10 @@ end;
 procedure Tfrmmain.SetPublicViewMode(AMode: TPublicViewMode);
 begin
   FPublicViewMode := AMode;
+  if Assigned(pnlPergunta) then
+    pnlPergunta.Visible := True;
+  if Assigned(pnlFooter) then
+    pnlFooter.Visible := False;
 
   case AMode of
     pvmIdle:
@@ -1016,8 +1029,14 @@ begin
     pnlAdminRoot.Visible := False;
   if Assigned(pnlRoot) then
     pnlRoot.Visible := True;
+  if Assigned(pnlPergunta) then
+    pnlPergunta.Visible := True;
+  if Assigned(pnlFooter) then
+    pnlFooter.Visible := False;
   UpdateExhibitionLayout;
   SetProfessorState('idle');
+  if Assigned(memPergunta) and memPergunta.CanFocus then
+    memPergunta.SetFocus;
 end;
 
 procedure Tfrmmain.EnterAdminMode;
@@ -1445,10 +1464,13 @@ begin
   // Inicializa Percepcao Semantica Kinect v1
   InitVision;
 
+  if Assigned(pnlFooter) then
+    pnlFooter.Visible := False;
+
   if Assigned(memPergunta) then
   begin
     memPergunta.Text := '';
-    memPergunta.TextHint := 'Digite sua pergunta aqui...';
+    memPergunta.TextHint := 'Digite sua pergunta...';
   end;
 end;
 

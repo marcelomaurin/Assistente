@@ -16,6 +16,7 @@ object frmmain: Tfrmmain
   OnClose = FormClose
   OnKeyDown = FormKeyDown
   OnResize = FormResize
+  OnShow = FormShow
   Position = poScreenCenter
   LCLVersion = '4.99.0.0'
   object pnlRoot: TPanel
@@ -99,6 +100,7 @@ object frmmain: Tfrmmain
       ParentBackground = False
       ParentColor = False
       TabOrder = 1
+      Visible = False
       object lblProfessorStatus: TLabel
         Left = 0
         Height = 34
@@ -128,10 +130,10 @@ object frmmain: Tfrmmain
       ParentColor = False
       TabOrder = 2
       object pnlBotoesPergunta: TPanel
-        Left = 824
+        Left = 952
         Height = 58
         Top = 0
-        Width = 276
+        Width = 148
         Align = alRight
         BevelOuter = bvNone
         Color = 1381653
@@ -140,49 +142,55 @@ object frmmain: Tfrmmain
         ParentColor = False
         TabOrder = 1
         object btEnviar: TBitBtn
-          Left = 175
+          Left = 98
           Height = 44
           Top = 7
-          Width = 94
+          Width = 44
           Align = alRight
-          BorderSpacing.Around = 7
-          Caption = 'Enviar ▶'
+          BorderSpacing.Around = 6
+          Caption = '➤'
           Color = 3942428
           Font.Color = clWhite
-          Font.Height = -13
+          Font.Height = -16
           Font.Style = [fsBold]
+          Hint = 'Enviar pergunta'
           OnClick = btEnviarClick
           ParentFont = False
+          ShowHint = True
           TabOrder = 0
         end
         object btMic: TBitBtn
-          Left = 90
+          Left = 52
           Height = 44
           Top = 7
-          Width = 78
+          Width = 40
           Align = alRight
-          BorderSpacing.Around = 7
-          Caption = '🎤 Falar'
+          BorderSpacing.Around = 6
+          Caption = '🎤'
           Color = 2500134
           Font.Color = clWhite
-          Font.Height = -12
+          Font.Height = -14
+          Hint = 'Falar (Microfone)'
           OnClick = btMicClick
           ParentFont = False
+          ShowHint = True
           TabOrder = 1
         end
         object btParar: TBitBtn
-          Left = 14
+          Left = 6
           Height = 44
           Top = 7
-          Width = 69
+          Width = 40
           Align = alRight
-          BorderSpacing.Around = 7
-          Caption = '⏹ Parar'
+          BorderSpacing.Around = 6
+          Caption = '⏹'
           Color = 2105376
           Font.Color = clWhite
-          Font.Height = -12
+          Font.Height = -14
+          Hint = 'Interromper'
           OnClick = btPararClick
           ParentFont = False
+          ShowHint = True
           TabOrder = 2
         end
       end
@@ -190,7 +198,7 @@ object frmmain: Tfrmmain
         Left = 12
         Height = 46
         Top = 6
-        Width = 804
+        Width = 936
         Align = alClient
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6

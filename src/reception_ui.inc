@@ -31,7 +31,7 @@ begin
   btAnexar.Caption := 'Documentos';
   btMic.Caption := 'Ouvir';
   btParar.Caption := 'Interromper';
-  lblPergunta.Caption := 'Converse comigo ou escreva sua pergunta';
+  // lblPergunta.Caption := 'Converse comigo ou escreva sua pergunta';
   P := TPanel.Create(Self); P.Parent := pnlChat; P.Align := alTop;
   P.Height := 56; P.BevelOuter := bvNone; P.Color := $00201912;
   FReceptionStatus := TLabel.Create(Self); FReceptionStatus.Parent := P;
