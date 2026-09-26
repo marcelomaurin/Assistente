@@ -8,6 +8,7 @@ object frmConfig: TfrmConfig
   ClientHeight = 490
   ClientWidth = 390
   OnCreate = FormCreate
+  OnShow = FormShow
   Position = poOwnerFormCenter
   LCLVersion = '4.4.0.0'
   object pcConfig: TPageControl
@@ -186,16 +187,6 @@ object frmConfig: TfrmConfig
         State = cbChecked
         TabOrder = 4
       end
-      object chkAutoSpeak: TCheckBox
-        Left = 12
-        Height = 19
-        Top = 198
-        Width = 277
-        Caption = 'Falar respostas recebidas (Voz Neural / SAPI)'
-        Checked = True
-        State = cbChecked
-        TabOrder = 5
-      end
       object btTestarJarvis: TButton
         Left = 12
         Height = 32
@@ -254,6 +245,7 @@ object frmConfig: TfrmConfig
         Top = 95
         Width = 350
         ItemHeight = 15
+        Style = csDropDown
         TabOrder = 1
       end
       object lblToken: TLabel
@@ -288,6 +280,27 @@ object frmConfig: TfrmConfig
         Width = 350
         TabOrder = 3
       end
+      object btTestarProvedor: TButton
+        Left = 10
+        Height = 32
+        Top = 255
+        Width = 350
+        Caption = ' Testar Provedor'
+        OnClick = btTestarProvedorClick
+        TabOrder = 4
+      end
+      object lblProvedorStatus: TLabel
+        Left = 10
+        Height = 70
+        Top = 295
+        Width = 350
+        AutoSize = False
+        Caption = 'Clique no botão acima para testar a comunicação com o provedor...'
+        Font.Color = clNavy
+        ParentColor = False
+        ParentFont = False
+        WordWrap = True
+      end
     end
     object tsOutputVoice: TTabSheet
       Caption = 'Output Voice'
@@ -296,7 +309,7 @@ object frmConfig: TfrmConfig
       object lblSynthEngine: TLabel
         Left = 10
         Height = 15
-        Top = 15
+        Top = 10
         Width = 145
         Caption = 'Mecanismo de Síntese:'
         ParentColor = False
@@ -304,8 +317,8 @@ object frmConfig: TfrmConfig
       object cbSynthEngine: TComboBox
         Left = 10
         Height = 23
-        Top = 35
-        Width = 350
+        Top = 28
+        Width = 170
         ItemHeight = 15
         ItemIndex = 1
         Items.Strings = (
@@ -319,10 +332,34 @@ object frmConfig: TfrmConfig
         TabOrder = 0
         Text = 'Windows SAPI'
       end
+      object lblSynthModel: TLabel
+        Left = 190
+        Height = 15
+        Top = 10
+        Width = 120
+        Caption = 'Modelo OpenAI TTS:'
+        ParentColor = False
+        Visible = False
+      end
+      object cbSynthModel: TComboBox
+        Left = 190
+        Height = 23
+        Top = 28
+        Width = 170
+        ItemHeight = 15
+        Items.Strings = (
+          'tts-1'
+          'tts-1-hd'
+        )
+        Style = csDropDown
+        TabOrder = 1
+        Text = 'tts-1'
+        Visible = False
+      end
       object lblSynthVoice: TLabel
         Left = 10
         Height = 15
-        Top = 75
+        Top = 58
         Width = 23
         Caption = 'Voz:'
         ParentColor = False
@@ -330,15 +367,27 @@ object frmConfig: TfrmConfig
       object cbSynthVoice: TComboBox
         Left = 10
         Height = 23
-        Top = 95
+        Top = 76
         Width = 350
         ItemHeight = 15
-        TabOrder = 1
+        TabOrder = 2
+      end
+      object lblOpenAINote: TLabel
+        Left = 10
+        Height = 15
+        Top = 104
+        Width = 350
+        AutoSize = False
+        Caption = '* OpenAI TTS utiliza a chave configurada na aba IA / ChatGPT.'
+        Font.Color = clNavy
+        ParentColor = False
+        ParentFont = False
+        Visible = False
       end
       object lblSynthVolume: TLabel
         Left = 10
         Height = 15
-        Top = 135
+        Top = 125
         Width = 43
         Caption = 'Volume:'
         ParentColor = False
@@ -346,7 +395,7 @@ object frmConfig: TfrmConfig
       object lblSynthVolumeVal: TLabel
         Left = 320
         Height = 15
-        Top = 135
+        Top = 125
         Width = 31
         Caption = '100%'
         ParentColor = False
@@ -354,17 +403,17 @@ object frmConfig: TfrmConfig
       object tbSynthVolume: TTrackBar
         Left = 10
         Height = 35
-        Top = 155
+        Top = 143
         Width = 350
         Max = 100
         OnChange = tbSynthVolumeChange
         Position = 100
-        TabOrder = 2
+        TabOrder = 3
       end
       object lblSynthRate: TLabel
         Left = 10
         Height = 15
-        Top = 200
+        Top = 180
         Width = 63
         Caption = 'Velocidade:'
         ParentColor = False
@@ -372,7 +421,7 @@ object frmConfig: TfrmConfig
       object lblSynthRateVal: TLabel
         Left = 340
         Height = 15
-        Top = 200
+        Top = 180
         Width = 7
         Caption = '0'
         ParentColor = False
@@ -380,22 +429,53 @@ object frmConfig: TfrmConfig
       object tbSynthRate: TTrackBar
         Left = 10
         Height = 35
-        Top = 220
+        Top = 198
         Width = 350
         Min = -10
         OnChange = tbSynthRateChange
         Position = 0
-        TabOrder = 3
+        TabOrder = 4
       end
       object chkSynthAsync: TCheckBox
         Left = 10
         Height = 19
-        Top = 270
+        Top = 238
         Width = 205
         Caption = 'Fala Assíncrona (Asynchronous)'
         Checked = True
         State = cbChecked
-        TabOrder = 4
+        TabOrder = 5
+      end
+      object chkAutoSpeak: TCheckBox
+        Left = 10
+        Height = 19
+        Top = 262
+        Width = 350
+        Caption = 'Falar respostas recebidas automaticamente'
+        Checked = True
+        State = cbChecked
+        TabOrder = 6
+      end
+      object btTestarFala: TButton
+        Left = 10
+        Height = 28
+        Top = 290
+        Width = 350
+        Caption = 'Testar Voz / Síntese de Fala'
+        OnClick = btTestarFalaClick
+        TabOrder = 7
+      end
+      object lblTestarFalaStatus: TLabel
+        Left = 10
+        Height = 36
+        Top = 324
+        Width = 350
+        AutoSize = False
+        Caption = 'Clique em "Testar Voz" para ouvir a síntese configurada.'
+        Font.Color = clGray
+        ParentColor = False
+        ParentFont = False
+        WordWrap = True
       end
     end
     object tsVoz: TTabSheet
@@ -405,88 +485,185 @@ object frmConfig: TfrmConfig
       object lblRecogEngine: TLabel
         Left = 10
         Height = 15
-        Top = 15
-        Width = 260
-        Caption = 'Mecanismo de Reconhecimento (CHATGPT):'
+        Top = 10
+        Width = 170
+        Caption = 'Mecanismo de Reconhecimento:'
         ParentColor = False
       end
       object cbRecogEngine: TComboBox
         Left = 10
         Height = 23
-        Top = 35
-        Width = 350
+        Top = 28
+        Width = 360
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
-          'OpenAI Whisper (Nuvem / Alta Preciso)'
+          'OpenAI Whisper (Nuvem / Alta Precisão)'
           'Windows SAPI (Local / Sem Nuvem)'
-          'Padro do Sistema'
+          'Padrão do Sistema'
         )
         Style = csDropDownList
         TabOrder = 0
-        Text = 'OpenAI Whisper (Nuvem / Alta Preciso)'
+        Text = 'OpenAI Whisper (Nuvem / Alta Precisão)'
       end
       object lblRecogLanguage: TLabel
         Left = 10
         Height = 15
-        Top = 75
-        Width = 150
-        Caption = 'Idioma de Transcrio:'
+        Top = 56
+        Width = 140
+        Caption = 'Idioma de Transcrição:'
         ParentColor = False
       end
       object edRecogLanguage: TEdit
         Left = 10
         Height = 23
-        Top = 95
-        Width = 160
+        Top = 74
+        Width = 100
         TabOrder = 1
         Text = 'pt'
       end
-      object lblAudioSampleRate: TLabel
-        Left = 10
-        Height = 15
-        Top = 135
-        Width = 230
-        Caption = 'Taxa de Amostragem (TAIAudioInput):'
-        ParentColor = False
-      end
-      object cbAudioSampleRate: TComboBox
-        Left = 10
+      object chkContinuousListening: TCheckBox
+        Left = 125
         Height = 23
-        Top = 155
-        Width = 200
-        ItemHeight = 15
-        ItemIndex = 0
-        Items.Strings = (
-          '16000 Hz (Recomendado)'
-          '44100 Hz (Qualidade Alta)'
-        )
-        Style = csDropDownList
+        Top = 74
+        Width = 245
+        Caption = 'Ativar escuta contínua por voz'
+        Checked = True
+        State = cbChecked
         TabOrder = 2
-        Text = '16000 Hz (Recomendado)'
       end
-      object lblAudioChannels: TLabel
+      object gbCaptacao: TGroupBox
         Left = 10
-        Height = 15
-        Top = 195
-        Width = 120
-        Caption = 'Canais de udio:'
-        ParentColor = False
-      end
-      object cbAudioChannels: TComboBox
-        Left = 10
-        Height = 23
-        Top = 215
-        Width = 200
-        ItemHeight = 15
-        ItemIndex = 0
-        Items.Strings = (
-          '1 - Mono'
-          '2 - Estreo'
-        )
-        Style = csDropDownList
-        TabOrder = 3
-        Text = '1 - Mono'
+        Height = 295
+        Top = 104
+        Width = 360
+        Caption = 'Dispositivo e Informações da Captação'
+        ClientHeight = 275
+        ClientWidth = 356
+        TabOrder = 2
+        object lblAudioDevice: TLabel
+          Left = 10
+          Height = 15
+          Top = 5
+          Width = 185
+          Caption = 'Dispositivo de Entrada / Microfone:'
+          ParentColor = False
+        end
+        object cbAudioDevice: TComboBox
+          Left = 10
+          Height = 23
+          Top = 22
+          Width = 250
+          ItemHeight = 15
+          OnChange = cbAudioDeviceChange
+          Style = csDropDownList
+          TabOrder = 0
+        end
+        object btRefreshAudio: TButton
+          Left = 266
+          Height = 23
+          Top = 22
+          Width = 80
+          Caption = 'Atualizar'
+          OnClick = btRefreshAudioClick
+          TabOrder = 1
+        end
+        object lblAudioDeviceInfo: TLabel
+          Left = 10
+          Height = 32
+          Top = 49
+          Width = 336
+          AutoSize = False
+          Caption = 'Dispositivo: Padrão do Sistema'
+          Font.Color = clNavy
+          ParentColor = False
+          ParentFont = False
+          WordWrap = True
+        end
+        object lblAudioSampleRate: TLabel
+          Left = 10
+          Height = 15
+          Top = 85
+          Width = 120
+          Caption = 'Taxa de Amostragem:'
+          ParentColor = False
+        end
+        object cbAudioSampleRate: TComboBox
+          Left = 10
+          Height = 23
+          Top = 103
+          Width = 155
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '16000 Hz (Recomendado)'
+            '44100 Hz (Qualidade Alta)'
+          )
+          Style = csDropDownList
+          TabOrder = 2
+          Text = '16000 Hz (Recomendado)'
+        end
+        object lblAudioChannels: TLabel
+          Left = 175
+          Height = 15
+          Top = 85
+          Width = 90
+          Caption = 'Canais de Áudio:'
+          ParentColor = False
+        end
+        object cbAudioChannels: TComboBox
+          Left = 175
+          Height = 23
+          Top = 103
+          Width = 170
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '1 - Mono'
+            '2 - Estéreo'
+          )
+          Style = csDropDownList
+          TabOrder = 3
+          Text = '1 - Mono'
+        end
+        object lblAudioFormatInfo: TLabel
+          Left = 10
+          Height = 15
+          Top = 131
+          Width = 336
+          Caption = 'Formato: 16-bit PCM Linear | Latência: Baixa'
+          Font.Color = clGray
+          ParentColor = False
+          ParentFont = False
+        end
+        object btTestarAudioInput: TButton
+          Left = 10
+          Height = 27
+          Top = 152
+          Width = 336
+          Caption = 'Testar Captação do Microfone'
+          OnClick = btTestarAudioInputClick
+          TabOrder = 4
+        end
+        object pbAudioLevel: TProgressBar
+          Left = 10
+          Height = 14
+          Top = 184
+          Width = 336
+          TabOrder = 5
+        end
+        object lblAudioTestStatus: TLabel
+          Left = 10
+          Height = 40
+          Top = 203
+          Width = 336
+          AutoSize = False
+          Caption = 'Clique em "Testar Captação" para verificar se o microfone está ouvindo som.'
+          Font.Color = clGray
+          ParentColor = False
+          ParentFont = False
+          WordWrap = True
+        end
       end
     end
     object tsVisao: TTabSheet

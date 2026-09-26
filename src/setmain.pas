@@ -108,6 +108,8 @@ type
         FRecogLanguage : String;
         FAudioSampleRate : integer;
         FAudioChannels : integer;
+        FAudioDeviceIndex : integer; // -1 = Padrão (WAVE_MAPPER), 0, 1, ...
+        FAudioDeviceName : String;
 
         { Kinect v1 / Percepcao }
         FVisionSource: TVisionSource;
@@ -220,6 +222,8 @@ type
         property RecogLanguage : String read FRecogLanguage write FRecogLanguage;
         property AudioSampleRate : integer read FAudioSampleRate write FAudioSampleRate;
         property AudioChannels : integer read FAudioChannels write FAudioChannels;
+        property AudioDeviceIndex : integer read FAudioDeviceIndex write FAudioDeviceIndex;
+        property AudioDeviceName : String read FAudioDeviceName write FAudioDeviceName;
         property Avatar3DModel: string read FAvatar3DModel write FAvatar3DModel;
         property AdminPIN: string read FAdminPIN write FAdminPIN;
         property Avatar3DAutoIdle: Boolean read FAvatar3DAutoIdle write FAvatar3DAutoIdle;
@@ -370,6 +374,8 @@ begin
     FRecogLanguage := 'pt';
     FAudioSampleRate := 16000;
     FAudioChannels := 1;
+    FAudioDeviceIndex := -1;
+    FAudioDeviceName := '';
     FAvatar3DModel := '';
     FAdminPIN := '';
     FAvatar3DAutoIdle := True;
@@ -665,6 +671,14 @@ begin
     begin
       FAudioChannels := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 1);
     end;
+    if  BuscaChave(arquivo,'AUDIODEVICEINDEX:',posicao) then
+    begin
+      FAudioDeviceIndex := strtointdef(RetiraInfo(arquivo.Strings[posicao]), -1);
+    end;
+    if  BuscaChave(arquivo,'AUDIODEVICENAME:',posicao) then
+    begin
+      FAudioDeviceName := RetiraInfo(arquivo.Strings[posicao]);
+    end;
 
     if BuscaChave(arquivo,'CONTINUOUS_LISTENING:',posicao) then
       FContinuousListening := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
@@ -680,6 +694,15 @@ begin
       FEchoSuppressionEnabled := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     if BuscaChave(arquivo,'SELF_AUDIO_CORR_THRESH:',posicao) then
       FSelfAudioCorrelationThreshold := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 0.70);
+
+    // Sanitize values to prevent 0-value deadlocks in voice recognition & synthesis
+    if FSilenceTimeoutMs <= 0 then FSilenceTimeoutMs := 900;
+    if FMinSpeechMs <= 0 then FMinSpeechMs := 250;
+    if FMaxSpeechMs <= 0 then FMaxSpeechMs := 15000;
+    if FVoiceThreshold <= 0.0001 then FVoiceThreshold := 0.015;
+    if FSelfAudioCorrelationThreshold <= 0.0001 then FSelfAudioCorrelationThreshold := 0.70;
+    if (Trim(FVoiceModel) = '') or (FVoiceModel = 'gpt-4o-mini-tts') then
+      FVoiceModel := 'tts-1';
 
     if BuscaChave(arquivo,'STT_TOKEN:',posicao) then
       FSTTToken := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
@@ -816,6 +839,7 @@ begin
 
   arquivo.Append('SYNTHENGINE:'+inttostr(FSynthEngine));
   arquivo.Append('SYNTHVOICE:'+FSynthVoice);
+  arquivo.Append('VOICEMODEL:'+FVoiceModel);
   arquivo.Append('SYNTHVOLUME:'+inttostr(FSynthVolume));
   arquivo.Append('SYNTHRATE:'+inttostr(FSynthRate));
   arquivo.Append('SYNTHASYNC:'+iif(FSynthAsync, '1', '0'));
@@ -824,6 +848,8 @@ begin
   arquivo.Append('RECOGLANGUAGE:'+FRecogLanguage);
   arquivo.Append('AUDIOSAMPLERATE:'+inttostr(FAudioSampleRate));
   arquivo.Append('AUDIOCHANNELS:'+inttostr(FAudioChannels));
+  arquivo.Append('AUDIODEVICEINDEX:'+inttostr(FAudioDeviceIndex));
+  arquivo.Append('AUDIODEVICENAME:'+FAudioDeviceName);
 
   arquivo.Append('VISION_SOURCE:'+VisionSourceName(FVisionSource));
   arquivo.Append('KINECT_DEVICE_INDEX:'+IntToStr(FKinectDeviceIndex));
