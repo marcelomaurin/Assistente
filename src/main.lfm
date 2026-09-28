@@ -31,21 +31,21 @@ object frmmain: Tfrmmain
     TabOrder = 0
     object pnlHeader: TPanel
       Left = 0
-      Height = 64
+      Height = 58
       Top = 0
       Width = 1100
       Align = alTop
       BevelOuter = bvNone
-      ClientHeight = 64
+      ClientHeight = 58
       ClientWidth = 1100
       TabOrder = 0
       object lblTitulo: TLabel
         Left = 24
-        Height = 29
-        Top = 10
-        Width = 257
+        Height = 26
+        Top = 8
+        Width = 220
         Caption = 'Professor Virtual'
-        Font.Height = -21
+        Font.Height = -20
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentFont = False
@@ -53,15 +53,15 @@ object frmmain: Tfrmmain
       object lblStatus: TLabel
         Left = 25
         Height = 17
-        Top = 40
+        Top = 35
         Width = 126
         Caption = 'Pronto para conversar'
       end
       object btConfig: TSpeedButton
-        Left = 1012
-        Height = 36
+        Left = 1024
+        Height = 30
         Top = 14
-        Width = 64
+        Width = 52
         Anchors = [akTop, akRight]
         Caption = 'Config.'
         Flat = True
@@ -70,30 +70,51 @@ object frmmain: Tfrmmain
     end
     object pnlConteudo: TPanel
       Left = 0
-      Height = 576
-      Top = 64
+      Height = 582
+      Top = 58
       Width = 1100
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 576
+      ClientHeight = 582
       ClientWidth = 1100
       TabOrder = 1
+      object pnlAvatar: TPanel
+        Left = 24
+        Height = 534
+        Top = 24
+        Width = 350
+        Anchors = [akTop, akLeft, akBottom]
+        BevelOuter = bvNone
+        Caption = ''
+        ClientHeight = 534
+        ClientWidth = 350
+        TabOrder = 0
+        object GifAvatar: TGifAnim
+          Left = 0
+          Height = 534
+          Top = 0
+          Width = 350
+          Align = alClient
+          AutoSize = False
+          Animate = False
+        end
+      end
       object lblAssistente: TLabel
-        Left = 32
+        Left = 406
         Height = 25
         Top = 24
-        Width = 208
-        Caption = 'Como posso ajudar?'
-        Font.Height = -19
+        Width = 410
+        Caption = 'Olá. Pergunte sobre qualquer projeto da exposição.'
+        Font.Height = -18
         Font.Name = 'Segoe UI'
         Font.Style = [fsBold]
         ParentFont = False
       end
       object memResposta: TMemo
-        Left = 32
-        Height = 487
-        Top = 64
-        Width = 666
+        Left = 406
+        Height = 486
+        Top = 72
+        Width = 670
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderStyle = bsNone
         Color = clBtnFace
@@ -102,28 +123,7 @@ object frmmain: Tfrmmain
         ParentFont = False
         ReadOnly = True
         ScrollBars = ssAutoVertical
-        TabOrder = 0
-      end
-      object pnlAvatar: TPanel
-        Left = 722
-        Height = 487
-        Top = 64
-        Width = 346
-        Anchors = [akTop, akRight, akBottom]
-        BevelOuter = bvNone
-        Caption = ''
-        ClientHeight = 487
-        ClientWidth = 346
         TabOrder = 1
-        object GifAvatar: TGifAnim
-          Left = 0
-          Height = 487
-          Top = 0
-          Width = 346
-          Align = alClient
-          AutoSize = False
-          Animate = False
-        end
       end
     end
     object pnlEntrada: TPanel
@@ -137,10 +137,10 @@ object frmmain: Tfrmmain
       ClientWidth = 1100
       TabOrder = 2
       object edPergunta: TEdit
-        Left = 32
-        Height = 36
+        Left = 24
+        Height = 38
         Top = 18
-        Width = 920
+        Width = 934
         Anchors = [akLeft, akRight, akBottom]
         Font.Height = -15
         Font.Name = 'Segoe UI'
@@ -149,10 +149,10 @@ object frmmain: Tfrmmain
         OnKeyDown = edPerguntaKeyDown
       end
       object btEnviar: TButton
-        Left = 968
-        Height = 36
+        Left = 974
+        Height = 38
         Top = 18
-        Width = 100
+        Width = 102
         Anchors = [akRight, akBottom]
         Caption = 'Enviar'
         Default = True
