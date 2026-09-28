@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, LCLType, chatgpt, setmain, frmconfig, jarvis_api, agent_manager;
+  Buttons, LCLType, GifAnim, chatgpt, setmain, frmconfig, jarvis_api, agent_manager;
 
 type
   { Tfrmmain
@@ -19,6 +19,8 @@ type
     lblStatus: TLabel;
     btConfig: TSpeedButton;
     pnlConteudo: TPanel;
+    pnlAvatar: TPanel;
+    GifAvatar: TGifAnim;
     lblAssistente: TLabel;
     memResposta: TMemo;
     pnlEntrada: TPanel;
@@ -35,6 +37,7 @@ type
     FJarvisClient: TJarvisAPIClient;
     FAguardandoResposta: Boolean;
     procedure AplicarConfiguracao;
+    procedure CarregarAvatarEstatico;
     procedure EnviarPergunta;
     procedure SetEstado(const ATexto: string; AOcupado: Boolean);
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState;
@@ -69,6 +72,7 @@ begin
   FAssistantManager.OnComplete := @OnAgentComplete;
 
   AplicarConfiguracao;
+  CarregarAvatarEstatico;
   SetEstado('Pronto para conversar', False);
 end;
 
@@ -102,6 +106,31 @@ begin
   { Jarvis e apenas uma dependencia do agente; nenhuma automacao e iniciada aqui. }
   FJarvisClient.BaseURL := FSetMain.JarvisURL;
   FJarvisClient.APIKey := FSetMain.JarvisAPIKey;
+end;
+
+procedure Tfrmmain.CarregarAvatarEstatico;
+var
+  BaseDir, AvatarFile: string;
+begin
+  { O espaco do avatar ja nasce separado do restante da UI.
+    Nesta etapa usamos somente o primeiro quadro do GIF existente. }
+  GifAvatar.Animate := False;
+  BaseDir := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName));
+
+  AvatarFile := ExpandFileName(BaseDir + '..' + PathDelim + 'img' + PathDelim + 'robo-start.gif');
+  if not FileExists(AvatarFile) then
+    AvatarFile := ExpandFileName(BaseDir + 'img' + PathDelim + 'robo-start.gif');
+  if not FileExists(AvatarFile) then
+    AvatarFile := ExpandFileName(BaseDir + '..' + PathDelim + '..' + PathDelim + 'img' + PathDelim + 'robo-start.gif');
+
+  if FileExists(AvatarFile) then
+  begin
+    GifAvatar.FileName := AvatarFile;
+    GifAvatar.Animate := False;
+    GifAvatar.Visible := True;
+  end
+  else
+    GifAvatar.Visible := False;
 end;
 
 procedure Tfrmmain.SetEstado(const ATexto: string; AOcupado: Boolean);
@@ -164,7 +193,6 @@ begin
   try
     if FormCfg.ShowModal = mrOk then
     begin
-      { A propria configuracao salva em TSetMain. Recarregamos e propagamos. }
       FSetMain.CarregaContexto;
       AplicarConfiguracao;
       SetEstado('Configurações atualizadas', False);
