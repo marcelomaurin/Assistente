@@ -93,7 +93,7 @@ object frmmain: Tfrmmain
         Left = 32
         Height = 487
         Top = 64
-        Width = 1036
+        Width = 666
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderStyle = bsNone
         Color = clBtnFace
@@ -103,6 +103,27 @@ object frmmain: Tfrmmain
         ReadOnly = True
         ScrollBars = ssAutoVertical
         TabOrder = 0
+      end
+      object pnlAvatar: TPanel
+        Left = 722
+        Height = 487
+        Top = 64
+        Width = 346
+        Anchors = [akTop, akRight, akBottom]
+        BevelOuter = bvNone
+        Caption = ''
+        ClientHeight = 487
+        ClientWidth = 346
+        TabOrder = 1
+        object GifAvatar: TGifAnim
+          Left = 0
+          Height = 487
+          Top = 0
+          Width = 346
+          Align = alClient
+          AutoSize = False
+          Animate = False
+        end
       end
     end
     object pnlEntrada: TPanel
