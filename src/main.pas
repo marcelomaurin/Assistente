@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, LCLType, GifAnim, chatgpt, setmain, frmconfig, jarvis_api,
-  agent_manager, reception_core;
+  agent_manager, reception_core, aiagent_memorymap, aiagent_flowevents;
 
 type
   { Tfrmmain
@@ -37,9 +37,15 @@ type
     FAssistantManager: TAssistantManager;
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
+    FMemoryMap: TAIAgentMemoryMap;
+    FMemoryItem: TAIAgentMemoryMapItem;
+    FHistoryFile: string;
+    FCurrentUserText: string;
     FAguardandoResposta: Boolean;
     procedure AplicarConfiguracao;
     procedure CarregarAvatarEstatico;
+    procedure InicializarMemoria;
+    procedure SalvarMemoria;
     procedure EnviarPergunta;
     procedure FalarResposta(const ATexto: string);
     procedure SetEstado(const ATexto: string; AOcupado: Boolean);
@@ -62,6 +68,8 @@ procedure Tfrmmain.FormCreate(Sender: TObject);
 begin
   FAguardandoResposta := False;
   FSpeechJob := nil;
+  FMemoryItem := nil;
+  FCurrentUserText := '';
 
   { TSetMain permanece sendo a fonte unica das configuracoes. }
   if FSetMain = nil then
@@ -75,6 +83,10 @@ begin
   FAssistantManager.OnStateChange := @OnAgentStateChange;
   FAssistantManager.OnComplete := @OnAgentComplete;
 
+  { Memoria conversacional da suite CHATGPT. }
+  FMemoryMap := TAIAgentMemoryMap.Create(Self);
+  InicializarMemoria;
+
   AplicarConfiguracao;
   CarregarAvatarEstatico;
   SetEstado('Pronto para conversar', False);
@@ -82,6 +94,7 @@ end;
 
 procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
+  SalvarMemoria;
   { O job de fala nao pertence ao formulario; encerra antes de destruir a UI. }
   if Assigned(FSpeechJob) then
   begin
@@ -97,6 +110,45 @@ procedure Tfrmmain.FormShow(Sender: TObject);
 begin
   edPergunta.Text := '';
   edPergunta.SetFocus;
+end;
+
+procedure Tfrmmain.InicializarMemoria;
+var
+  BaseDir: string;
+begin
+  BaseDir := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName));
+  FHistoryFile := BaseDir + 'conversation-history.json';
+
+  FMemoryMap.MaxItems := 100;
+  FMemoryMap.StoreFullPrompt := True;
+  FMemoryMap.StoreFullResponse := True;
+  FMemoryMap.DetectInformationLoss := True;
+  FMemoryMap.RedactSensitiveData := True;
+
+  if FileExists(FHistoryFile) then
+  begin
+    try
+      FMemoryMap.LoadFromFile(FHistoryFile);
+    except
+      on E: Exception do
+      begin
+        { Historico corrompido nao impede a aplicacao de iniciar. }
+        FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
+      end;
+    end;
+  end
+  else
+    FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
+end;
+
+procedure Tfrmmain.SalvarMemoria;
+begin
+  if (FMemoryMap = nil) or (FHistoryFile = '') then Exit;
+  try
+    FMemoryMap.SaveToFile(FHistoryFile);
+  except
+    { Persistencia de memoria nao deve derrubar a interface. }
+  end;
 end;
 
 procedure Tfrmmain.AplicarConfiguracao;
@@ -154,12 +206,32 @@ end;
 
 procedure Tfrmmain.EnviarPergunta;
 var
-  Pergunta: string;
+  Pergunta, Historico, PromptComContexto: string;
 begin
   if FAguardandoResposta then Exit;
 
   Pergunta := Trim(edPergunta.Text);
   if Pergunta = '' then Exit;
+
+  FCurrentUserText := Pergunta;
+  Historico := '';
+  if Assigned(FMemoryMap) then
+    Historico := Trim(FMemoryMap.BuildConversationContext(100));
+
+  if Historico <> '' then
+    PromptComContexto :=
+      'Historico completo da conversa anterior:' + sLineBreak +
+      Historico + sLineBreak + sLineBreak +
+      'Nova fala do usuario:' + sLineBreak + Pergunta + sLineBreak + sLineBreak +
+      'Analise a nova fala considerando todo o historico acima e responda mantendo o contexto.'
+  else
+    PromptComContexto := Pergunta;
+
+  if Assigned(FMemoryMap) then
+    FMemoryItem := FMemoryMap.BeginAgentStep('Assistente', tamOrquestrador,
+      Pergunta, Historico)
+  else
+    FMemoryItem := nil;
 
   memResposta.Lines.Add('Você: ' + Pergunta);
   memResposta.Lines.Add('');
@@ -167,10 +239,18 @@ begin
   SetEstado('Pensando...', True);
 
   try
-    FAssistantManager.ProcessUserRequestAsync(Pergunta);
+    FAssistantManager.ProcessUserRequestAsync(PromptComContexto);
   except
     on E: Exception do
     begin
+      if Assigned(FMemoryItem) then
+      begin
+        FMemoryItem.Erro := E.Message;
+        FMemoryMap.EndAgentStep(FMemoryItem, 'Falha ao enviar pergunta', E.Message,
+          'erro', '', '');
+        SalvarMemoria;
+        FMemoryItem := nil;
+      end;
       memResposta.Lines.Add('Assistente: erro ao enviar a pergunta: ' + E.Message);
       memResposta.Lines.Add('');
       SetEstado('Erro. Pronto para nova tentativa', False);
@@ -281,6 +361,20 @@ begin
       Texto := 'Não foi possível obter uma resposta.';
   end;
 
+  { Fecha o turno no MemoryMap: pergunta, contexto recebido e resposta ficam
+    persistidos como uma unica etapa da conversa. }
+  if Assigned(FMemoryItem) and Assigned(FMemoryMap) then
+  begin
+    if not ASuccess then
+      FMemoryItem.Erro := Texto;
+    FMemoryMap.EndAgentStep(FMemoryItem,
+      'Nova fala analisada considerando o historico da conversa',
+      'Resposta produzida pelo agente com memoria contextual',
+      'responder', Texto, Texto);
+    SalvarMemoria;
+    FMemoryItem := nil;
+  end;
+
   memResposta.Lines.Add('Assistente: ' + Texto);
   memResposta.Lines.Add('');
 
@@ -292,6 +386,7 @@ begin
   else
     SetEstado('Falha na resposta. Tente novamente', False);
 
+  FCurrentUserText := '';
   edPergunta.SetFocus;
 end;
 
