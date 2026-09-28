@@ -7,12 +7,10 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   Buttons, LCLType, GifAnim, chatgpt, setmain, frmconfig, jarvis_api,
-  agent_manager, reception_core, aiagent_memorymap, aiagent_flowevents;
+  agent_manager, reception_core, aiagent_memorymap, aiagent_flowevents,
+  voice_input_bridge;
 
 type
-  { Tfrmmain
-    Tela principal minima. A UI apenas recebe a entrada e apresenta o resultado.
-    Configuracoes continuam centralizadas em TSetMain/frmconfig. }
   Tfrmmain = class(TForm)
     pnlRoot: TPanel;
     pnlHeader: TPanel;
@@ -37,6 +35,7 @@ type
     FAssistantManager: TAssistantManager;
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
+    FVoiceInput: TVoiceInputBridge;
     FMemoryMap: TAIAgentMemoryMap;
     FMemoryItem: TAIAgentMemoryMapItem;
     FHistoryFile: string;
@@ -47,6 +46,9 @@ type
     procedure InicializarMemoria;
     procedure SalvarMemoria;
     procedure EnviarPergunta;
+    procedure ProcessarEntrada(const ATexto: string);
+    procedure VoiceText(Sender: TObject; const AText: string);
+    procedure VoiceState(Sender: TObject; const AState: string);
     procedure FalarResposta(const ATexto: string);
     procedure SetEstado(const ATexto: string; AOcupado: Boolean);
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState;
@@ -55,6 +57,7 @@ type
       AProvider: string; ASuccess: Boolean);
   public
     property AssistantManager: TAssistantManager read FAssistantManager;
+    property VoiceInput: TVoiceInputBridge read FVoiceInput;
   end;
 
 var
@@ -71,21 +74,23 @@ begin
   FMemoryItem := nil;
   FCurrentUserText := '';
 
-  { TSetMain permanece sendo a fonte unica das configuracoes. }
   if FSetMain = nil then
     FSetMain := TSetMain.Create;
   FSetMain.CarregaContexto;
 
-  { Inicializamos somente o necessario para texto -> agente -> resposta -> TTS. }
   FJarvisClient := TJarvisAPIClient.Create(Self);
   FAssistantManager := TAssistantManager.Create(Self);
   FAssistantManager.JarvisClient := FJarvisClient;
   FAssistantManager.OnStateChange := @OnAgentStateChange;
   FAssistantManager.OnComplete := @OnAgentComplete;
 
-  { Memoria conversacional da suite CHATGPT. }
   FMemoryMap := TAIAgentMemoryMap.Create(Self);
   InicializarMemoria;
+
+  { A ponte de voz entrega texto ao mesmo fluxo usado pelo teclado. }
+  FVoiceInput := TVoiceInputBridge.Create(Self);
+  FVoiceInput.OnText := @VoiceText;
+  FVoiceInput.OnState := @VoiceState;
 
   AplicarConfiguracao;
   CarregarAvatarEstatico;
@@ -94,16 +99,15 @@ end;
 
 procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
+  if Assigned(FVoiceInput) then
+    FVoiceInput.Cancel;
   SalvarMemoria;
-  { O job de fala nao pertence ao formulario; encerra antes de destruir a UI. }
   if Assigned(FSpeechJob) then
   begin
     FSpeechJob.Cancel;
     FSpeechJob.Free;
     FSpeechJob := nil;
   end;
-  { Componentes com Owner=Self sao liberados pelo formulario.
-    FSetMain continua com o mesmo ciclo de vida global usado pelo projeto. }
 end;
 
 procedure Tfrmmain.FormShow(Sender: TObject);
@@ -113,28 +117,21 @@ begin
 end;
 
 procedure Tfrmmain.InicializarMemoria;
-var
-  BaseDir: string;
+var BaseDir: string;
 begin
   BaseDir := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName));
   FHistoryFile := BaseDir + 'conversation-history.json';
-
   FMemoryMap.MaxItems := 100;
   FMemoryMap.StoreFullPrompt := True;
   FMemoryMap.StoreFullResponse := True;
   FMemoryMap.DetectInformationLoss := True;
   FMemoryMap.RedactSensitiveData := True;
-
   if FileExists(FHistoryFile) then
   begin
     try
       FMemoryMap.LoadFromFile(FHistoryFile);
     except
-      on E: Exception do
-      begin
-        { Historico corrompido nao impede a aplicacao de iniciar. }
-        FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
-      end;
+      FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
     end;
   end
   else
@@ -147,45 +144,34 @@ begin
   try
     FMemoryMap.SaveToFile(FHistoryFile);
   except
-    { Persistencia de memoria nao deve derrubar a interface. }
   end;
 end;
 
 procedure Tfrmmain.AplicarConfiguracao;
 begin
   if (FSetMain = nil) or (FAssistantManager = nil) then Exit;
-
-  { IA: propaga exatamente os valores mantidos pela tela de configuracao. }
   FAssistantManager.ChatGPT.TOKEN := FSetMain.CHATGPT;
   if (FSetMain.ChatGPTProvider >= 0) and
      (FSetMain.ChatGPTProvider <= Ord(High(TAIProvider))) then
     FAssistantManager.ChatGPT.Provider := TAIProvider(FSetMain.ChatGPTProvider)
   else
     FAssistantManager.ChatGPT.Provider := AIP_OPENAI;
-
   FAssistantManager.ChatGPT.CustomModel := FSetMain.ChatGPTModel;
   FAssistantManager.ChatGPT.URL := FSetMain.ChatGPTURL;
-
-  { Jarvis e apenas uma dependencia do agente; nenhuma automacao e iniciada aqui. }
   FJarvisClient.BaseURL := FSetMain.JarvisURL;
   FJarvisClient.APIKey := FSetMain.JarvisAPIKey;
 end;
 
 procedure Tfrmmain.CarregarAvatarEstatico;
-var
-  BaseDir, AvatarFile: string;
+var BaseDir, AvatarFile: string;
 begin
-  { O espaco do avatar ja nasce separado do restante da UI.
-    Nesta etapa usamos somente o primeiro quadro do GIF existente. }
   GifAvatar.Animate := False;
   BaseDir := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName));
-
   AvatarFile := ExpandFileName(BaseDir + '..' + PathDelim + 'img' + PathDelim + 'robo-start.gif');
   if not FileExists(AvatarFile) then
     AvatarFile := ExpandFileName(BaseDir + 'img' + PathDelim + 'robo-start.gif');
   if not FileExists(AvatarFile) then
     AvatarFile := ExpandFileName(BaseDir + '..' + PathDelim + '..' + PathDelim + 'img' + PathDelim + 'robo-start.gif');
-
   if FileExists(AvatarFile) then
   begin
     GifAvatar.FileName := AvatarFile;
@@ -205,12 +191,27 @@ begin
 end;
 
 procedure Tfrmmain.EnviarPergunta;
+begin
+  ProcessarEntrada(edPergunta.Text);
+end;
+
+procedure Tfrmmain.VoiceText(Sender: TObject; const AText: string);
+begin
+  ProcessarEntrada(AText);
+end;
+
+procedure Tfrmmain.VoiceState(Sender: TObject; const AState: string);
+begin
+  if not FAguardandoResposta then
+    lblStatus.Caption := AState;
+end;
+
+procedure Tfrmmain.ProcessarEntrada(const ATexto: string);
 var
   Pergunta, Historico, PromptComContexto: string;
 begin
   if FAguardandoResposta then Exit;
-
-  Pergunta := Trim(edPergunta.Text);
+  Pergunta := Trim(ATexto);
   if Pergunta = '' then Exit;
 
   FCurrentUserText := Pergunta;
@@ -220,9 +221,9 @@ begin
 
   if Historico <> '' then
     PromptComContexto :=
-      'Historico completo da conversa anterior:' + sLineBreak +
-      Historico + sLineBreak + sLineBreak +
-      'Nova fala do usuario:' + sLineBreak + Pergunta + sLineBreak + sLineBreak +
+      'Historico completo da conversa anterior:' + sLineBreak + Historico +
+      sLineBreak + sLineBreak + 'Nova fala do usuario:' + sLineBreak + Pergunta +
+      sLineBreak + sLineBreak +
       'Analise a nova fala considerando todo o historico acima e responda mantendo o contexto.'
   else
     PromptComContexto := Pergunta;
@@ -254,47 +255,36 @@ begin
       memResposta.Lines.Add('Assistente: erro ao enviar a pergunta: ' + E.Message);
       memResposta.Lines.Add('');
       SetEstado('Erro. Pronto para nova tentativa', False);
-      edPergunta.SetFocus;
     end;
   end;
 end;
 
 procedure Tfrmmain.FalarResposta(const ATexto: string);
-var
-  Cfg: TReceptionConfig;
-  Texto: string;
+var Cfg: TReceptionConfig; Texto: string;
 begin
   if (FSetMain = nil) or (not FSetMain.AutoSpeak) then Exit;
-
   Texto := Trim(ATexto);
   if Texto = '' then Exit;
-
-  { Se ainda existe uma fala anterior, interrompe antes da nova resposta. }
   if Assigned(FSpeechJob) then
   begin
     FSpeechJob.Cancel;
     FSpeechJob.Free;
     FSpeechJob := nil;
   end;
-
   FillChar(Cfg, SizeOf(Cfg), 0);
   Cfg.Token := FSetMain.CHATGPT;
   Cfg.AudioToken := FSetMain.VoiceAPIToken;
-  if Cfg.AudioToken = '' then
-    Cfg.AudioToken := FSetMain.CHATGPT;
+  if Cfg.AudioToken = '' then Cfg.AudioToken := FSetMain.CHATGPT;
   Cfg.Model := FSetMain.VoiceModel;
   Cfg.URL := FSetMain.VoiceEndpoint;
   Cfg.Language := FSetMain.VoiceLanguage;
   Cfg.Voice := FSetMain.SynthVoice;
-  if Cfg.Voice = '' then
-    Cfg.Voice := FSetMain.VoiceRemoteVoice;
+  if Cfg.Voice = '' then Cfg.Voice := FSetMain.VoiceRemoteVoice;
   Cfg.Provider := FSetMain.VoiceProvider;
   Cfg.RecogEngine := FSetMain.RecogEngine;
   Cfg.SynthEngine := FSetMain.SynthEngine;
   Cfg.Volume := FSetMain.SynthVolume;
   Cfg.Rate := FSetMain.SynthRate;
-
-  { TReceptionJob executa a sintese fora da thread visual. }
   FSpeechJob := TReceptionJob.Create(rjSpeak, Cfg, Texto, '', 'main');
 end;
 
@@ -303,8 +293,7 @@ begin
   EnviarPergunta;
 end;
 
-procedure Tfrmmain.edPerguntaKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure Tfrmmain.edPerguntaKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if (Key = VK_RETURN) and (Shift = []) then
   begin
@@ -314,11 +303,9 @@ begin
 end;
 
 procedure Tfrmmain.btConfigClick(Sender: TObject);
-var
-  FormCfg: TfrmConfig;
+var FormCfg: TfrmConfig;
 begin
   if FAguardandoResposta then Exit;
-
   FormCfg := TfrmConfig.Create(Self);
   try
     if FormCfg.ShowModal = mrOk then
@@ -337,36 +324,28 @@ procedure Tfrmmain.OnAgentStateChange(Sender: TObject; AState: TAgentState;
   const ADescription: string);
 begin
   case AState of
-    asIdle:          lblStatus.Caption := 'Pronto para conversar';
-    asPlanning:      lblStatus.Caption := 'Analisando...';
+    asIdle: lblStatus.Caption := 'Pronto para conversar';
+    asPlanning: lblStatus.Caption := 'Analisando...';
     asExecutingStep: lblStatus.Caption := 'Processando...';
-    asCallingTool:   lblStatus.Caption := 'Executando...';
-    asFinished:      lblStatus.Caption := 'Resposta recebida';
-    asError:         lblStatus.Caption := 'Erro no agente';
-    asCancelled:     lblStatus.Caption := 'Cancelado';
+    asCallingTool: lblStatus.Caption := 'Executando...';
+    asFinished: lblStatus.Caption := 'Resposta recebida';
+    asError: lblStatus.Caption := 'Erro no agente';
+    asCancelled: lblStatus.Caption := 'Cancelado';
   end;
 end;
 
 procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText,
   AProvider: string; ASuccess: Boolean);
-var
-  Texto: string;
+var Texto: string;
 begin
   Texto := Trim(AResponseText);
   if Texto = '' then
-  begin
-    if ASuccess then
-      Texto := '(resposta vazia)'
-    else
-      Texto := 'Não foi possível obter uma resposta.';
-  end;
+    if ASuccess then Texto := '(resposta vazia)'
+    else Texto := 'Não foi possível obter uma resposta.';
 
-  { Fecha o turno no MemoryMap: pergunta, contexto recebido e resposta ficam
-    persistidos como uma unica etapa da conversa. }
   if Assigned(FMemoryItem) and Assigned(FMemoryMap) then
   begin
-    if not ASuccess then
-      FMemoryItem.Erro := Texto;
+    if not ASuccess then FMemoryItem.Erro := Texto;
     FMemoryMap.EndAgentStep(FMemoryItem,
       'Nova fala analisada considerando o historico da conversa',
       'Resposta produzida pelo agente com memoria contextual',
@@ -377,7 +356,6 @@ begin
 
   memResposta.Lines.Add('Assistente: ' + Texto);
   memResposta.Lines.Add('');
-
   if ASuccess then
   begin
     SetEstado('Pronto para conversar', False);
@@ -385,7 +363,6 @@ begin
   end
   else
     SetEstado('Falha na resposta. Tente novamente', False);
-
   FCurrentUserText := '';
   edPergunta.SetFocus;
 end;
