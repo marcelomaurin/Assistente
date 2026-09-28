@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, LCLType, GifAnim, chatgpt, setmain, frmconfig, jarvis_api, agent_manager;
+  Buttons, LCLType, GifAnim, chatgpt, setmain, frmconfig, jarvis_api,
+  agent_manager, reception_core;
 
 type
   { Tfrmmain
@@ -35,10 +36,12 @@ type
   private
     FAssistantManager: TAssistantManager;
     FJarvisClient: TJarvisAPIClient;
+    FSpeechJob: TReceptionJob;
     FAguardandoResposta: Boolean;
     procedure AplicarConfiguracao;
     procedure CarregarAvatarEstatico;
     procedure EnviarPergunta;
+    procedure FalarResposta(const ATexto: string);
     procedure SetEstado(const ATexto: string; AOcupado: Boolean);
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState;
       const ADescription: string);
@@ -58,13 +61,14 @@ implementation
 procedure Tfrmmain.FormCreate(Sender: TObject);
 begin
   FAguardandoResposta := False;
+  FSpeechJob := nil;
 
   { TSetMain permanece sendo a fonte unica das configuracoes. }
   if FSetMain = nil then
     FSetMain := TSetMain.Create;
   FSetMain.CarregaContexto;
 
-  { Nesta primeira fase inicializamos somente o necessario para texto -> agente. }
+  { Inicializamos somente o necessario para texto -> agente -> resposta -> TTS. }
   FJarvisClient := TJarvisAPIClient.Create(Self);
   FAssistantManager := TAssistantManager.Create(Self);
   FAssistantManager.JarvisClient := FJarvisClient;
@@ -78,6 +82,13 @@ end;
 
 procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
+  { O job de fala nao pertence ao formulario; encerra antes de destruir a UI. }
+  if Assigned(FSpeechJob) then
+  begin
+    FSpeechJob.Cancel;
+    FSpeechJob.Free;
+    FSpeechJob := nil;
+  end;
   { Componentes com Owner=Self sao liberados pelo formulario.
     FSetMain continua com o mesmo ciclo de vida global usado pelo projeto. }
 end;
@@ -168,6 +179,45 @@ begin
   end;
 end;
 
+procedure Tfrmmain.FalarResposta(const ATexto: string);
+var
+  Cfg: TReceptionConfig;
+  Texto: string;
+begin
+  if (FSetMain = nil) or (not FSetMain.AutoSpeak) then Exit;
+
+  Texto := Trim(ATexto);
+  if Texto = '' then Exit;
+
+  { Se ainda existe uma fala anterior, interrompe antes da nova resposta. }
+  if Assigned(FSpeechJob) then
+  begin
+    FSpeechJob.Cancel;
+    FSpeechJob.Free;
+    FSpeechJob := nil;
+  end;
+
+  FillChar(Cfg, SizeOf(Cfg), 0);
+  Cfg.Token := FSetMain.CHATGPT;
+  Cfg.AudioToken := FSetMain.VoiceAPIToken;
+  if Cfg.AudioToken = '' then
+    Cfg.AudioToken := FSetMain.CHATGPT;
+  Cfg.Model := FSetMain.VoiceModel;
+  Cfg.URL := FSetMain.VoiceEndpoint;
+  Cfg.Language := FSetMain.VoiceLanguage;
+  Cfg.Voice := FSetMain.SynthVoice;
+  if Cfg.Voice = '' then
+    Cfg.Voice := FSetMain.VoiceRemoteVoice;
+  Cfg.Provider := FSetMain.VoiceProvider;
+  Cfg.RecogEngine := FSetMain.RecogEngine;
+  Cfg.SynthEngine := FSetMain.SynthEngine;
+  Cfg.Volume := FSetMain.SynthVolume;
+  Cfg.Rate := FSetMain.SynthRate;
+
+  { TReceptionJob executa a sintese fora da thread visual. }
+  FSpeechJob := TReceptionJob.Create(rjSpeak, Cfg, Texto, '', 'main');
+end;
+
 procedure Tfrmmain.btEnviarClick(Sender: TObject);
 begin
   EnviarPergunta;
@@ -235,7 +285,10 @@ begin
   memResposta.Lines.Add('');
 
   if ASuccess then
-    SetEstado('Pronto para conversar', False)
+  begin
+    SetEstado('Pronto para conversar', False);
+    FalarResposta(Texto);
+  end
   else
     SetEstado('Falha na resposta. Tente novamente', False);
 
