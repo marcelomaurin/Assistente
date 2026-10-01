@@ -1,6 +1,6 @@
 # Continuidade do projeto Assistente
 
-Atualizado em 28/09/2026.
+Atualizado em 01/10/2026. Consulte também `REVISAO_TECNICA.md`.
 
 Este documento existe para que outro agente/bot consiga continuar o trabalho sem reconstruir decisões já tomadas.
 
@@ -76,12 +76,12 @@ O pacote CHATGPT correspondente contém `TAIContinuousListener` e a evolução d
 
 O Assistente não deve reconhecer a própria fala. A escuta precisa permanecer pausada enquanto o agente está processando e principalmente enquanto o TTS estiver reproduzindo. Deve ser retomada somente após confirmação real de término do TTS.
 
-O código atual ainda não concluiu esse ciclo: cria `FSpeechJob`, mas falta acompanhar corretamente o término do job para chamar `RetomarEscuta`.
+O temporizador `SpeechTick` acompanha `FSpeechJob.Done`, libera o job e retoma a escuta. A reprodução remota consulta o estado real MCI. O listener respeita a pausa ao terminar o callback de fala. A validação física permanece pendente.
 
 ## Limitações e pontos a validar
 
-- Nenhuma das alterações recentes de áudio foi considerada compilada/testada ainda.
-- É necessário compilar primeiro o CHATGPT atualizado e depois o Assistente.
+- Compilação completa Windows x64 e testes automatizados com provedor local executados. Isso não comprova áudio físico.
+- Usar a revisão da biblioteca documentada em `vendor/chatgpt-voice/README.md`.
 - O fluxo real de microfone/VAD/STT precisa ser testado de ponta a ponta.
 - O backend de nível/VAD do CHATGPT está inicialmente focado em Windows/MCI; Linux/ALSA ainda é pendência no pacote.
 - Calibrar thresholds somente após teste real; não mascarar falhas de captura aumentando/diminuindo números arbitrariamente.
@@ -89,15 +89,16 @@ O código atual ainda não concluiu esse ciclo: cria `FSpeechJob`, mas falta aco
 
 ## Tarefas pendentes para o próximo agente
 
-- [ ] Corrigir o ciclo TTS/microfone: observar término real de `FSpeechJob` e executar `RetomarEscuta` somente após o TTS terminar.
-- [ ] Compilar o pacote CHATGPT atualizado no Lazarus/Free Pascal e corrigir erros encontrados sem remover a arquitetura de escuta contínua.
-- [ ] Compilar o Assistente com o pacote atualizado.
+- [ ] Validar separadamente o pacote completo CHATGPT; nesta revisão foram compiladas as unidades usadas pelo Assistente.
 - [ ] Testar: iniciar Assistente -> escuta automática -> começar fala -> pausa curta -> continuar fala -> silêncio final -> WAV -> STT -> texto -> agente -> resposta.
 - [ ] Confirmar que nenhuma palavra é cortada nas pausas normais da fala.
 - [ ] Confirmar que o Assistente não transcreve o próprio TTS.
 - [ ] Calibrar `VoiceThreshold`, `SilenceTimeoutMs`, `MinSpeechMs` e `MaxSpeechMs` com microfone real.
 - [ ] Integrar/validar filtros de ruído do pacote CHATGPT no caminho de áudio.
-- [ ] Depois que o áudio estiver estável, retomar as próximas etapas do projeto (RAG e demais módulos) sem voltar a acoplar tudo ao `main`.
+- [ ] Avaliar a qualidade do RAG com documentos reais antes de ampliar para busca híbrida; o BM25 já está conectado ao atendimento.
+- [ ] Aplicar seleção de microfone e avaliar cancelamento acústico no backend.
+- [ ] Integrar sensores e avatar 3D ao fluxo principal, hoje limitado ao avatar estático.
+- [ ] Substituir no servidor a credencial JARVIS exposta no histórico e revisar TLS/armazenamento de segredos.
 
 ## Regra obrigatória de manutenção desta lista
 

@@ -383,9 +383,9 @@ begin
 
         cbKinectDevice.ItemIndex := ASavedKinectIndex
 
-      else
-
-        cbKinectDevice.ItemIndex := 0;
+      else if (ASavedKinectIndex < 0) and (AKinectDevices.Count = 1) then
+        cbKinectDevice.ItemIndex := 0
+      else cbKinectDevice.ItemIndex := -1;
 
       cbKinectDevice.Enabled := chkEnableKinect.Checked;
 
@@ -397,7 +397,7 @@ begin
 
       cbKinectDevice.Items.Add('Nenhum Kinect detectado');
 
-      cbKinectDevice.ItemIndex := 0;
+      cbKinectDevice.ItemIndex := -1;
 
       cbKinectDevice.Enabled := False;
 
@@ -417,13 +417,13 @@ begin
 
     begin
 
-      chkEnableCamera.Enabled := True;
+      chkEnableCamera.Enabled := False;
 
       chkEnableCamera.Checked := False;
 
       cbCameraDevice.Items.Add('Nenhuma câmera detectada');
 
-      cbCameraDevice.ItemIndex := 0;
+      cbCameraDevice.ItemIndex := -1;
 
       cbCameraDevice.Enabled := False;
 
@@ -441,9 +441,7 @@ begin
 
       cbCameraDevice.ItemIndex := TWebcamVision.ResolveDevice(ACameraDevices, ASavedCamera);
 
-      if cbCameraDevice.ItemIndex < 0 then
 
-        cbCameraDevice.ItemIndex := 0;
 
       cbCameraDevice.Enabled := chkEnableCamera.Checked;
 
@@ -587,7 +585,9 @@ var
 
 begin
 
-  if chkEnableKinect.Checked and (cbKinectDevice.ItemIndex >= 0) then
+  if not chkEnableKinect.Enabled then
+    KinectMsg := 'Kinect: não detectado'
+  else if chkEnableKinect.Checked and (cbKinectDevice.ItemIndex >= 0) then
 
     KinectMsg := 'Kinect: ' + cbKinectDevice.Text
 
@@ -601,7 +601,9 @@ begin
 
 
 
-  if chkEnableCamera.Checked and (cbCameraDevice.ItemIndex >= 0) and
+  if not chkEnableCamera.Enabled then
+    CameraMsg := 'Câmera: não detectada'
+  else if chkEnableCamera.Checked and (cbCameraDevice.ItemIndex >= 0) and
 
      (cbCameraDevice.Text <> 'Nenhuma câmera detectada') then
 
