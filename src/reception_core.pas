@@ -5,11 +5,13 @@ unit reception_core;
 interface
 
 uses Classes, SysUtils, SyncObjs, fpjson, jsonparser, chatgpt, aiagent,
-  aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace;
+  aivoicerecognizer, aivoicesynthesizer, reception_playback, airetrieval, aitrace,
+  aivoiceprovider_types;
 
 type
   TReceptionConfig = record
-    Token, AudioToken, Model, URL, Language, Voice: string;
+    Token, AudioToken, Model, URL, Language, Voice, RemoteVoice: string;
+    Speed: Double;
     Provider, RecogEngine, SynthEngine, Volume, Rate: Integer;
   end;
   TReceptionJobKind = (rjReply, rjTranscribe, rjSpeak);
@@ -53,11 +55,13 @@ function ReceptionDataDir: string;
 
 implementation
 
-uses {$IFDEF WINDOWS}ActiveX, Windows,{$ENDIF} Math;
+uses {$IFDEF WINDOWS}ActiveX, Windows,{$ENDIF} Math, LazUTF8;
 
 function ReceptionDataDir: string;
 begin
-  Result := IncludeTrailingPathDelimiter(GetAppConfigDir(False)) + 'reception' + PathDelim;
+  Result := SysUtils.GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+  if Result = '' then Result := GetAppConfigDir(False);
+  Result := IncludeTrailingPathDelimiter(Result) + 'reception' + PathDelim;
   ForceDirectories(Result);
 end;
 
@@ -115,10 +119,10 @@ var
   I: Integer;
   Part: string;
   Trace: TAITrace;
-  Player: TAIAudioPlayer;
+  Player: TReceptionPlayer;
   UntilTime: QWord;
-  Wav: TFileStream;
-  BytesPerSecond: LongWord;
+  SpeechID: TGUID;
+  SpeechFile: string;
 begin
   {$IFDEF WINDOWS}CoInitialize(nil);{$ENDIF}
   try
@@ -183,8 +187,13 @@ begin
           begin
             Recognizer := TAIVoiceRecognizer.Create(nil);
             try
+              if (FConfig.RecogEngine < Ord(Low(TAIVoiceRecognitionEngine))) or
+                (FConfig.RecogEngine > Ord(High(TAIVoiceRecognitionEngine))) then
+                raise Exception.Create('Motor de reconhecimento invalido');
               Recognizer.Engine := TAIVoiceRecognitionEngine(FConfig.RecogEngine);
               Recognizer.OpenAIToken := FConfig.AudioToken;
+              if FConfig.Model <> '' then Recognizer.OpenAIModel := FConfig.Model;
+              if FConfig.URL <> '' then Recognizer.OpenAIEndpoint := FConfig.URL;
               Recognizer.Language := FConfig.Language;
               Success := Recognizer.TranscribeFile(FInput, Text);
               if not Success then ErrorText := Recognizer.LastError;
@@ -197,26 +206,43 @@ begin
           begin
             Synth := TAIVoiceSynthesizer.Create(nil);
             Words := TStringList.Create;
-            Player := TAIAudioPlayer.Create(nil);
+            Player := TReceptionPlayer.Create;
             try
+              CreateGUID(SpeechID);
+              SpeechFile := ReceptionDataDir + 'speech-' + GUIDToString(SpeechID) + '.wav';
+              Synth.OpenAIOutputFile := SpeechFile;
+              if (FConfig.SynthEngine < Ord(Low(TSpeechEngine))) or
+                (FConfig.SynthEngine > Ord(High(TSpeechEngine))) then
+                raise Exception.Create('Motor de sintese invalido');
               Synth.Engine := TSpeechEngine(FConfig.SynthEngine);
+              if (FConfig.Provider < Ord(Low(TAIVoiceProvider))) or
+                (FConfig.Provider > Ord(High(TAIVoiceProvider))) then
+                raise Exception.Create('Provedor de voz invalido');
+              Synth.Provider := TAIVoiceProvider(FConfig.Provider);
               Synth.OpenAIToken := FConfig.AudioToken;
+              if FConfig.Model <> '' then Synth.Model := FConfig.Model;
+              if FConfig.URL <> '' then Synth.Endpoint := FConfig.URL;
+              if FConfig.RemoteVoice <> '' then Synth.RemoteVoice := FConfig.RemoteVoice;
+              if FConfig.Speed > 0 then Synth.Speed := FConfig.Speed;
               Synth.VoiceName := FConfig.Voice;
               Synth.Language := FConfig.Language;
               Synth.Volume := FConfig.Volume;
               Synth.Rate := FConfig.Rate;
               Synth.Asynchronous := False;
+              Synth.AutoPlay := False;
+              Synth.EnableCache := False;
               Synth.OpenAIOutputFormat := 'wav';
-              Synth.OpenAIOutputFile := ReceptionDataDir + 'speech-' + IntToStr(Started) + '.wav';
               Words.Delimiter := ' ';
               Words.StrictDelimiter := True;
+              Words.QuoteChar := #0;
               Words.DelimitedText := StringReplace(FInput, LineEnding, ' ', [rfReplaceAll]);
               Part := '';
               for I := 0 to Words.Count - 1 do
               begin
                 if Terminated then Break;
                 Part := Trim(Part + ' ' + Words[I]);
-                if ((I mod 8) = 7) or (I = Words.Count - 1) then
+                if (Length(Part) >= 600) or (I = Words.Count - 1) or
+                  ((Length(Part) >= 100) and (Part[Length(Part)] in ['.', '!', '?'])) then
                 begin
                   Synth.Say(Part);
                   if Synth.LastError <> '' then
@@ -224,21 +250,19 @@ begin
                     ErrorText := Synth.LastError;
                     Break;
                   end;
-                  if Synth.Engine = seOpenAI then
+                  if (Synth.Engine = seOpenAI) or (Synth.Provider <> vpNone) then
                   begin
                     if Terminated then Break;
-                    if not Player.Play(Synth.OpenAIOutputFile) then
-                    begin ErrorText := Player.LastError; Break; end;
-                    { Read PCM byte rate from the generated WAV; playback remains
-                      interruptible, unlike a shell-launched media player. }
-                    Wav := TFileStream.Create(Synth.OpenAIOutputFile, fmOpenRead or fmShareDenyNone);
+                    Player.Play(Synth.OpenAIOutputFile);
                     try
-                      Wav.Position := 28; Wav.ReadBuffer(BytesPerSecond, 4);
-                      if BytesPerSecond = 0 then raise Exception.Create('WAV de fala invalido');
-                      UntilTime := GetTickCount64 + QWord(Wav.Size) * 1000 div BytesPerSecond;
-                    finally Wav.Free; end;
-                    while not Terminated and (GetTickCount64 < UntilTime) do Sleep(20);
-                    Player.Stop;
+                      UntilTime := GetTickCount64 + 120000;
+                      while not Terminated and Player.Playing do
+                      begin
+                        if GetTickCount64 >= UntilTime then
+                          raise Exception.Create('Tempo limite de reproducao excedido');
+                        Sleep(20);
+                      end;
+                    finally Player.Stop; end;
                   end;
                   Part := '';
                 end;
@@ -248,7 +272,7 @@ begin
             finally
               Words.Free;
               Player.Free;
-              SysUtils.DeleteFile(Synth.OpenAIOutputFile);
+              if SpeechFile <> '' then SysUtils.DeleteFile(SpeechFile);
               Synth.Free;
             end;
           end;
@@ -331,6 +355,7 @@ var R: TAIBM25Retriever; Files: TSearchRec; S, Hits: TStringList;
     I, Offset, N: Integer; Item: TAIRetrievalResult; Folder, Body: string;
 begin
   Result := '';
+  if (Trim(AFolder) = '') or not DirectoryExists(AFolder) or (Trim(AQuery) = '') then Exit;
   Folder := IncludeTrailingPathDelimiter(AFolder);
   R := TAIBM25Retriever.Create(nil);
   S := TStringList.Create;
@@ -347,14 +372,14 @@ begin
             S.LoadFromFile(Folder + Files.Name);
             Body := S.Text;
             Offset := 1;
-            while Offset <= Length(Body) do
+            while (Offset <= UTF8Length(Body)) and (N < 2000) do
             begin
               Inc(N);
-              R.AddDocument(IntToStr(N), Files.Name, Copy(Body, Offset, 1800));
+              R.AddDocument(IntToStr(N), Files.Name, UTF8Copy(Body, Offset, 1800));
               Inc(Offset, 1500);
             end;
           end;
-        until FindNext(Files) <> 0;
+        until (N >= 2000) or (FindNext(Files) <> 0);
       finally SysUtils.FindClose(Files); end;
     end;
     R.Retrieve(AQuery, 4, Hits);

@@ -22,6 +22,7 @@ type
     FOnText: TVoiceTextEvent;
     FOnState: TVoiceStateEvent;
     FPaused: Boolean;
+    FOnFinished: TNotifyEvent;
     procedure TimerTick(Sender: TObject);
     procedure SetState(const AState: string);
     function BuildConfig: TReceptionConfig;
@@ -36,6 +37,7 @@ type
     property Paused: Boolean read FPaused;
     property OnText: TVoiceTextEvent read FOnText write FOnText;
     property OnState: TVoiceStateEvent read FOnState write FOnState;
+    property OnFinished: TNotifyEvent read FOnFinished write FOnFinished;
   end;
 
 implementation
@@ -136,6 +138,7 @@ begin
   FJob.Free;
   FJob := nil;
 
+  try
   if Ok and (TextResult <> '') then
   begin
     SetState('Fala reconhecida');
@@ -146,6 +149,9 @@ begin
     SetState('Falha no reconhecimento: ' + ErrorResult)
   else
     SetState('Nenhuma fala reconhecida');
+  finally
+    if Assigned(FOnFinished) then FOnFinished(Self);
+  end;
 end;
 
 procedure TVoiceInputBridge.Pause;

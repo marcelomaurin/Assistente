@@ -82,9 +82,9 @@ begin
     try
       frmmain.SetBounds(0,0,1100,780);
       frmmain.HandleNeeded;
-      Check(Pos('Recepcao', frmmain.Caption) > 0, 'formulario inicia como recepcao');
-      Check(not frmmain.tmrCheckOnline.Enabled, 'recepcao independe do JARVIS');
-      Check(not frmmain.pnlQuickBar.Visible, 'automacao residencial fora do atendimento');
+      Check(Pos('Assistente', frmmain.Caption) > 0, 'formulario atual inicia');
+      Check(Assigned(frmmain.AssistantManager), 'gerenciador de atendimento disponivel');
+      Check(frmmain.btEnviar.Enabled, 'entrada de texto disponivel');
       Bitmap := TBitmap.Create;
       try
         Bitmap.SetSize(frmmain.Width,frmmain.Height);

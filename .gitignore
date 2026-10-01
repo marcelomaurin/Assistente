@@ -25,3 +25,7 @@ __pycache__/
 *.pyc
 tests/test-output/
 tests/reception_tests.exe
+tests/app_checks.exe
+conversation-history.json
+Setmain.cfg
+.lazarus/

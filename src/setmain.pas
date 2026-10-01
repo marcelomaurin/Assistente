@@ -342,8 +342,8 @@ begin
     FChatGPTURL := '';
 
     // JARVIS Defaults
-    FJarvisURL := 'https://chorus-gazette-princeton-charter.trycloudflare.com';
-    FJarvisAPIKey := 'jarvis_sec_v1_90a934713a4a1191e342ce5af0ffe9fe47b0a9a6b47bb915';
+    FJarvisURL := '';
+    FJarvisAPIKey := '';
     FJarvisIAMode := 'auto';
     FMinimizeToTray := true;
     FAutoSpeak := true;
@@ -498,7 +498,7 @@ begin
     end;
     if  BuscaChave(arquivo,'CHATGPT:',posicao) then
     begin
-      FCHATGPT := RetiraInfo(arquivo.Strings[posicao]);
+      FCHATGPT := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'DLLPATH:',posicao) then
     begin
@@ -527,7 +527,7 @@ begin
     end;
     if  BuscaChave(arquivo,'PASSWORDMY:',posicao) then
     begin
-      FPasswordMy := RetiraInfo(arquivo.Strings[posicao]);
+      FPasswordMy := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'HOSTNAMEPOST:',posicao) then
     begin
@@ -574,7 +574,7 @@ begin
     end;
     if  BuscaChave(arquivo,'JARVISAPIKEY:',posicao) then
     begin
-      FJarvisAPIKey := RetiraInfo(arquivo.Strings[posicao]);
+      FJarvisAPIKey := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
     if  BuscaChave(arquivo,'JARVISIAMODE:',posicao) then
     begin
@@ -646,7 +646,7 @@ begin
     if  BuscaChave(arquivo,'VOICEOUTPUTFORMAT:',posicao) then
       FVoiceOutputFormat := RetiraInfo(arquivo.Strings[posicao]);
     if  BuscaChave(arquivo,'VOICESPEED:',posicao) then
-      FVoiceSpeed := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 1.0);
+      FVoiceSpeed := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 1.0);
 
     // Migracao/fallback de configuracao antiga (tarefa 27)
     if (Trim(FVoiceAPIToken) = '') and (FSynthEngine = 3) and (Trim(FCHATGPT) <> '') then
@@ -683,7 +683,7 @@ begin
     if BuscaChave(arquivo,'CONTINUOUS_LISTENING:',posicao) then
       FContinuousListening := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     if BuscaChave(arquivo,'VOICE_THRESHOLD:',posicao) then
-      FVoiceThreshold := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 0.015);
+      FVoiceThreshold := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.015);
     if BuscaChave(arquivo,'SILENCE_TIMEOUT_MS:',posicao) then
       FSilenceTimeoutMs := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 900);
     if BuscaChave(arquivo,'MIN_SPEECH_MS:',posicao) then
@@ -693,7 +693,7 @@ begin
     if BuscaChave(arquivo,'ECHO_SUPPRESSION:',posicao) then
       FEchoSuppressionEnabled := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     if BuscaChave(arquivo,'SELF_AUDIO_CORR_THRESH:',posicao) then
-      FSelfAudioCorrelationThreshold := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 0.70);
+      FSelfAudioCorrelationThreshold := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.70);
 
     // Sanitize values to prevent 0-value deadlocks in voice recognition & synthesis
     if FSilenceTimeoutMs <= 0 then FSilenceTimeoutMs := 900;
@@ -701,8 +701,8 @@ begin
     if FMaxSpeechMs <= 0 then FMaxSpeechMs := 15000;
     if FVoiceThreshold <= 0.0001 then FVoiceThreshold := 0.015;
     if FSelfAudioCorrelationThreshold <= 0.0001 then FSelfAudioCorrelationThreshold := 0.70;
-    if (Trim(FVoiceModel) = '') or (FVoiceModel = 'gpt-4o-mini-tts') then
-      FVoiceModel := 'tts-1';
+    if Trim(FVoiceModel) = '' then
+      FVoiceModel := 'gpt-4o-mini-tts';
 
     if BuscaChave(arquivo,'STT_TOKEN:',posicao) then
       FSTTToken := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
@@ -750,11 +750,10 @@ end;
 
 procedure TSetMain.IdentificaArquivo(flag: boolean);
 begin
-  Fpath := GetAppConfigDir(false);
-  if not(FileExists(FPATH)) then
-  begin
-     createdir(fpath);
-  end;
+  Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+  if Fpath = '' then Fpath := GetAppConfigDir(false);
+  Fpath := IncludeTrailingPathDelimiter(Fpath);
+  ForceDirectories(Fpath);
   if (FileExists(fpath+filename)) then
   begin
     arquivo.LoadFromFile(fpath+filename);
@@ -779,6 +778,7 @@ begin
     FKinectTargetLeft := '';
     FKinectTargetRight := '';
     FKinectTargetCenter := '';
+    default();
     IdentificaArquivo(true);
 end;
 
@@ -786,7 +786,10 @@ procedure TSetMain.SalvaContexto(flag: boolean);
 begin
   if (flag) then
   begin
-    IdentificaArquivo(false);
+    Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+    if Fpath = '' then Fpath := GetAppConfigDir(False);
+    Fpath := IncludeTrailingPathDelimiter(Fpath);
+    ForceDirectories(Fpath);
   end;
   arquivo.Clear;
   arquivo.Append('DEVICE:'+iif(ckdevice,'1','0'));
@@ -803,7 +806,7 @@ begin
   arquivo.Append('INSTALLSCRIPT:'+FInstall);
   arquivo.Append('COMPILESCRIPT:'+FCompile);
   arquivo.Append('FONT:'+FontToString(FFONT));
-  arquivo.Append('CHATGPT:'+FCHATGPT);
+  arquivo.Append('CHATGPT:'+TVoiceCredentialStore.ProtectToken(FCHATGPT));
   arquivo.Append('DLLPATH:'+FDLLPATH);
   arquivo.Append('DLLMYPATH:'+FDLLMYPATH);
   arquivo.Append('DLLPOSTPATH:'+FDLLPOSTPATH);
@@ -811,12 +814,12 @@ begin
   arquivo.Append('HOSTNAMEMY:'+FHostnameMy);
   arquivo.Append('BANCOMY:'+FBancoMy);
   arquivo.Append('USERNAMEMY:'+FUsernameMy);
-  arquivo.Append('PASSWORDMY:'+FPasswordMy);
+  arquivo.Append('PASSWORDMY:'+TVoiceCredentialStore.ProtectToken(FPasswordMy));
 
   arquivo.Append('HOSTNAMEPOST:'+FHostnamePOST);
   arquivo.Append('BANCOPOST:'+FBancoPOST);
   arquivo.Append('USERNAMEPOST:'+FUsernamePOST);
-  arquivo.Append('PASSWORDPOST:'+FPasswordPOST);
+  arquivo.Append('PASSWORDPOST:'+TVoiceCredentialStore.ProtectToken(FPasswordPOST));
   arquivo.Append('SCHEMAPOST:'+FSchemaPost);
   arquivo.Append('TOOLSFALAR:'+iif(FToolsFalar,'1','0'));
 
@@ -826,7 +829,7 @@ begin
 
   // Salva JARVIS
   arquivo.Append('JARVISURL:'+FJarvisURL);
-  arquivo.Append('JARVISAPIKEY:'+FJarvisAPIKey);
+  arquivo.Append('JARVISAPIKEY:'+TVoiceCredentialStore.ProtectToken(FJarvisAPIKey));
   arquivo.Append('JARVISIAMODE:'+FJarvisIAMode);
   arquivo.Append('MINIMIZETOTRAY:'+iif(FMinimizeToTray, '1', '0'));
   arquivo.Append('AUTOSPEAK:'+iif(FAutoSpeak, '1', '0'));
@@ -840,6 +843,13 @@ begin
   arquivo.Append('SYNTHENGINE:'+inttostr(FSynthEngine));
   arquivo.Append('SYNTHVOICE:'+FSynthVoice);
   arquivo.Append('VOICEMODEL:'+FVoiceModel);
+  arquivo.Append('VOICEPROVIDER:'+IntToStr(FVoiceProvider));
+  arquivo.Append('VOICEAPITOKEN:'+TVoiceCredentialStore.ProtectToken(FVoiceAPIToken));
+  arquivo.Append('VOICEENDPOINT:'+FVoiceEndpoint);
+  arquivo.Append('VOICEREMOTEVOICE:'+FVoiceRemoteVoice);
+  arquivo.Append('VOICELANGUAGE:'+FVoiceLanguage);
+  arquivo.Append('VOICEOUTPUTFORMAT:'+FVoiceOutputFormat);
+  arquivo.Append('VOICESPEED:'+FloatToStr(FVoiceSpeed));
   arquivo.Append('SYNTHVOLUME:'+inttostr(FSynthVolume));
   arquivo.Append('SYNTHRATE:'+inttostr(FSynthRate));
   arquivo.Append('SYNTHASYNC:'+iif(FSynthAsync, '1', '0'));

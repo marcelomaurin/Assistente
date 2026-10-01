@@ -89,14 +89,16 @@ object frmmain: Tfrmmain
         ClientHeight = 534
         ClientWidth = 350
         TabOrder = 0
-        object GifAvatar: TGifAnim
+        object GifAvatar: TImage
           Left = 0
           Height = 534
           Top = 0
           Width = 350
           Align = alClient
           AutoSize = False
-          Animate = False
+          Center = True
+          Proportional = True
+          Stretch = True
         end
       end
       object lblAssistente: TLabel
