@@ -6,7 +6,7 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   reception_core, aiagent_memorymap, aiagent_flowevents, voice_input_bridge,
   professor_listener, professor_state, professor_view,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
-  professor_ui;
+  professor_ui, professor_commands;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -60,7 +60,7 @@ type
     procedure IniciarEscuta;
     procedure PausarEscuta;
     procedure RetomarEscuta;
-    procedure FalarResposta(const ATexto: string);
+    procedure CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SetEstado(const ATexto: string; AOcupado: Boolean);
     procedure OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
     procedure OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
@@ -73,6 +73,8 @@ type
     procedure PararVideo;
     procedure ProfileChange(Sender: TObject);
   public
+    procedure FalarResposta(const ATexto: string);
+    function ApresentandoResposta: Boolean;
     procedure ReloadAvatars(Sender: TObject);
     property AssistantManager: TAssistantManager read FAssistantManager;
     property VoiceInput: TVoiceInputBridge read FVoiceInput;
@@ -106,6 +108,8 @@ begin
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 50;
   FTimer.OnTimer := @TimerTick;
+  KeyPreview:=True;
+  OnKeyDown:=@CancelarApresentacao;
   SetEstado('Pronto para conversar', False);
 end;
 
@@ -490,6 +494,7 @@ begin
   P := Trim(ATexto);
   if P = '' then begin RetomarEscuta; Exit; end;
   PausarEscuta;
+  FProfessor.ResetCommands;
   FCurrentUserText := P;
   H := Trim(FMemoryMap.BuildConversationContext(100));
   if H <> '' then C := 'Historico completo da conversa anterior:' + sLineBreak + H +
@@ -520,10 +525,15 @@ begin
 end;
 
 procedure Tfrmmain.FalarResposta(const ATexto: string);
-var C: TReceptionConfig;
+var C: TReceptionConfig; Script: TAvatarScript;
 begin
-  if not FSetMain.AutoSpeak or (Trim(ATexto) = '') then begin RetomarEscuta; Exit; end;
+  if FClosing or Assigned(FSpeechJob) then Exit;
+  Script:=ParseAvatarScript(ATexto);
+  if (Trim(ATexto)='') or (not FSetMain.AutoSpeak and (Script.CommandCount=0)) then begin RetomarEscuta;Exit;end;
+  PausarEscuta;
   C := Default(TReceptionConfig);
+  C.EnableAvatarCommands:=True;
+  C.SilentPresentation:=not FSetMain.AutoSpeak;
   C.Token := FSetMain.CHATGPT;
   C.AudioToken := FSetMain.VoiceAPIToken;
   if C.AudioToken = '' then C.AudioToken := FSetMain.CHATGPT;
@@ -539,17 +549,30 @@ begin
   C.Rate := FSetMain.SynthRate;
   try
     FSpeechJob := TReceptionJob.Create(rjSpeak, C, ATexto, '', 'main');
-    SetEstado('Preparando voz...', False);
+    if C.SilentPresentation then SetEstado('Apresentando gestos... (Esc para parar)',False)
+    else SetEstado('Preparando voz... (Esc para parar)', False);
   except on E: Exception do
     begin SetEstado('Falha na voz: ' + E.Message, False); RetomarEscuta; end;
   end;
 end;
 
+function Tfrmmain.ApresentandoResposta: Boolean;
+begin Result:=Assigned(FSpeechJob);end;
+
+procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key=VK_ESCAPE) and Assigned(FSpeechJob) then
+  begin
+    FSpeechJob.Cancel;FProfessor.ResetCommands;Key:=0;
+    lblStatus.Caption:='Interrompendo apresentação...';
+  end;
+end;
+
 procedure Tfrmmain.TimerTick(Sender: TObject);
-var Ok: Boolean; Err: string;
+var Ok: Boolean; Err: string; Command: TAvatarCommand;
 begin
   if FClosing then Exit;
-  FAvatarStatus.Caption := 'Avatar: ' + UpperCase(AnimationName(FProfessor.State));
+  FAvatarStatus.Caption := 'Avatar: ' + FProfessor.ActivityLabel;
   if FProfessor.ModelFile <> '' then FRenderStatus.Caption := 'Renderização 3D'
   else FRenderStatus.Caption := '3D indisponível';
   FRenderStatus.Hint := FDeviceStatus.Caption;
@@ -559,15 +582,22 @@ begin
   begin
     if FSpeechJob.PlaybackActive then
     begin FProfessor.SetActivity(psSpeaking); lblStatus.Caption := 'Falando...'; end
+    else if FSpeechJob.IsSilent then FProfessor.SetActivity(psIdle)
     else FProfessor.SetActivity(psThinking);
-    Exit;
   end;
+  while FSpeechJob.TakeAvatarCommand(Command) do
+    try
+      if not FSpeechJob.IsSilent then FProfessor.SetActivity(psSpeaking);
+      FProfessor.ExecuteCommand(Command);
+    finally FSpeechJob.ConfirmAvatarCommand;end;
+  if not FSpeechJob.Done then Exit;
   Ok := FSpeechJob.Success;
   Err := FSpeechJob.ErrorText;
+  if FSpeechJob.Cancelled then Err:='Apresentação cancelada';
   FreeAndNil(FSpeechJob);
   SetEstado('Pronto para conversar', False);
   RetomarEscuta;
-  if not Ok then lblStatus.Caption := 'Falha na voz: ' + Err;
+  if not Ok then begin FProfessor.ResetCommands;lblStatus.Caption := Err;end;
 end;
 
 procedure Tfrmmain.btEnviarClick(Sender: TObject);
@@ -584,8 +614,10 @@ begin
   if FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
   FContinuousListener.Stop;
   PararVideo;
-  F := TfrmConfig.Create(Self);
+  FProfessor.SetRenderingActive(False);
+  F:=nil;
   try
+    F := TfrmConfig.Create(Self);
     LoadProfessorSettings(F, FSetMain);
     if F.ShowModal = mrOk then
     begin
@@ -593,7 +625,7 @@ begin
       FSetMain.SalvaContexto(False);
       AplicarConfiguracao;
     end;
-  finally F.Free; IniciarEscuta; IniciarVideo; end;
+  finally F.Free;FProfessor.SetRenderingActive(True);IniciarEscuta;IniciarVideo;end;
 end;
 
 procedure Tfrmmain.OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
@@ -608,12 +640,15 @@ begin
 end;
 
 procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
-var T: string;
+var T, Annotated: string; Script: TAvatarScript;
 begin
   if FClosing then Exit;
-  T := Trim(AResponseText);
+  Annotated:=Trim(AResponseText);
+  Script:=ParseAvatarScript(Annotated);
+  T := Trim(Script.PlainText);
   if T = '' then
-    if ASuccess then T := '(resposta vazia)' else T := 'Não foi possível obter uma resposta.';
+    if ASuccess and (Script.CommandCount>0) then T:='(gesto do avatar)'
+    else if ASuccess then T := '(resposta vazia)' else T := 'Não foi possível obter uma resposta.';
   if Assigned(FMemoryItem) then
   begin
     if not ASuccess then FMemoryItem.Erro := T;
@@ -626,7 +661,7 @@ begin
   FAIConnected := ASuccess;
   memResposta.Lines.Add('');
   SetEstado('Pronto para conversar', False);
-  if ASuccess then FalarResposta(T) else RetomarEscuta;
+  if ASuccess then FalarResposta(Annotated) else RetomarEscuta;
   FCurrentUserText := '';
 end;
 

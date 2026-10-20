@@ -7,6 +7,10 @@ Avatar 3D nativo no formulário Lazarus, com dez perfis selecionáveis e
 animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.
+Os modelos v3 usam anatomia contínua, esqueleto com pesos, texturas de pele e
+tecido e expressões faciais. A IA pode dirigir gestos no texto com `[sorriso]`,
+`[aplausos]`, `[levantar mao direita]` e `[abaixar mao direita]`.
+As tags não são pronunciadas. Veja [comandos e sincronização](docs/avatar-comandos-ia.md).
 Veja [arquitetura, modelos, instalação, build e limites](docs/professor-virtual-3d.md).
 O build atualizado fica em `build/professor/assistente.exe`; os executáveis
 antigos presentes no repositório não são atualizados automaticamente.

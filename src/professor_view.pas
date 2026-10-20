@@ -6,7 +6,7 @@ interface
 
 uses Classes, SysUtils, Controls, ExtCtrls, StdCtrls, IniFiles,
   CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
-  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math;
+  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands;
 
 type
   TProfessorZoomEvent = procedure(Steps: Single) of object;
@@ -30,10 +30,15 @@ type
     FAnimations: array[TProfessorState] of string;
     FAutoIdle: Boolean;
     FZoom, FModelHeight: Single;
+    FSmile, FRightHandUp: Boolean;
+    FRenderingActive: Boolean;
+    FDirectiveGesture: string;
+    FDirectiveUntil: QWord;
     procedure TimerTick(Sender: TObject);
     procedure ApplyAnimation;
     function DefaultModel: string;
     function GetState: TProfessorState;
+    function GetActivityLabel: string;
     procedure ResetView(Sender: TObject);
     procedure FrameCamera;
   public
@@ -43,11 +48,17 @@ type
     procedure SetActivity(AState: TProfessorState);
     procedure Gesture(AState: TProfessorState);
     procedure ZoomBy(Steps: Single);
+    function ExecuteCommand(Command: TAvatarCommand): Boolean;
+    procedure ResetCommands;
+    procedure SetRenderingActive(Active: Boolean);
     property Zoom: Single read FZoom;
     property Diagnostic: string read FDiagnostic;
     property Scene: TCastleScene read FScene;
     property ModelFile: string read FModelFile;
     property State: TProfessorState read GetState;
+    property CurrentAnimation: string read FLastAnimation;
+    property ActivityLabel: string read GetActivityLabel;
+    property RenderingActive: Boolean read FRenderingActive;
   end;
 
 implementation
@@ -82,6 +93,8 @@ begin
   FViewport.BackgroundColor := Vector4(1, 1, 1, 1);
   FControl.Container.Controls.InsertFront(FViewport);
   FScene := TCastleScene.Create(Self);
+  FScene.DefaultAnimationTransition := 0.32;
+  FRenderingActive:=True;
   FViewport.Items.Add(FScene);
   FNotice := TLabel.Create(Self);
   FNotice.Parent := AParent;
@@ -115,6 +128,10 @@ var S: TProfessorState; Ini: TIniFile; Missing, Requested: string;
 begin
   Result := False;
   FDiagnostic := '';
+  FSmile := False;
+  FRightHandUp := False;
+  FDirectiveGesture := '';
+  FDirectiveUntil := 0;
   FAutoIdle := AAutoIdle;
   Requested := Trim(AFileName);
   if Requested = '' then Requested := DefaultModel
@@ -170,11 +187,27 @@ begin
 end;
 
 procedure TProfessorView.ApplyAnimation;
-var Clip: string;
+var Clip, Base, Requested: string;
 begin
   if FModelFile = '' then Exit;
   Clip := FAnimations[FMachine.State];
-  if (FMachine.State = psIdle) and not FAutoIdle then Clip := '';
+  if FDirectiveGesture<>'' then Clip:=FDirectiveGesture;
+  Base:=Clip;
+  if FSmile then Clip:=Clip+'_smile';
+  if FRightHandUp and (FDirectiveGesture='') then Clip:=Clip+'_right_hand_up';
+  Requested:=Clip;
+  if FScene.AnimationsList.IndexOf(Clip)<0 then
+  begin
+    Clip:=Base;
+    if FRightHandUp and (FScene.AnimationsList.IndexOf(Base+'_right_hand_up')>=0) then Clip:=Base+'_right_hand_up'
+    else if FSmile and (FScene.AnimationsList.IndexOf(Base+'_smile')>=0) then Clip:=Base+'_smile';
+    if Requested<>Base then
+    begin
+      FNotice.Caption:='Modelo sem o gesto combinado: '+Requested;
+      FNotice.Visible:=True;
+    end;
+  end;
+  if (FMachine.State = psIdle) and not FAutoIdle and not FSmile and not FRightHandUp and (FDirectiveGesture='') then Clip := '';
   if (Clip <> '') and (FScene.AnimationsList.IndexOf(Clip) < 0) then
     Clip := FAnimations[psIdle];
   if Clip = FLastAnimation then Exit;
@@ -182,6 +215,54 @@ begin
   if (Clip <> '') and (FScene.AnimationsList.IndexOf(Clip) >= 0) then
     FScene.PlayAnimation(Clip, True)
   else FScene.StopAnimation;
+end;
+
+function TProfessorView.ExecuteCommand(Command: TAvatarCommand): Boolean;
+var Expected: string;
+begin
+  Expected:='';
+  case Command of
+    acNone: Exit(True);
+    acSmile: begin FSmile:=True;Expected:=FAnimations[psIdle]+'_smile';end;
+    acNeutral: begin ResetCommands;Exit(True);end;
+    acRaiseRightHand: begin FRightHandUp:=True;FDirectiveGesture:='';Expected:=FAnimations[psIdle]+'_right_hand_up';end;
+    acLowerRightHand: begin FRightHandUp:=False;FDirectiveGesture:='';end;
+    acApplause,acWave,acWalk:
+      begin
+        case Command of
+          acApplause: begin FDirectiveGesture:='applause';if FMachine.State=psSpeaking then FDirectiveGesture:='applause_talking';end;
+          acWave: FDirectiveGesture:=FAnimations[psWave];
+          acWalk: FDirectiveGesture:=FAnimations[psWalk];
+        end;
+        Expected:=FDirectiveGesture;
+        FDirectiveUntil:=GetTickCount64+2400;
+      end;
+  end;
+  if Command in [acRaiseRightHand,acLowerRightHand] then FScene.DefaultAnimationTransition:=0.6;
+  ApplyAnimation;
+  FScene.DefaultAnimationTransition:=0.32;
+  Result:=(Expected='') or (FScene.AnimationsList.IndexOf(Expected)>=0);
+  if not Result then
+  begin FNotice.Caption:='Modelo sem comando: '+AvatarCommandName(Command);FNotice.Visible:=True;end;
+end;
+
+procedure TProfessorView.ResetCommands;
+begin
+  FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;
+  ApplyAnimation;
+end;
+
+procedure TProfessorView.SetRenderingActive(Active: Boolean);
+begin
+  FRenderingActive:=Active;
+  FTimer.Enabled:=Active;
+  FControl.AutoRedisplay:=Active;
+  FScene.TimePlaying:=Active;
+  if Active then
+  begin
+    FControl.Container.Fps.ZeroNextSecondsPassed;
+    FControl.Invalidate;
+  end;
 end;
 
 procedure TProfessorView.SetActivity(AState: TProfessorState);
@@ -198,6 +279,8 @@ end;
 
 procedure TProfessorView.TimerTick(Sender: TObject);
 begin
+  if (FDirectiveUntil<>0) and (GetTickCount64>=FDirectiveUntil) then
+  begin FDirectiveUntil:=0;FDirectiveGesture:='';end;
   FMachine.Tick(GetTickCount64);
   ApplyAnimation;
 end;
@@ -207,9 +290,27 @@ begin
   Result := FMachine.State;
 end;
 
-procedure TProfessorView.FrameCamera;
+function TProfessorView.GetActivityLabel: string;
 begin
-  FViewport.Camera.SetWorldView(Vector3(0,FModelHeight*0.52,FModelHeight*1.9*FZoom),
+  if Pos('applause',FDirectiveGesture)=1 then Exit('Aplaudindo');
+  if (FDirectiveGesture<>'') and (FDirectiveGesture=FAnimations[psWave]) then Exit('Acenando');
+  if (FDirectiveGesture<>'') and (FDirectiveGesture=FAnimations[psWalk]) then Exit('Caminhando');
+  if FRightHandUp then Exit('Mão direita levantada');
+  case FMachine.State of
+    psIdle: if FSmile then Result:='Sorrindo' else Result:='Pronto';
+    psListening: Result:='Escutando';
+    psThinking: Result:='Pensando';
+    psSpeaking: Result:='Falando';
+    psWave: Result:='Acenando';
+    psWalk: Result:='Caminhando';
+  end;
+end;
+
+procedure TProfessorView.FrameCamera;
+var Focus: Single;
+begin
+  Focus:=0.52+0.24*(1-Min(1,FZoom))/0.6;
+  FViewport.Camera.SetWorldView(Vector3(0,FModelHeight*Focus,FModelHeight*2.1*FZoom),
     Vector3(0,0,-1),Vector3(0,1,0));
 end;
 procedure TProfessorView.ZoomBy(Steps: Single);

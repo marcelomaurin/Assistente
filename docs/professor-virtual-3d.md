@@ -30,16 +30,32 @@ No cartão há seletor, atualizar lista (↻), acenar e caminhar. O mínimo é
 740 × 450; as colunas se adaptam ao tamanho da janela.
 
 Incluídos: Professor, Médico, Engenheiro, Programador, Dona de casa,
-Empresário, Padre, Criança, Bebê e Robô. São malhas 3D articuladas originais,
-com detalhes de olhos/íris/pupilas, sobrancelhas, cabelo, orelhas, boca/dentes,
-dedos, roupas, calçados e acessórios. O professor inclui uma textura argyle;
-o robô tem placas claras, juntas escuras, detalhes cianos e headset.
-O gerador é `tools/generate_professor.py`, apenas biblioteca padrão Python.
-Malhas, textura e animações incluídas são CC0 (veja `AVATARES/LICENSE.txt`).
+Empresário, Padre, Criança, Bebê e Robô. A versão 3 substitui a montagem de
+primitivas por anatomia contínua e vestuário ajustado, derivados dos recursos
+oficiais CC0 do MakeHuman. São aproximadamente 33–54 mil triângulos por modelo,
+163 juntas, quatro influências normalizadas por vértice, UVs, texturas de pele,
+mechas de cabelo com recorte alfa e materiais com normais/oclusão de tecido.
+O professor inclui um colete argyle; o robô tem cerâmica clara e headset ciano.
 
-São personagens procedurais estilizados, sem equivalência exata às imagens
-artísticas fornecidas. Não são imagens planas, nem reproduções de recursos
-proprietários de Xbox. Escolher uma profissão altera apenas a aparência.
+Cada modelo tem 28 clipes: seis estados básicos e composições de sorriso,
+mão direita levantada e aplausos com/sem fala. Boca, pálpebras e sorriso usam
+morph targets. Trajetórias são amostradas a 60 Hz com aceleração suave, IK
+nas pernas/poses de mãos, oposição de braços e pernas e apoio/avanço dos pés.
+O renderer mistura estados em 0,32 s e levantar/baixar a mão em 0,6 s.
+Esse valor de amostragem não é uma garantia de FPS no equipamento do usuário.
+
+O gerador é `tools/generate_professor.py`, com numpy/Pillow apenas na autoria.
+Fontes artísticas, hashes e licenças estão em `tools/avatar-source/`; não é
+necessário instalar MakeHuman para gerar ou executar. Todos os recursos
+gráficos incluídos são CC0 (veja `AVATARES/LICENSE.txt`). São adaptações para
+tempo real, sem equivalência exata às referências, sem fotorrealismo, captura
+de movimento ou simulação física de tecido. Profissão altera a aparência.
+
+A IA dirige gestos com tags na resposta; o worker entrega os comandos à LCL
+antes do respectivo trecho falado. As tags são removidas do chat, memória e
+TTS. Consulte [vocabulário, exemplo e sincronização](avatar-comandos-ia.md).
+Esc cancela a apresentação; sem fala automática, tags usam tempo de leitura
+estimado, sem abrir serviços de voz.
 
 ## Pasta AVATARES e inclusão de novos personagens
 
@@ -88,7 +104,9 @@ restaura a distância. O zoom não modifica o modelo salvo.
 | Aceno / abertura | `wave`, retorno após 2,4 s |
 | Caminhada | `walk`, retorno após 2,4 s |
 
-Fala/pensamento têm prioridade sobre gestos. Caminhada é um ciclo no lugar.
+Fala/pensamento têm prioridade sobre os botões manuais de gesto. Comandos da
+resposta da IA podem compor sorriso e mão levantada com a fala; aplausos
+dirigidos pela IA também podem acompanhar a voz. Caminhada é um ciclo no lugar.
 Os clipes incluídos restabelecem todas as articulações animadas ao trocar.
 Para outros nomes, use um `.ini` com o mesmo nome do modelo:
 
@@ -146,6 +164,9 @@ o caminho original. Nenhuma credencial é incluída nos testes ou modelos novos.
 
 ```powershell
 python tests/check_avatar_assets.py
+python tests/check_avatar_motion.py
+.\scripts\build_professor.ps1 -Target tests\professor_commands_tests.lpr -Run
+.\scripts\build_professor.ps1 -Target tests\professor_speech_commands_tests.lpr -Run
 .\scripts\build_professor.ps1 -Target tests\professor_state_tests.lpr -Run
 .\scripts\build_professor.ps1 -Target tests\professor_catalog_tests.lpr -Run -RunArguments build\catalog-fixtures
 .\scripts\build_professor.ps1 -Target tests\professor_model_tests.lpr
@@ -154,6 +175,8 @@ Get-ChildItem AVATARES -Filter modelo.gltf -Recurse | ForEach-Object {
   if ($LASTEXITCODE -ne 0) { throw $_.FullName }
 }
 .\scripts\build_professor.ps1 -Target tests\professor_ui_smoke.lpr
+.\scripts\build_professor.ps1 -Target tests\professor_directive_smoke.lpr
+.\scripts\build_professor.ps1 -Target tests\professor_animation_smoke.lpr
 ```
 
 Execute `professor_ui_smoke.exe` para o teste gráfico isolado: desativa captura,
@@ -163,6 +186,21 @@ O relatório em `build/professor/ui-smoke/result.txt` também registra falha de
 descarte de recursos, se houver. A prévia de layout combina a captura LCL com
 a captura real OpenGL porque GetFormImage não inclui o framebuffer 3D.
 As mensagens dessa prévia são dados de demonstração.
+
+`professor_directive_smoke.exe` executa o exemplo anotado do usuário na janela
+real, sem voz/rede/hardware, verifica sorriso/aplausos/mão levantada/comando final
+e Esc. `professor_animation_smoke.exe caminho/modelo.gltf` captura treze poses
+e aproximação; um segundo argumento `walk`, `wave` ou `applause_smile` captura
+144 quadros nativos a passos de 1/60 s para exportar vídeo contínuo a 60 FPS.
+Durante a captura, a janela avança mais devagar para salvar os quadros; a
+velocidade final é a do vídeo exportado. A inspeção de treze poses é estática
+e está identificada no título, para não confundir com a reprodução contínua.
+Os testes de movimento verificam matrizes de vínculo, pele/roupa deformadas,
+lado correto da mão e das palmas nos aplausos, apoio/avanço do pé, velocidades
+angulares e continuidade das poses nos ciclos. `professor_performance_smoke`
+mede a reprodução real durante dez segundos após aquecimento, sem capturar
+imagens. A prévia das configurações percorre estados e comandos em reprodução
+contínua; o renderer principal fica pausado enquanto o diálogo está aberto.
 
 ## Limites
 

@@ -5,12 +5,14 @@ unit reception_core;
 interface
 
 uses Classes, SysUtils, SyncObjs, fpjson, jsonparser, chatgpt, aiagent,
-  aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace;
+  aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace,
+  professor_commands;
 
 type
   TReceptionConfig = record
     Token, AudioToken, Model, URL, Language, Voice: string;
     Provider, RecogEngine, SynthEngine, Volume, Rate: Integer;
+    EnableAvatarCommands, SilentPresentation: Boolean;
   end;
   TReceptionJobKind = (rjReply, rjTranscribe, rjSpeak);
   { Each job owns its suite components. No UI or mutable session objects cross
@@ -24,6 +26,11 @@ type
     FLock: TCriticalSection;
     FLLM: TCHATGPT;
     FPlaybackActive: LongInt;
+    FCommandAck: TEvent;
+    FPendingCommand: TAvatarCommand;
+    FCommandPending: Boolean;
+    procedure DeliverCommand(Command: TAvatarCommand);
+    procedure ExecuteSpeech;
   protected
     procedure Execute; override;
   public
@@ -37,6 +44,9 @@ type
     function Cancelled: Boolean;
     procedure Cancel;
     function PlaybackActive: Boolean;
+    function TakeAvatarCommand(out Command: TAvatarCommand): Boolean;
+    procedure ConfirmAvatarCommand;
+    function IsSilent: Boolean;
   end;
 
   TReceptionMemory = class
@@ -70,6 +80,7 @@ begin
   FreeOnTerminate := False;
   FDone := TEvent.Create(nil, True, False, '');
   FLock := SyncObjs.TCriticalSection.Create;
+  FCommandAck := TEvent.Create(nil, True, False, '');
   FKind := AKind;
   FConfig := AConfig;
   FInput := AInput;
@@ -84,13 +95,16 @@ begin
   Cancel;
   WaitFor;
   FDone.Free;
+  FCommandAck.Free;
   FLock.Free;
   inherited Destroy;
 end;
 
 function TReceptionJob.Done: Boolean;
 begin
-  Result := FDone.WaitFor(0) = wrSignaled;
+  { FPC may skip Execute when a newly started thread was cancelled before its
+    entry point ran. In that case its finally block cannot signal FDone. }
+  Result := (FDone.WaitFor(0) = wrSignaled) or Finished;
 end;
 
 function TReceptionJob.PlaybackActive: Boolean;
@@ -111,21 +125,127 @@ begin
   finally FLock.Release; end;
 end;
 
+function TReceptionJob.IsSilent: Boolean;
+begin Result:=FConfig.SilentPresentation;end;
+
+function TReceptionJob.TakeAvatarCommand(out Command: TAvatarCommand): Boolean;
+begin
+  FLock.Acquire;
+  try
+    Result:=FCommandPending and not Terminated;
+    if Result then begin Command:=FPendingCommand;FCommandPending:=False;end
+    else Command:=acNone;
+  finally FLock.Release;end;
+end;
+
+procedure TReceptionJob.ConfirmAvatarCommand;
+begin FCommandAck.SetEvent;end;
+
+procedure TReceptionJob.DeliverCommand(Command: TAvatarCommand);
+begin
+  if Terminated or not FConfig.EnableAvatarCommands then Exit;
+  FCommandAck.ResetEvent;
+  FLock.Acquire;
+  try FPendingCommand:=Command;FCommandPending:=True;
+  finally FLock.Release;end;
+  { The LCL timer applies the command, then acknowledges it. No UI callback
+    runs on the audio worker, and cancellation never waits on the UI. }
+  while not Terminated and (FCommandAck.WaitFor(20)<>wrSignaled) do ;
+end;
+
+procedure TReceptionJob.ExecuteSpeech;
+var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
+  Player: TAIAudioPlayer; Pending: array of TAvatarCommand; Wav: TFileStream;
+  UntilTime: QWord; BytesPerSecond: LongWord; Part,SpeechFile: string;
+  procedure FlushCommands;
+  var K: Integer;
+  begin
+    for K:=0 to High(Pending) do begin if Terminated then Break;DeliverCommand(Pending[K]);end;
+    SetLength(Pending,0);
+  end;
+  procedure WaitUntil(Deadline: QWord);
+  begin while not Terminated and (GetTickCount64<Deadline) do Sleep(10);end;
+begin
+  Script:=ParseAvatarScript(FInput);
+  Text:=Script.PlainText;
+  Synth:=nil;Player:=nil;SpeechFile:='';
+  try
+    if not FConfig.SilentPresentation then
+    begin
+      Synth:=TAIVoiceSynthesizer.Create(nil);
+      Player:=TAIAudioPlayer.Create(nil);
+      Synth.Engine:=TSpeechEngine(FConfig.SynthEngine);
+      Synth.OpenAIToken:=FConfig.AudioToken;
+      if FConfig.Model<>'' then Synth.OpenAIModel:=FConfig.Model;
+      if FConfig.URL<>'' then Synth.OpenAIEndpoint:=FConfig.URL;
+      Synth.VoiceName:=FConfig.Voice;
+      if (Synth.Engine=seOpenAI) and (FConfig.Voice<>'') then Synth.OpenAIVoice:=FConfig.Voice;
+      Synth.Language:=FConfig.Language;Synth.Volume:=FConfig.Volume;Synth.Rate:=FConfig.Rate;
+      Synth.Asynchronous:=False;Synth.OpenAIOutputFormat:='wav';
+    end;
+    for I:=0 to High(Script.Steps) do
+    begin
+      if Terminated then Break;
+      if Script.Steps[I].Command<>acNone then
+      begin
+        J:=Length(Pending);SetLength(Pending,J+1);Pending[J]:=Script.Steps[I].Command;
+        Continue;
+      end;
+      Part:=Trim(Script.Steps[I].Text);
+      if Part='' then Continue;
+      if FConfig.SilentPresentation then
+      begin
+        FlushCommands;
+        WaitUntil(GetTickCount64+SilentSegmentDuration(Part));
+      end else if Synth.Engine=seOpenAI then
+      begin
+        SpeechFile:=ReceptionDataDir+'speech-'+IntToStr(Started)+'-'+IntToStr(I)+'.wav';
+        Synth.OpenAIOutputFile:=SpeechFile;
+        Synth.Say(Part);
+        if Synth.LastError<>'' then begin ErrorText:=Synth.LastError;Break;end;
+        if Terminated then Break;
+        Wav:=TFileStream.Create(SpeechFile,fmOpenRead or fmShareDenyNone);
+        try
+          if Wav.Size<44 then raise Exception.Create('WAV de fala invalido');
+          Wav.Position:=28;Wav.ReadBuffer(BytesPerSecond,4);
+          if BytesPerSecond=0 then raise Exception.Create('WAV de fala invalido');
+          UntilTime:=QWord(Wav.Size)*1000 div BytesPerSecond;
+        finally Wav.Free;end;
+        { Remote synthesis finishes before applying tags: gestures start at the
+          audible segment boundary, not while waiting for the provider. }
+        FlushCommands;
+        if Terminated then Break;
+        if not Player.Play(SpeechFile) then begin ErrorText:=Player.LastError;Break;end;
+        InterlockedExchange(FPlaybackActive,1);
+        WaitUntil(GetTickCount64+UntilTime);
+        Player.Stop;InterlockedExchange(FPlaybackActive,0);
+        SysUtils.DeleteFile(SpeechFile);SpeechFile:='';
+      end else
+      begin
+        FlushCommands;
+        if Terminated then Break;
+        InterlockedExchange(FPlaybackActive,1);
+        try Synth.Say(Part);finally InterlockedExchange(FPlaybackActive,0);end;
+        if Synth.LastError<>'' then begin ErrorText:=Synth.LastError;Break;end;
+      end;
+    end;
+    if not Terminated and (ErrorText='') then FlushCommands;
+    Success:=not Terminated and (ErrorText='');
+  finally
+    if Player<>nil then begin Player.Stop;Player.Free;end;
+    if Synth<>nil then begin Synth.Stop;Synth.Free;end;
+    if SpeechFile<>'' then SysUtils.DeleteFile(SpeechFile);
+    InterlockedExchange(FPlaybackActive,0);
+  end;
+end;
+
 procedure TReceptionJob.Execute;
 var
   LLM: TCHATGPT;
   Agent: TAIAgent;
   Action: TAIAgentAction;
   Recognizer: TAIVoiceRecognizer;
-  Synth: TAIVoiceSynthesizer;
-  Words: TStringList;
-  I: Integer;
-  Part: string;
   Trace: TAITrace;
-  Player: TAIAudioPlayer;
-  UntilTime: QWord;
-  Wav: TFileStream;
-  BytesPerSecond: LongWord;
 begin
   {$IFDEF WINDOWS}CoInitialize(nil);{$ENDIF}
   try
@@ -202,73 +322,7 @@ begin
               SysUtils.DeleteFile(FInput);
             end;
           end;
-        rjSpeak:
-          begin
-            Synth := TAIVoiceSynthesizer.Create(nil);
-            Words := TStringList.Create;
-            Player := TAIAudioPlayer.Create(nil);
-            try
-              Synth.Engine := TSpeechEngine(FConfig.SynthEngine);
-              Synth.OpenAIToken := FConfig.AudioToken;
-              if FConfig.Model <> '' then Synth.OpenAIModel := FConfig.Model;
-              if FConfig.URL <> '' then Synth.OpenAIEndpoint := FConfig.URL;
-              Synth.VoiceName := FConfig.Voice;
-              if (Synth.Engine = seOpenAI) and (FConfig.Voice <> '') then
-                Synth.OpenAIVoice := FConfig.Voice;
-              Synth.Language := FConfig.Language;
-              Synth.Volume := FConfig.Volume;
-              Synth.Rate := FConfig.Rate;
-              Synth.Asynchronous := False;
-              Synth.OpenAIOutputFormat := 'wav';
-              Synth.OpenAIOutputFile := ReceptionDataDir + 'speech-' + IntToStr(Started) + '.wav';
-              Words.Delimiter := ' ';
-              Words.StrictDelimiter := True;
-              Words.DelimitedText := StringReplace(FInput, LineEnding, ' ', [rfReplaceAll]);
-              Part := '';
-              for I := 0 to Words.Count - 1 do
-              begin
-                if Terminated then Break;
-                Part := Trim(Part + ' ' + Words[I]);
-                if ((I mod 8) = 7) or (I = Words.Count - 1) then
-                begin
-                  if Synth.Engine <> seOpenAI then InterlockedExchange(FPlaybackActive, 1);
-                  Synth.Say(Part);
-                  InterlockedExchange(FPlaybackActive, 0);
-                  if Synth.LastError <> '' then
-                  begin
-                    ErrorText := Synth.LastError;
-                    Break;
-                  end;
-                  if Synth.Engine = seOpenAI then
-                  begin
-                    if Terminated then Break;
-                    if not Player.Play(Synth.OpenAIOutputFile) then
-                    begin ErrorText := Player.LastError; Break; end;
-                    InterlockedExchange(FPlaybackActive, 1);
-                    { Read PCM byte rate from the generated WAV; playback remains
-                      interruptible, unlike a shell-launched media player. }
-                    Wav := TFileStream.Create(Synth.OpenAIOutputFile, fmOpenRead or fmShareDenyNone);
-                    try
-                      Wav.Position := 28; Wav.ReadBuffer(BytesPerSecond, 4);
-                      if BytesPerSecond = 0 then raise Exception.Create('WAV de fala invalido');
-                      UntilTime := GetTickCount64 + QWord(Wav.Size) * 1000 div BytesPerSecond;
-                    finally Wav.Free; end;
-                    while not Terminated and (GetTickCount64 < UntilTime) do Sleep(20);
-                    Player.Stop;
-                    InterlockedExchange(FPlaybackActive, 0);
-                  end;
-                  Part := '';
-                end;
-              end;
-              Success := not Terminated and (ErrorText = '');
-              Synth.Stop;
-            finally
-              Words.Free;
-              Player.Free;
-              SysUtils.DeleteFile(Synth.OpenAIOutputFile);
-              Synth.Free;
-            end;
-          end;
+        rjSpeak: ExecuteSpeech;
       end;
     except
       on E: Exception do begin Success := False; ErrorText := E.Message; end;

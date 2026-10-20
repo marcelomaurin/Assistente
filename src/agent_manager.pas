@@ -121,6 +121,7 @@ type
   end;
 
 implementation
+uses professor_commands;
 
 constructor TAssistantPlanner.Create;
 begin inherited Create; Clear; end;
@@ -258,7 +259,8 @@ begin
     end else if Step.ToolName='llm.task' then begin
       PromptFinal:='Objetivo: '+FPrompt+sLineBreak+'Contexto obtido: '+Ctx+sLineBreak+'Tarefa atual: '+Step.Title+sLineBreak+'Execute apenas esta tarefa, em escopo pequeno, e devolva o resultado.'; AskLLM(PromptFinal,R); ExpandTaskIfNeeded(Step,R);
     end else if Step.ToolName='llm.synthesize' then begin
-      AskLLM('Objetivo original: '+FPrompt+sLineBreak+'Resultados das tarefas: '+Ctx+sLineBreak+'Valide os resultados e responda ao usuario de forma final.',R);FFinalResponse:=R;FSuccess:=R<>'';
+      AskLLM('Objetivo original: '+FPrompt+sLineBreak+'Resultados das tarefas: '+Ctx+sLineBreak+
+        'Valide os resultados e responda ao usuario de forma final.'+sLineBreak+AvatarInstructionText,R);FFinalResponse:=R;FSuccess:=R<>'';
     end else R:='Objetivo e contexto analisados.';
     if R<>'' then Ctx:=Ctx+sLineBreak+'['+Step.ID+' '+Step.Title+'] '+R;
     FManager.Planner.UpdateCurrentStepStatus('done',R);FManager.SyncProjectTasks;FCurrentStepStatus:='done';Synchronize(@SyncStepUpdate);

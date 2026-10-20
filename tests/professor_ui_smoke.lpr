@@ -62,6 +62,13 @@ begin
   FControl.OnDblClick(FControl);
   if Abs(FView.Zoom-1)>0.001 then raise Exception.Create('Double-click framing');
   FReport.Add('PASS: wheel zoom in/out and both distance limits');
+  FView.SetRenderingActive(False);
+  if FView.RenderingActive or FView.Scene.TimePlaying or FControl.AutoRedisplay then
+    raise Exception.Create('Background renderer did not pause');
+  FView.SetRenderingActive(True);
+  if not FView.RenderingActive or not FView.Scene.TimePlaying or not FControl.AutoRedisplay then
+    raise Exception.Create('Background renderer did not resume');
+  FReport.Add('PASS: background renderer pauses and resumes for modal preview');
   FTimer := TTimer.Create(Self);
   FTimer.Interval := 900;
   FTimer.OnTimer := @Tick;
