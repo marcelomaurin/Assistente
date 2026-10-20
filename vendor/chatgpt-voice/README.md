@@ -8,3 +8,9 @@ na branch main da biblioteca local. Evita alterar o checkout compartilhado
 de CHATGPT ou remover escuta contínua, supressão de eco e barge-in.
 O compilador usa estas unidades antes da biblioteca externa.
 Os demais componentes continuam vindo de ../../CHATGPT.
+
+Adaptações locais para o Professor 3D: `aicontinuouslistener.pas` aceita
+`DeviceIndex` (padrão -1 = WAVE_MAPPER), informa falha real de `waveInOpen`
+e encerra a thread suspensa quando a construção da captura falha.
+A entrega de eventos à LCL é feita por `src/professor_listener.pas`, sem
+alterar a biblioteca CHATGPT compartilhada.

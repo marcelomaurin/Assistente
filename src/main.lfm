@@ -1,11 +1,11 @@
 object frmmain: Tfrmmain
   Left = 160
-  Height = 720
+  Height = 620
   Top = 80
-  Width = 1100
+  Width = 960
   Caption = 'Assistente - Professor Virtual'
-  ClientHeight = 720
-  ClientWidth = 1100
+  ClientHeight = 620
+  ClientWidth = 960
   Color = clBtnFace
   Font.CharSet = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,23 +21,23 @@ object frmmain: Tfrmmain
   LCLVersion = '3.6.0.0'
   object pnlRoot: TPanel
     Left = 0
-    Height = 720
+    Height = 620
     Top = 0
-    Width = 1100
+    Width = 960
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 720
-    ClientWidth = 1100
+    ClientHeight = 620
+    ClientWidth = 960
     TabOrder = 0
     object pnlHeader: TPanel
       Left = 0
       Height = 58
       Top = 0
-      Width = 1100
+      Width = 960
       Align = alTop
       BevelOuter = bvNone
       ClientHeight = 58
-      ClientWidth = 1100
+      ClientWidth = 960
       TabOrder = 0
       object lblTitulo: TLabel
         Left = 24
@@ -72,11 +72,11 @@ object frmmain: Tfrmmain
       Left = 0
       Height = 582
       Top = 58
-      Width = 1100
+      Width = 960
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 582
-      ClientWidth = 1100
+      ClientWidth = 960
       TabOrder = 1
       object pnlAvatar: TPanel
         Left = 24
@@ -89,15 +89,6 @@ object frmmain: Tfrmmain
         ClientHeight = 534
         ClientWidth = 350
         TabOrder = 0
-        object GifAvatar: TGifAnim
-          Left = 0
-          Height = 534
-          Top = 0
-          Width = 350
-          Align = alClient
-          AutoSize = False
-          Animate = False
-        end
       end
       object lblAssistente: TLabel
         Left = 406
@@ -130,11 +121,11 @@ object frmmain: Tfrmmain
       Left = 0
       Height = 80
       Top = 640
-      Width = 1100
+      Width = 960
       Align = alBottom
       BevelOuter = bvNone
       ClientHeight = 80
-      ClientWidth = 1100
+      ClientWidth = 960
       TabOrder = 2
       object edPergunta: TEdit
         Left = 24

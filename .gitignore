@@ -25,3 +25,9 @@ __pycache__/
 *.pyc
 tests/test-output/
 tests/reception_tests.exe
+
+# Professor 3D local build and dependencies
+build/
+.deps/
+*.exe
+!bin/*.exe

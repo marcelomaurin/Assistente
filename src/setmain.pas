@@ -22,6 +22,7 @@ type
 
   private
         FAvatar3DModel: string;
+        FAvatar3DProfile: string;
         FAdminPIN: string;
         FAvatar3DAutoIdle: Boolean;
         FAvatar3DAutoBlink: Boolean;
@@ -225,6 +226,7 @@ type
         property AudioDeviceIndex : integer read FAudioDeviceIndex write FAudioDeviceIndex;
         property AudioDeviceName : String read FAudioDeviceName write FAudioDeviceName;
         property Avatar3DModel: string read FAvatar3DModel write FAvatar3DModel;
+        property Avatar3DProfile: string read FAvatar3DProfile write FAvatar3DProfile;
         property AdminPIN: string read FAdminPIN write FAdminPIN;
         property Avatar3DAutoIdle: Boolean read FAvatar3DAutoIdle write FAvatar3DAutoIdle;
         property Avatar3DAutoBlink: Boolean read FAvatar3DAutoBlink write FAvatar3DAutoBlink;
@@ -377,6 +379,7 @@ begin
     FAudioDeviceIndex := -1;
     FAudioDeviceName := '';
     FAvatar3DModel := '';
+    FAvatar3DProfile := 'professor';
     FAdminPIN := '';
     FAvatar3DAutoIdle := True;
     FAvatar3DAutoBlink := True;
@@ -711,6 +714,12 @@ begin
     if BuscaChave(arquivo,'STT_ENDPOINT:',posicao) then
       FSTTEndpoint := RetiraInfo(arquivo.Strings[posicao]);
 
+    if BuscaChave(arquivo,'AVATAR3D_PROFILE:',posicao) then
+      FAvatar3DProfile := RetiraInfo(arquivo.Strings[posicao]);
+    if BuscaChave(arquivo,'AVATAR3D_MODEL:',posicao) then
+      FAvatar3DModel := RetiraInfo(arquivo.Strings[posicao]);
+    if BuscaChave(arquivo,'AVATAR3D_AUTO_IDLE:',posicao) then
+      FAvatar3DAutoIdle := StrToBoolDef(RetiraInfo(arquivo.Strings[posicao]), True);
     if BuscaChave(arquivo,'VISION_SOURCE:',posicao) then
       FVisionSource := ParseVisionSource(RetiraInfo(arquivo.Strings[posicao]))
     else if BuscaChave(arquivo,'KINECT_ENABLED:',posicao) then
@@ -751,6 +760,8 @@ end;
 procedure TSetMain.IdentificaArquivo(flag: boolean);
 begin
   Fpath := GetAppConfigDir(false);
+  if GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR') <> '' then
+    Fpath := IncludeTrailingPathDelimiter(GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR'));
   if not(FileExists(FPATH)) then
   begin
      createdir(fpath);
@@ -771,6 +782,8 @@ begin
     inherited create();
     arquivo := TStringList.create();
     FFONT := TFont.create();
+    FAvatar3DProfile := 'professor';
+    FAvatar3DAutoIdle := True;
     FVisionSource := vsNone;
     FKinectDeviceIndex := -1;
     FKinectMinDistance := 0.8;
@@ -851,6 +864,9 @@ begin
   arquivo.Append('AUDIODEVICEINDEX:'+inttostr(FAudioDeviceIndex));
   arquivo.Append('AUDIODEVICENAME:'+FAudioDeviceName);
 
+  arquivo.Append('AVATAR3D_PROFILE:'+FAvatar3DProfile);
+  arquivo.Append('AVATAR3D_MODEL:'+FAvatar3DModel);
+  arquivo.Append('AVATAR3D_AUTO_IDLE:'+iif(FAvatar3DAutoIdle, '1', '0'));
   arquivo.Append('VISION_SOURCE:'+VisionSourceName(FVisionSource));
   arquivo.Append('KINECT_DEVICE_INDEX:'+IntToStr(FKinectDeviceIndex));
   arquivo.Append('CAMERA_DEVICE:'+FCameraDevice);

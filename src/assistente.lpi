@@ -25,6 +25,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="castle_engine_lcl"/>
+      </Item>
+      <Item>
         <PackageName Value="SynEdit"/>
       </Item>
       <Item>

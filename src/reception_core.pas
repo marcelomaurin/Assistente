@@ -23,6 +23,7 @@ type
     FInput, FContext: string;
     FLock: TCriticalSection;
     FLLM: TCHATGPT;
+    FPlaybackActive: LongInt;
   protected
     procedure Execute; override;
   public
@@ -35,6 +36,7 @@ type
     function Done: Boolean;
     function Cancelled: Boolean;
     procedure Cancel;
+    function PlaybackActive: Boolean;
   end;
 
   TReceptionMemory = class
@@ -89,6 +91,11 @@ end;
 function TReceptionJob.Done: Boolean;
 begin
   Result := FDone.WaitFor(0) = wrSignaled;
+end;
+
+function TReceptionJob.PlaybackActive: Boolean;
+begin
+  Result := InterlockedCompareExchange(FPlaybackActive, 0, 0) <> 0;
 end;
 
 function TReceptionJob.Cancelled: Boolean;
@@ -185,6 +192,8 @@ begin
             try
               Recognizer.Engine := TAIVoiceRecognitionEngine(FConfig.RecogEngine);
               Recognizer.OpenAIToken := FConfig.AudioToken;
+              if FConfig.Model <> '' then Recognizer.OpenAIModel := FConfig.Model;
+              if FConfig.URL <> '' then Recognizer.OpenAIEndpoint := FConfig.URL;
               Recognizer.Language := FConfig.Language;
               Success := Recognizer.TranscribeFile(FInput, Text);
               if not Success then ErrorText := Recognizer.LastError;
@@ -201,7 +210,11 @@ begin
             try
               Synth.Engine := TSpeechEngine(FConfig.SynthEngine);
               Synth.OpenAIToken := FConfig.AudioToken;
+              if FConfig.Model <> '' then Synth.OpenAIModel := FConfig.Model;
+              if FConfig.URL <> '' then Synth.OpenAIEndpoint := FConfig.URL;
               Synth.VoiceName := FConfig.Voice;
+              if (Synth.Engine = seOpenAI) and (FConfig.Voice <> '') then
+                Synth.OpenAIVoice := FConfig.Voice;
               Synth.Language := FConfig.Language;
               Synth.Volume := FConfig.Volume;
               Synth.Rate := FConfig.Rate;
@@ -218,7 +231,9 @@ begin
                 Part := Trim(Part + ' ' + Words[I]);
                 if ((I mod 8) = 7) or (I = Words.Count - 1) then
                 begin
+                  if Synth.Engine <> seOpenAI then InterlockedExchange(FPlaybackActive, 1);
                   Synth.Say(Part);
+                  InterlockedExchange(FPlaybackActive, 0);
                   if Synth.LastError <> '' then
                   begin
                     ErrorText := Synth.LastError;
@@ -229,6 +244,7 @@ begin
                     if Terminated then Break;
                     if not Player.Play(Synth.OpenAIOutputFile) then
                     begin ErrorText := Player.LastError; Break; end;
+                    InterlockedExchange(FPlaybackActive, 1);
                     { Read PCM byte rate from the generated WAV; playback remains
                       interruptible, unlike a shell-launched media player. }
                     Wav := TFileStream.Create(Synth.OpenAIOutputFile, fmOpenRead or fmShareDenyNone);
@@ -239,6 +255,7 @@ begin
                     finally Wav.Free; end;
                     while not Terminated and (GetTickCount64 < UntilTime) do Sleep(20);
                     Player.Stop;
+                    InterlockedExchange(FPlaybackActive, 0);
                   end;
                   Part := '';
                 end;
@@ -257,6 +274,7 @@ begin
       on E: Exception do begin Success := False; ErrorText := E.Message; end;
     end;
   finally
+    InterlockedExchange(FPlaybackActive, 0);
     {$IFDEF WINDOWS}CoUninitialize;{$ENDIF}
     FDone.SetEvent;
   end;

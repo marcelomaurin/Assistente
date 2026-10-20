@@ -1,0 +1,4 @@
+Original meshes, texture and animations authored for Assistente, 2026.
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+To the extent possible under law, the authors dedicate these original assets
+to the public domain. No third-party character mesh or texture is included.
