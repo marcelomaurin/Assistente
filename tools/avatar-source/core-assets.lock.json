@@ -1,0 +1,87 @@
+{
+  "repository": "https://github.com/makehumancommunity/makehuman",
+  "revision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "license": "CC0-1.0 (art assets)",
+  "files": [
+    {
+      "path": "african-female-young.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/african-female-young.target",
+      "sha256": "92d61eeb3c164b421fd5a7c3537ee45e7e1a51de4d49bf312e19c3df2be1d8fc"
+    },
+    {
+      "path": "african-male-young.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/african-male-young.target",
+      "sha256": "894abc1fbb3d28543a51fef16f89d5d4bdf9aa2e1534413339811a3d47818b7d"
+    },
+    {
+      "path": "base.obj",
+      "upstream_path": "makehuman/data/3dobjs/base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c"
+    },
+    {
+      "path": "caucasian-female-young.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/caucasian-female-young.target",
+      "sha256": "118379f6e8ba9266247fdb8788a20e1df40a239f97ced0b9905bcbcc74f6e820"
+    },
+    {
+      "path": "caucasian-male-baby.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/caucasian-male-baby.target",
+      "sha256": "f970a2e354b70f8438508a884cd40a9b2ea5cbd24fa6b89a99071a30720c7417"
+    },
+    {
+      "path": "caucasian-male-child.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/caucasian-male-child.target",
+      "sha256": "401b9b0349c88dc7aacb81e71f67daf747fecde0f7fd7f3f6e10fb2ce5586d1e"
+    },
+    {
+      "path": "caucasian-male-old.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/caucasian-male-old.target",
+      "sha256": "b0d2b1d58cba0358af59833740e70229265f7da1c20a11240f4123b7192cfd6d"
+    },
+    {
+      "path": "caucasian-male-young.target",
+      "upstream_path": "makehuman/data/targets/macrodetails/caucasian-male-young.target",
+      "sha256": "70e228ba7164737dae664454394536fc5935fa48d333c1a97d77e2dc6eacc5f5"
+    },
+    {
+      "path": "default.mhskel",
+      "upstream_path": "makehuman/data/rigs/default.mhskel",
+      "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24"
+    },
+    {
+      "path": "default_weights.mhw",
+      "upstream_path": "makehuman/data/rigs/default_weights.mhw",
+      "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625"
+    },
+    {
+      "path": "eye-left-closure.target",
+      "upstream_path": "makehuman/data/targets/expression/units/caucasian/eye-left-closure.target",
+      "sha256": "e38cb77fd888de3d0d944efe6f3511bf3ca4076b0397fa7c840d8368f08205c2"
+    },
+    {
+      "path": "eye-right-closure.target",
+      "upstream_path": "makehuman/data/targets/expression/units/caucasian/eye-right-closure.target",
+      "sha256": "58faf2c199272bfd87478ea122cdaa4b4b8669505be0d75f777c5471527b2b15"
+    },
+    {
+      "path": "LICENSE.ASSETS.md",
+      "upstream_path": "LICENSE.ASSETS.md",
+      "sha256": "f6089cba01cb570a24712b41ab8a586ccd3cc5ef53dc266ca50b95c288956d2c"
+    },
+    {
+      "path": "LICENSE.md",
+      "upstream_path": "LICENSE.md",
+      "sha256": "edd99571ca62698f78c943fd4fffb159a413c315fa0d4819d3cec5cadaf8b4f1"
+    },
+    {
+      "path": "mouth-corner-puller.target",
+      "upstream_path": "makehuman/data/targets/expression/units/caucasian/mouth-corner-puller.target",
+      "sha256": "75ec1f2356c381aa44065f2b812daafae85c5a918843b978d04cf6d8bc79dbe4"
+    },
+    {
+      "path": "mouth-open.target",
+      "upstream_path": "makehuman/data/targets/expression/units/caucasian/mouth-open.target",
+      "sha256": "07377ba3a3eb1b92b00029908f896ea1f8cc50356789f54268d897f2e89c2843"
+    }
+  ]
+}

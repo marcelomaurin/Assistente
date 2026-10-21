@@ -1,0 +1,18 @@
+Avatars v3: adapted MakeHuman CC0 art assets plus original Assistente animation,
+materials and accessories, 2026. All included graphical assets are CC0-1.0.
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+
+Base mesh, age/anatomy targets, skeleton and weights:
+https://github.com/makehumancommunity/makehuman
+Revision a8bc2d54ff0ac92e78ff71431b1023eda42bf482.
+Core artwork: MakeHuman team, Data Collection AB, Joel Palmius, Jonas Hauquier;
+historical authors are preserved in the source art headers.
+
+Clothes, hair, eyes, eyebrows, teeth and skin textures: official MakeHuman
+system assets CC0 package, listed at:
+https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html
+
+Provenance, full CC0 legal text, checksums and prepared source artwork:
+tools/avatar-source/ in the source repository. No MakeHuman application code
+is included or imported. The Assistente adaptations and new animation tracks
+are also dedicated to the public domain under CC0-1.0.

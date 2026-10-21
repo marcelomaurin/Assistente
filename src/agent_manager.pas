@@ -48,8 +48,11 @@ type
     property Goal: string read FGoal;
   end;
 
+  TAgentWorkerThread = class;
+
   TAssistantManager = class(TComponent)
   private
+    FWorker: TAgentWorkerThread;
     FChatGPT: TCHATGPT;
     FAgent: TAIAgent;
     FPipeline: TAIPipeline;
@@ -118,6 +121,7 @@ type
   end;
 
 implementation
+uses professor_commands;
 
 constructor TAssistantPlanner.Create;
 begin inherited Create; Clear; end;
@@ -166,7 +170,18 @@ begin
   FTaskActions:=TAITaskActions.Create(Self); FTaskActions.Project:=FProject;
   SetupBuiltInTools;
 end;
-destructor TAssistantManager.Destroy; begin FPlanner.Free; FLock.Free; inherited Destroy; end;
+destructor TAssistantManager.Destroy;
+begin
+  FOnComplete := nil;
+  FOnStateChange := nil;
+  FOnStepUpdate := nil;
+  FOnToolLog := nil;
+  CancelExecution;
+  if Assigned(FWorker) then begin FWorker.WaitFor; FreeAndNil(FWorker); end;
+  FPlanner.Free;
+  FLock.Free;
+  inherited Destroy;
+end;
 procedure TAssistantManager.SyncProjectTasks;
 var Plan:TJSONObject; Arr:TJSONArray; I:Integer; S:TPlanStep;
 begin
@@ -191,10 +206,26 @@ procedure TAssistantManager.ToolCasaDeviceSet(Sender:TObject; ACall:TAIToolCall;
 procedure TAssistantManager.ToolCasaClimate(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var T,U,D:string; C:Boolean; begin if Assigned(FJarvisClient) and FJarvisClient.ObterClima(T,U,D,C) then begin AResult.Success:=True;AResult.Output:=Format('Temperatura: %s | Umidade: %s | %s',[T,U,D]);end else begin AResult.Success:=False;AResult.ErrorText:='Falha ao obter clima';end;end;
 procedure TAssistantManager.ToolFileRead(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var P:string;SL:TStringList; begin P:='';if ACall.Arguments<>nil then P:=ACall.Arguments.Get('path',''); if (P<>'') and FileExists(P) then begin SL:=TStringList.Create;try SL.LoadFromFile(P);AResult.Success:=True;AResult.Output:=SL.Text;finally SL.Free;end;end else begin AResult.Success:=False;AResult.ErrorText:='Arquivo invalido';end;end;
 procedure TAssistantManager.ToolSystemInfo(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); begin AResult.Success:=True;AResult.Output:='Projeto: '+FActiveProject+' | '+DateTimeToStr(Now);end;
-procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt:string); begin FCancelRequested:=False;FState:=asPlanning;TAgentWorkerThread.Create(Self,AUserPrompt);end;
-procedure TAssistantManager.CancelExecution; begin FCancelRequested:=True;FState:=asCancelled;end;
+procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt:string);
+begin
+  if Assigned(FWorker) then
+  begin
+    if not FWorker.Finished then raise Exception.Create('Agente ainda ocupado');
+    FreeAndNil(FWorker);
+  end;
+  FCancelRequested := False;
+  FState := asPlanning;
+  FWorker := TAgentWorkerThread.Create(Self, AUserPrompt);
+  FWorker.Start;
+end;
+procedure TAssistantManager.CancelExecution;
+begin
+  FCancelRequested := True;
+  FState := asCancelled;
+  if Assigned(FChatGPT) then FChatGPT.Cancel;
+end;
 
-constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt:string); begin inherited Create(True);FreeOnTerminate:=True;FManager:=AManager;FPrompt:=APrompt;FProviderName:='CHATGPT Suite';Start;end;
+constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt:string); begin inherited Create(True);FreeOnTerminate:=False;FManager:=AManager;FPrompt:=APrompt;FProviderName:='CHATGPT Suite';end;
 procedure TAgentWorkerThread.SyncStateChange; begin if Assigned(FManager.FOnStateChange) then FManager.FOnStateChange(FManager,FManager.FState,'Executando');end;
 procedure TAgentWorkerThread.SyncStepUpdate; begin if Assigned(FManager.FOnStepUpdate) then FManager.FOnStepUpdate(FManager,FCurrentStepIdx,FManager.Planner.StepCount,FCurrentStepTitle,FCurrentStepStatus);end;
 procedure TAgentWorkerThread.SyncToolLog; begin if Assigned(FManager.FOnToolLog) then FManager.FOnToolLog(FManager,FToolNameLog,FToolArgsLog,FToolResultLog,FToolSuccessLog);end;
@@ -211,11 +242,16 @@ end;
 procedure TAgentWorkerThread.Execute;
 var Step:TPlanStep;Tool:TAITool;CallObj:TAIToolCall;ResultObj:TAIToolResult;Ctx,PromptFinal,R:string;HasJarvis:Boolean;
 begin
+  try
+  FManager.FState := asPlanning; Synchronize(@SyncStateChange);
   HasJarvis:=Assigned(FManager.FJarvisClient) and (FManager.FJarvisClient.BaseURL<>'');
   FManager.FLock.Acquire;try FManager.Planner.CreatePlan(FPrompt,HasJarvis,FManager.FActiveProject);FManager.SyncProjectTasks;finally FManager.FLock.Release;end;
   Ctx:='';
   while FManager.Planner.NextStep(Step) do begin
     if FManager.CancelRequested then begin FFinalResponse:='Operacao cancelada.';FSuccess:=False;Synchronize(@SyncComplete);Exit;end;
+    if (Step.ToolName <> '') and (Pos('llm.', Step.ToolName) <> 1) then FManager.FState := asCallingTool
+    else FManager.FState := asExecutingStep;
+    Synchronize(@SyncStateChange);
     FCurrentStepIdx:=FManager.Planner.CurrentStepIndex;FCurrentStepTitle:=Step.Title;FCurrentStepStatus:='running';Synchronize(@SyncStepUpdate);
     R:='';
     if (Step.ToolName<>'') and (Pos('llm.',Step.ToolName)<>1) then begin
@@ -223,13 +259,19 @@ begin
     end else if Step.ToolName='llm.task' then begin
       PromptFinal:='Objetivo: '+FPrompt+sLineBreak+'Contexto obtido: '+Ctx+sLineBreak+'Tarefa atual: '+Step.Title+sLineBreak+'Execute apenas esta tarefa, em escopo pequeno, e devolva o resultado.'; AskLLM(PromptFinal,R); ExpandTaskIfNeeded(Step,R);
     end else if Step.ToolName='llm.synthesize' then begin
-      AskLLM('Objetivo original: '+FPrompt+sLineBreak+'Resultados das tarefas: '+Ctx+sLineBreak+'Valide os resultados e responda ao usuario de forma final.',R);FFinalResponse:=R;FSuccess:=R<>'';
+      AskLLM('Objetivo original: '+FPrompt+sLineBreak+'Resultados das tarefas: '+Ctx+sLineBreak+
+        'Valide os resultados e responda ao usuario de forma final.'+sLineBreak+AvatarInstructionText,R);FFinalResponse:=R;FSuccess:=R<>'';
     end else R:='Objetivo e contexto analisados.';
     if R<>'' then Ctx:=Ctx+sLineBreak+'['+Step.ID+' '+Step.Title+'] '+R;
     FManager.Planner.UpdateCurrentStepStatus('done',R);FManager.SyncProjectTasks;FCurrentStepStatus:='done';Synchronize(@SyncStepUpdate);
   end;
   if FFinalResponse='' then begin FFinalResponse:=Ctx;FSuccess:=FFinalResponse<>'';end;
-  FManager.FState:=asFinished;Synchronize(@SyncComplete);
+  FManager.FState:=asFinished;
+  except
+    on E: Exception do
+    begin FManager.FState := asError; FFinalResponse := E.Message; FSuccess := False; end;
+  end;
+  Synchronize(@SyncComplete);
 end;
 
 end.

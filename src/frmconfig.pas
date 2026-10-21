@@ -315,6 +315,8 @@ var
 
 implementation
 
+uses professor_preview;
+
 
 
 {$R *.lfm}
@@ -1339,28 +1341,9 @@ end;
 
 
 procedure TfrmConfig.btTestarAvatarClick(Sender: TObject);
-
 begin
-
-  ShowMessage('Teste de sequencia do Avatar 3D:' + LineEnding +
-
-              '1. Estado: Idle (Respiração procedural)' + LineEnding +
-
-              '2. Emocao: Happy (Expressao facial positiva)' + LineEnding +
-
-              '3. Gesto: Wave (Aceno de boas-vindas)' + LineEnding +
-
-              '4. Gesto: Think (Postura pensativa)' + LineEnding +
-
-              '5. Estado: Speaking (Lip-Sync mandíbula)' + LineEnding +
-
-              '6. Retorno: Idle' + LineEnding +
-
-              'Sequencia validada com sucesso!');
-
+  ShowProfessorPreview(Trim(edAvatarModel.Text), chkAvatarAutoIdle.Checked);
 end;
-
-
 
 procedure TfrmConfig.btSalvarClick(Sender: TObject);
 

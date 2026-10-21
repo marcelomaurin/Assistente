@@ -85,6 +85,7 @@ type
   TAIContinuousListener = class(TComponent)
   private
     FEnabled: Boolean;
+    FDeviceIndex: Integer;
     FContinuous: Boolean;
     FSampleRate: Integer;
     FChannels: Integer;
@@ -176,6 +177,7 @@ type
     property AssistantSpeaking: Boolean read FAssistantSpeaking write SetAssistantSpeaking;
   published
     property Enabled: Boolean read FEnabled write SetEnabled default True;
+    property DeviceIndex: Integer read FDeviceIndex write FDeviceIndex default -1;
     property Continuous: Boolean read FContinuous write FContinuous default True;
     property SampleRate: Integer read FSampleRate write FSampleRate default 16000;
     property Channels: Integer read FChannels write FChannels default 1;
@@ -251,11 +253,11 @@ begin
   wfx.nAvgBytesPerSec := wfx.nSamplesPerSec * wfx.nBlockAlign;
   wfx.cbSize := 0;
 
-  mmRes := waveInOpen(@FWaveIn, WAVE_MAPPER, @wfx, DWORD_PTR(FEvent), 0, CALLBACK_EVENT);
+  mmRes := waveInOpen(@FWaveIn, UINT(FOwner.DeviceIndex), @wfx, DWORD_PTR(FEvent), 0, CALLBACK_EVENT);
   if mmRes <> MMSYSERR_NOERROR then
   begin
     FOwner.FLastError := Format('waveInOpen failed (error %d)', [mmRes]);
-    Exit;
+    raise Exception.Create(FOwner.FLastError);
   end;
   FDevOpened := True;
 
@@ -287,6 +289,8 @@ var
   i: Integer;
 begin
   Terminate;
+  { Constructor failure may leave the native thread suspended. }
+  if Suspended then Start;
   if FEvent <> 0 then
     SetEvent(FEvent);
   WaitFor;
@@ -341,6 +345,7 @@ constructor TAIContinuousListener.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FEnabled := True;
+  FDeviceIndex := -1;
   FContinuous := True;
   FSampleRate := 16000;
   FChannels := 1;
