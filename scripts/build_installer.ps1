@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $Compiler)) {
 }
 if (-not (Test-Path -LiteralPath $Compiler)) { throw "Inno Setup ausente: $Compiler" }
 if (-not (Test-Path -LiteralPath $Executable)) { throw 'Compile primeiro o professor com -Release.' }
-$work = Join-Path $root ('build\installer_0120\stage-' + [guid]::NewGuid())
+$work = Join-Path $root ('build\installer_0130\stage-' + [guid]::NewGuid())
 $payload = Join-Path $work 'payload'
 New-Item -ItemType Directory -Force -Path $payload,(Join-Path $payload 'docs'),(Join-Path $payload 'LICENSES') | Out-Null
 Copy-Item -LiteralPath $Executable -Destination (Join-Path $payload 'assistente.exe')
@@ -27,7 +27,7 @@ Copy-Item -LiteralPath (Join-Path $root 'AVATARES') -Destination $payload -Recur
 foreach ($name in @('libcrypto-1_1.dll','libssl-1_1.dll')) {
     Copy-Item -LiteralPath (Join-Path $root ('src\' + $name)) -Destination $payload
 }
-foreach ($name in @('professor-virtual-3d.md','avatar-comandos-ia.md','INSTALACAO_0120.md')) {
+foreach ($name in @('professor-virtual-3d.md','avatar-comandos-ia.md','INSTALACAO_0130.md')) {
     Copy-Item -LiteralPath (Join-Path $root ('Docs\' + $name)) -Destination (Join-Path $payload 'docs')
 }
 Copy-Item -LiteralPath (Join-Path $ChatGPT 'LICENSE') -Destination (Join-Path $payload 'LICENSES\CHATGPT-GPL-3.0.txt')
@@ -36,7 +36,7 @@ Copy-Item -LiteralPath (Join-Path $Castle 'doc\licenses') -Destination (Join-Pat
 $revision = (& git -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel identificar o commit de origem.' }
 $info = [ordered]@{
-    version = '0.120'; source_commit = $revision; platform = 'i386-win32'
+    version = '0.130'; source_commit = $revision; platform = 'i386-win32'
     executable_sha256 = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant()
     source_url = 'https://github.com/marcelomaurin/Assistente'
     chatgpt_source = 'https://github.com/marcelomaurin/CHATGPT/tree/3c845b998c7c631c0608c12b766a04b39da13be1'
@@ -52,13 +52,13 @@ foreach ($file in Get-ChildItem -LiteralPath $payload -File -Recurse | Sort-Obje
     }
     $records += [ordered]@{path=$relative; size=$file.Length; sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
-$log = Join-Path $root 'build\installer_0120\compile.log'
+$log = Join-Path $root 'build\installer_0130\compile.log'
 & $Compiler ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0) { throw "Falha no Inno Setup. Consulte $log" }
-$setup = Join-Path $root 'bin\setup_assistente_0120.exe'
-$manifest = [ordered]@{schema=1; version='0.120'; source_commit=$revision; platform='i386-win32'
-    installer=[ordered]@{file='setup_assistente_0120.exe';size=(Get-Item -LiteralPath $setup).Length;sha256=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()}
+$setup = Join-Path $root 'bin\setup_assistente_0130.exe'
+$manifest = [ordered]@{schema=1; version='0.130'; source_commit=$revision; platform='i386-win32'
+    installer=[ordered]@{file='setup_assistente_0130.exe';size=(Get-Item -LiteralPath $setup).Length;sha256=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()}
     files=$records}
-[IO.File]::WriteAllText((Join-Path $root 'bin\setup_assistente_0120.manifest.json'), ($manifest | ConvertTo-Json -Depth 8), $utf8)
+[IO.File]::WriteAllText((Join-Path $root 'bin\setup_assistente_0130.manifest.json'), ($manifest | ConvertTo-Json -Depth 8), $utf8)
 Write-Output "Instalador: $setup"
 Write-Output ("Arquivos empacotados: " + $records.Count)

@@ -26,6 +26,10 @@ def source_triangle_count():
 expected = source_triangle_count()
 assert expected > 10000, 'Missing source body topology'
 for path in sorted((ROOT / 'AVATARES').glob('*/modelo.gltf')):
+    if path.parent.name == 'ze_gotinha':
+        from check_ze_gotinha import validate
+        validate(path)
+        continue
     doc = json.loads(path.read_text(encoding='utf-8'))
     binary = base64.b64decode(doc['buffers'][0]['uri'].split(',')[1])
 

@@ -16,14 +16,15 @@ O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servi
 
 ## Instalação Windows
 
-Versão atual: [setup_assistente_0120.exe](bin/setup_assistente_0120.exe).
-Inclui o Release Win32 com as correções do corpo completo, ombro, voz e articulações,
-os dez avatares e as bibliotecas SSL necessárias. A instalação padrão é por
-usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação, conteúdo e verificação](Docs/INSTALACAO_0120.md).
-Hashes do pacote e dos arquivos estão no [manifesto](bin/setup_assistente_0120.manifest.json).
-O [resultado dos testes de instalação](bin/setup_assistente_0120.validacao.json) registra
-extração, abertura do aplicativo, reinstalação e desinstalação verificadas.
+Versão atual: [setup_assistente_0130.exe](bin/setup_assistente_0130.exe).
+Inclui o aplicativo Win32 Release atualizado e os 11 avatares, com o Zé Gotinha
+refeito em 3D a partir das referências: cabeça em gota, corpo arredondado,
+emblema SUS e animações de fala, piscadas, olhar e gestos.
+A instalação padrão é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
+Veja [instalação e verificação da versão 0.130](Docs/INSTALACAO_0130.md).
+Os hashes estão no [manifesto](bin/setup_assistente_0130.manifest.json), e os
+resultados dos testes no [relatório](bin/setup_assistente_0130.validacao.json).
+A versão [0.120](Docs/INSTALACAO_0120.md) permanece disponível como histórico.
 
 ## Professor Virtual 3D
 

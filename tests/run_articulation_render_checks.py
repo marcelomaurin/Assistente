@@ -53,8 +53,8 @@ for profile in profiles:
         animation=next(a for a in doc['animations'] if a['name']==clip)
         def is_active(c):
             bone=doc['nodes'][c['target']['node']]['name']
-            return (name=='mouth' and (bone=='jaw' or bone.startswith(('levator','oris','risorius','temporalis')))
-                    or name=='blink' and bone.startswith('orbicularis')
+            return (name=='mouth' and (bone in ('jaw','Boca articulada') or bone.startswith(('levator','oris','risorius','temporalis')))
+                    or name=='blink' and bone.startswith(('orbicularis','Olho ','Íris ','Pupila ','Brilho '))
                     or name=='gaze' and bone.startswith('eye.')
                     or name=='fingers' and bone.startswith('finger'))
         frozen=next(a for a in doc['animations'] if a['name']==('wave' if name=='fingers' else clip))

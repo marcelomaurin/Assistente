@@ -26,6 +26,7 @@ PROFILES = {
     'crianca': ('Criança', 'caucasian-male-child', 'male_casualsuit02', 'short03', 'young_caucasian_male'),
     'bebe': ('Bebê', 'caucasian-male-baby', 'male_casualsuit02', 'short03', 'young_caucasian_male'),
     'robo': ('Robô', 'caucasian-female-young', 'male_casualsuit01', None, None),
+    'ze_gotinha': ('Zé Gotinha', 'caucasian-male-young', 'male_casualsuit01', None, None),
 }
 
 def obj(path):
@@ -95,10 +96,26 @@ class Avatar:
         self.p0, self.uv, self.faces, self.groups = obj(SOURCE / 'base.obj')
         self.p = self.p0 + target(shape, len(self.p0))
         self.p += target('mouth-corner-puller', len(self.p0))*(.18 if profile!='robo' else .06)
+        if profile == 'ze_gotinha':
+            self.p += target('mouth-corner-puller', len(self.p0)) * 0.15
+            y = self.p[:, 1]
+            mask = y > 6.6
+            y_max = self.p[:, 1].max()
+            h = np.clip((y[mask] - 6.6) / (y_max - 6.6), 0.0, 1.0)
+            apex_y = 11.2
+            apex_x = 0.0
+            apex_z = 0.45
+            self.p[mask, 1] += (h ** 1.55) * (apex_y - y_max)
+            scale = np.where(h < 0.22,
+                             1.0 + 0.06 * np.sin(h * np.pi / 0.22),
+                             (1.0 - np.maximum(0.0, (h - 0.22) / 0.78) ** 1.25) * 1.06)
+            scale = np.clip(scale, 0.025, 1.15)
+            self.p[mask, 0] = apex_x + (self.p[mask, 0] - apex_x) * scale
+            self.p[mask, 2] = apex_z + (self.p[mask, 2] - apex_z) * scale
         # Slightly enlarge head for a friendly game avatar while retaining facial anatomy.
         skull = self.p[:, 1] > (self.p[:, 1].max() - (2.25 if profile not in ('crianca','bebe') else 2.9))
         # Age target files already encode individual proportions, not a scaled adult.
-        if profile not in ('crianca','bebe'):
+        if profile not in ('crianca','bebe','ze_gotinha'):
             center = self.p[skull].mean(0)
             self.p[skull] = center + (self.p[skull]-center)*[1.045, 1.015, 1.035]
         self.floor = self.p[self.faces[self.groups == 'body', :, 0].reshape(-1), 1].min()
@@ -337,7 +354,12 @@ class Avatar:
     def build(self):
         skin_dir=SOURCE/'system'/'skins'/(self.skin or 'young_caucasian_female')
         skin_tex=next(skin_dir.glob('*.png'))
-        skinmat=self.material('Pele com textura',rough=.58,texture=skin_tex) if self.skin else self.material('Cerâmica branca',(.77,.81,.84),.28,.35)
+        if self.skin:
+            skinmat=self.material('Pele com textura',rough=.58,texture=skin_tex)
+        elif self.profile=='ze_gotinha':
+            skinmat=self.material('Pele branca Zé Gotinha',(.96,.97,.99),rough=.42,metal=0.0)
+        else:
+            skinmat=self.material('Cerâmica branca',(.77,.81,.84),.28,.35)
         # Keep the complete skinned body underneath independent clothing meshes.
         # Cropping to head/hands leaves floating hands with short sleeves and
         # removes anatomy when a garment is hidden or replaced.
@@ -353,13 +375,14 @@ class Avatar:
         mat=self.material('Roupa: tecido normal e oclusão',rough=.87,texture=diffuse,normal=normal,ao=ao)
         original_mat=mat
         # Physician white coat and priest black suit retain sculpted cloth folds.
-        if self.profile in ('professor','medico','padre','robo'):
+        if self.profile in ('professor','medico','padre','robo','ze_gotinha'):
             im=Image.open(diffuse).convert('RGB')
             if self.profile in ('professor','medico'): im=ImageOps.colorize(ImageOps.grayscale(im),'#87959b','#f4f7f5')
             elif self.profile=='padre': im=ImageOps.colorize(ImageOps.grayscale(im),'#080b11','#33404c')
+            elif self.profile=='ze_gotinha': im=ImageOps.colorize(ImageOps.grayscale(im),'#dce4eb','#ffffff')
             else: im=ImageOps.colorize(ImageOps.grayscale(im),'#17202b','#cbd4d9')
             path=self.folder/'uniforme.png';im.save(path)
-            mat=self.material('Uniforme adaptado',rough=.75 if self.profile!='robo' else .32,metal=.35 if self.profile=='robo' else 0,texture=path,normal=normal,ao=ao)
+            mat=self.material('Uniforme adaptado',rough=.75 if self.profile not in ('robo','ze_gotinha') else .35,metal=.35 if self.profile=='robo' else 0,texture=path,normal=normal,ao=ao)
         if self.profile in ('professor','medico'):
             upper=p[f[:,:,0],1].mean(1)>self.origins['spine05'][1]+.025
             self.mesh('Vestuário deformável',p,uv,f[upper],mat,w)
@@ -383,7 +406,12 @@ class Avatar:
             Image.fromarray(pixels).save(pattern)
             self.mesh('Colete de tricô com UVs próprios',shell,vestuv,vf,self.material('Tricô argyle',rough=.94,texture=pattern),w)
         p,uv,f,w,d=self.fit('clothes','shoes05' if self.profile in ('crianca','bebe','programador') else 'shoes01')
-        self.mesh('Calçados',p,uv,f,self.material('Couro e sola',rough=.7,texture=next(d.glob('*diffuse.png')),normal=next(d.glob('*normal.png'),None)),w)
+        shoetex=next(d.glob('*diffuse.png'))
+        if self.profile=='ze_gotinha':
+            shoe_im=Image.open(shoetex).convert('RGB')
+            shoe_im=ImageOps.colorize(ImageOps.grayscale(shoe_im),'#c4cfd8','#ffffff')
+            shoe_path=self.folder/'tenis_branco.png';shoe_im.save(shoe_path);shoetex=shoe_path
+        self.mesh('Calçados',p,uv,f,self.material('Tênis branco' if self.profile=='ze_gotinha' else 'Couro e sola',rough=.7,texture=shoetex,normal=next(d.glob('*normal.png'),None)),w)
         if self.hair:
             p,uv,f,w,d=self.fit('hair',self.hair)
             self.mesh('Cabelo com mechas e transparência recortada',p,uv,f,
@@ -393,6 +421,9 @@ class Avatar:
         if self.profile=='robo':
             im=Image.open(eyes).convert('RGBA'); rgb=np.array(im);dark=rgb[:,:,:3].mean(2)<130
             rgb[dark,:3]=np.array([30,190,204]);path=self.folder/'olhos_cianos.png';Image.fromarray(rgb).save(path);eyes=path
+        elif self.profile=='ze_gotinha':
+            im=Image.open(eyes).convert('RGBA'); rgb=np.array(im);dark=rgb[:,:,:3].mean(2)<130
+            rgb[dark,:3]=np.array([15,65,175]);path=self.folder/'olhos_zegotinha.png';Image.fromarray(rgb).save(path);eyes=path
         self.mesh('Olhos: esclera íris e pupilas',p,uv,f,self.material('Córnea e íris',rough=.16,texture=eyes,alpha=True),w)
         p,uv,f,w,d=self.fit('eyebrows','eyebrow001')
         self.mesh('Sobrancelhas',p,uv,f,self.material('Sobrancelhas',rough=.85,texture=next(d.glob('*.png')),alpha=True),w)
@@ -407,7 +438,7 @@ class Avatar:
                             'body':'complete; clothing is a separate mesh', 'body_triangles':len(body), **self.stats}
         (self.folder/'modelo.gltf').write_text(json.dumps(self.doc,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
         (self.folder/'modelo.ini').write_text('[animations]\n'+'\n'.join(n+'='+n for n in CLIPS)+'\n',encoding='utf-8')
-        (self.folder/'avatar.json').write_text(json.dumps({'id':self.profile,'name':self.label,'model':'modelo.gltf','license':'CC0-1.0','version':4},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        (self.folder/'avatar.json').write_text(json.dumps({'id':self.profile,'name':self.label,'model':'modelo.gltf','license':'CC0-1.0' if self.profile!='ze_gotinha' else 'Domínio Público / SUS Brasil','version':4},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         print(self.profile,self.stats,'buffer',len(self.binary),flush=True)
 
     def details(self):
@@ -462,6 +493,14 @@ class Avatar:
                     tail=self.world(self.p[self.rig['joints'][self.rig['bones'][bone+side]['tail']]].mean(0))
                     self.accessory('Placa de braço',(start+tail)/2+[0,0,.025*sc],np.array([.045,.09,.030])*sc,white,bone+side)
                     self.segment('Inserto ciano',start+[0,-.025*sc,.05*sc],tail+[0,.03*sc,.05*sc],.007*sc,cyan,bone+side)
+        if self.profile=='ze_gotinha':
+            sus_blue=self.material('Azul SUS',(.0,.36,.75),rough=.35,metal=.05)
+            sus_white=self.material('Branco SUS',(.98,.98,.99),rough=.3,metal=.0)
+            chest=self.origins['spine05']
+            c=chest+np.array([0,.035,.118])*sc
+            self.accessory('Emblema Fundo',c,np.array([.042,.042,.004])*sc,sus_white,'spine05')
+            self.segment('Cruz SUS Vertical',c+[0,-.028*sc,.003*sc],c+[0,.028*sc,.003*sc],.011*sc,sus_blue,'spine05')
+            self.segment('Cruz SUS Horizontal',c+[-.028*sc,0,.003*sc],c+[.028*sc,0,.003*sc],.011*sc,sus_blue,'spine05')
 
     def arm_ik(self, side, target, pole=None, shoulder_elevation=0.):
         # Share overhead reach across clavicle, shoulder and upper arm. Rotating
@@ -720,6 +759,11 @@ class Avatar:
 def main():
     import argparse
     p=argparse.ArgumentParser(__doc__);p.add_argument('--profile',choices=list(PROFILES));args=p.parse_args()
-    for profile in ([args.profile] if args.profile else PROFILES): Avatar(profile).build()
+    for profile in ([args.profile] if args.profile else PROFILES):
+        if profile == 'ze_gotinha':
+            from ze_gotinha_avatar import ZeGotinha
+            ZeGotinha().build()
+        else:
+            Avatar(profile).build()
 
 if __name__=='__main__': main()

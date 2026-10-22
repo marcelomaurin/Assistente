@@ -1,0 +1,15 @@
+{
+  "version": "0.130",
+  "installer_sha256": "318e8b1b234a7d9a5fa773e41061760f7d467ca7c899ca5d8090513a969d31d9",
+  "result": "PASS",
+  "payload_files": 155,
+  "profiles": 11,
+  "checks": [
+    "PASS: all eleven installed avatars are current (Zé Gotinha v5, others v4) and match the validated source models byte for byte",
+    "PASS: actual installer extracted 155 files; all SHA-256 hashes match; eleven avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "PASS: installed Release application opened its native main form and closed normally with isolated configuration, no voice/provider/camera activity",
+    "PASS: reinstall preserved user configuration/history and left application registration unchanged",
+    "PASS: uninstaller removed packaged files, preserved user files and did not change registration"
+  ]
+}

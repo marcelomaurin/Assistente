@@ -15,7 +15,7 @@ for name in ('core-assets.lock.json','system-assets.lock.json'):
         assert hashlib.sha256(file.read_bytes()).hexdigest()==record.get('prepared_sha256',record.get('sha256')), f'Artwork checksum: {file}'
 print('PASS: pinned CC0 artwork provenance and prepared source checksums')
 profiles = ['professor', 'medico', 'engenheiro', 'programador', 'dona_de_casa',
-            'empresario', 'padre', 'crianca', 'bebe', 'robo']
+            'empresario', 'padre', 'crianca', 'bebe', 'robo', 'ze_gotinha']
 clips = {'idle', 'listening', 'thinking', 'talking', 'wave', 'walk'}
 for profile in profiles:
     folder = root / 'AVATARES' / profile
@@ -61,7 +61,7 @@ for profile in profiles:
                 assert len(delta) == len(positions)
                 assert max(abs(f) for p in delta for f in p)>1e-4
                 face_targets+=1
-    assert blended>100 and face_targets==3
+    assert blended>100 and face_targets==(0 if profile=='ze_gotinha' else 3)
     for animation in asset['animations']:
         paths = [(c['target']['node'], c['target']['path']) for c in animation['channels']]
         assert len(set(paths)) == len(paths), f'duplicate animated property: {profile}'
@@ -72,4 +72,4 @@ for profile in profiles:
             view = asset['bufferViews'][inp['bufferView']]
             times = struct.unpack_from('<' + 'f'*inp['count'], binary, view['byteOffset'])
             assert times[0] == 0 and all(a < b for a, b in zip(times, times[1:]))
-    print('PASS:', profile, 'geometry, 163-joint skin, normalized weights, three facial morphs, 28 clips')
+    print('PASS:', profile, 'geometry, 163-joint skin, normalized weights,', face_targets, 'reference facial morphs, 28 clips')

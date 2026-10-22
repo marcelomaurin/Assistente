@@ -11,6 +11,10 @@ ROOT=Path(__file__).resolve().parents[1]/'AVATARES'
 
 paths=[ROOT/sys.argv[1]/'modelo.gltf'] if len(sys.argv)>1 else sorted(ROOT.glob('*/modelo.gltf'))
 for path in paths:
+    if path.parent.name == 'ze_gotinha':
+        from check_ze_gotinha import validate
+        validate(path)
+        continue
     d=json.loads(path.read_text(encoding='utf-8'));binary=base64.b64decode(d['buffers'][0]['uri'].split(',')[1])
     def read(index):
         a=d['accessors'][index];width={'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}[a['type']]
