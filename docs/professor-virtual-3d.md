@@ -53,8 +53,8 @@ do ombro imóvel. A regressão de movimento verifica elevação e limites da rai
 do braço nos clipes acima da cabeça, além de lateralidade e apoio dos pés.
 
 Cada modelo tem 28 clipes: seis estados básicos e composições de sorriso,
-mão direita levantada e aplausos com/sem fala. Boca, pálpebras e sorriso usam
-morph targets. Trajetórias são amostradas a 60 Hz com aceleração suave, IK
+mão direita levantada e aplausos com/sem fala. Na versão 4, boca, pálpebras e
+sorriso são reproduzidos pelas juntas faciais e seus pesos de pele. Trajetórias são amostradas a 60 Hz com aceleração suave, IK
 nas pernas/poses de mãos, oposição de braços e pernas e apoio/avanço dos pés.
 O renderer mistura estados em 0,32 s e levantar/baixar a mão em 0,6 s.
 Esse valor de amostragem não é uma garantia de FPS no equipamento do usuário.
@@ -71,6 +71,61 @@ antes do respectivo trecho falado. As tags são removidas do chat, memória e
 TTS. Consulte [vocabulário, exemplo e sincronização](avatar-comandos-ia.md).
 Esc cancela a apresentação; sem fala automática, tags usam tempo de leitura
 estimado, sem abrir serviços de voz.
+
+## Articulação facial, mãos e olhos (modelos v4)
+
+O Castle fixado em `6a433378a8cc7117f5deccbec2fb70a42fdb98f3` declara em
+`src/scene/load/x3dloadinternalgltf.pas` que não suporta morph targets/animações.
+Por isso os targets anteriores, embora presentes e numericamente válidos nos
+arquivos, não moviam lábios e pálpebras no aplicativo. A mandíbula também
+tinha rotação muito pequena no sentido de fechar, e olhos/dedos não tinham canais.
+
+O gerador agora abre a mandíbula em X positivo ao redor da sua origem anatômica,
+com amplitude variável durante `talking` e `applause_talking`. Dentes inferiores
+acompanham o osso da mandíbula e os superiores continuam vinculados à cabeça.
+As referências CC0 de abertura, sorriso e fechamento das pálpebras são ajustadas
+às cadeias faciais existentes (oris, levator, orbicularis e demais suportes),
+usando as quatro influências e a hierarquia realmente exportadas. A contribuição
+da mandíbula é subtraída antes do ajuste dos lábios/bochechas para evitar abrir
+o queixo duas vezes. Os três morph targets ficam como referências de autoria,
+com pesos de animação zero para não duplicar a deformação em outros motores.
+
+Os dois globos oculares giram em conjunto com pequenos desvios de olhar. A
+córnea usa o alfa original da textura: a camada opaca anterior escondia íris e
+pupilas. As pálpebras piscam pela musculatura do esqueleto facial. Cada mão
+articula as três falanges dos cinco dedos ao redor de eixos derivados da própria
+anatomia e do lado da palma, com flexão menor na ponta. Repouso/fala, aceno,
+pensamento, mão levantada e aplausos têm flexões distintas; todos os clipes
+redefinem essas juntas para não herdar dedos ou expressões do estado anterior.
+
+É uma aproximação por esqueleto e pesos, sem simulação física de músculos,
+tendões ou contato entre dedos. O ciclo da boca acompanha o estado real de
+reprodução do áudio, mas ainda não alinha fonemas/visemas ao conteúdo falado.
+O olhar é procedural; não rastreia o rosto do usuário. No Bebê, a chupeta foi
+retirada da cavidade da boca e presa à roupa para liberar os lábios durante a fala.
+
+Regressões adicionais:
+
+```powershell
+python tests/check_avatar_motion.py
+.\scripts\build_professor.ps1 -Target tests\professor_articulation_smoke.lpr
+python tests/run_articulation_render_checks.py
+```
+
+O teste de pele mede abertura do queixo, fechamento bilateral das pálpebras e
+flexão dos dedos nas coordenadas locais da cabeça/punho. Assim, mover somente
+cabeça ou braço não faz o teste passar. O runner nativo cria cópias temporárias
+com as outras articulações congeladas e compara pixels em duas poses e na
+reprodução contínua. Por padrão percorre Engenheiro, Dona de casa, Bebê e Robô,
+com close adicional dos dedos do Engenheiro; aceita outros perfis por argumento.
+Capturas, GIFs e resultado ficam em `build/professor/articulation-validation`.
+Essas cópias são instrumentos de teste e não entram no catálogo do aplicativo.
+
+O instalador `setup_assistente_0120.exe` foi reempacotado com os modelos v4.
+O manifesto ao lado do setup identifica o commit de origem e todos os hashes.
+Quem baixou o pacote anterior deve baixar novamente o arquivo atualizado.
+Para compilar localmente, mantenha a pasta `AVATARES` correspondente ao lado
+de `build/professor/assistente.exe`.
 
 ## Pasta AVATARES e inclusão de novos personagens
 

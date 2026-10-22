@@ -4,7 +4,8 @@ Arquivo: `bin/setup_assistente_0120.exe`.
 
 Inclui o professor Lazarus Win32 Release, os dez avatares com corpo completo,
 correção do ombro nos gestos, ajuste das camadas de roupa e término real do
-áudio remoto. Funciona também em Windows de 64 bits via WOW64, com OpenGL.
+áudio remoto. O pacote atualizado contém modelos v4 com mandíbula, lábios,
+pálpebras, olhos e dedos articulados por esqueleto e córnea com transparência. Funciona também em Windows de 64 bits via WOW64, com OpenGL.
 
 O destino padrão é `%LOCALAPPDATA%\Programs\Assistente`, por usuário e sem
 elevação. Isso mantém o diretório gravável para o histórico e para adicionar
@@ -21,6 +22,10 @@ e configuração do usuário. Não instala Python nem APK Android.
 As configurações existentes do usuário não são substituídas. A desinstalação
 remove os arquivos empacotados; não há regra para apagar configurações ou
 histórico criados pelo usuário.
+
+O nome e a versão 0.120 foram mantidos na revisão das articulações. Quem já
+baixou a primeira publicação deve baixar novamente o setup e conferir seu
+SHA-256 no manifesto atual. O histórico Git preserva o pacote anterior.
 
 ## Reproduzir o pacote
 

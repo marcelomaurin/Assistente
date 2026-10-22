@@ -113,7 +113,7 @@ class Avatar:
         for name, values in raw_weights.items():
             v = np.array(values); self.weights[v[:, 0].astype(int), self.bone_index[name]] = v[:, 1]
         self.weights /= np.maximum(self.weights.sum(axis=1, keepdims=True), 1e-9)
-        self.doc = {'asset': {'version': '2.0', 'generator': 'Assistente game avatar v3; MakeHuman CC0 art + original adaptation'},
+        self.doc = {'asset': {'version': '2.0', 'generator': 'Assistente game avatar v4; MakeHuman CC0 art + original adaptation'},
                     'scene': 0, 'scenes': [{'nodes': [0]}], 'nodes': [{'name': self.label, 'children': []}],
                     'meshes': [], 'materials': [], 'bufferViews': [], 'accessors': [], 'animations': [],
                     'images': [], 'textures': [], 'samplers': [{'magFilter':9729,'minFilter':9987,'wrapS':10497,'wrapT':10497}]}
@@ -393,7 +393,7 @@ class Avatar:
         if self.profile=='robo':
             im=Image.open(eyes).convert('RGBA'); rgb=np.array(im);dark=rgb[:,:,:3].mean(2)<130
             rgb[dark,:3]=np.array([30,190,204]);path=self.folder/'olhos_cianos.png';Image.fromarray(rgb).save(path);eyes=path
-        self.mesh('Olhos: esclera íris e pupilas',p,uv,f,self.material('Córnea e íris',rough=.16,texture=eyes),w)
+        self.mesh('Olhos: esclera íris e pupilas',p,uv,f,self.material('Córnea e íris',rough=.16,texture=eyes,alpha=True),w)
         p,uv,f,w,d=self.fit('eyebrows','eyebrow001')
         self.mesh('Sobrancelhas',p,uv,f,self.material('Sobrancelhas',rough=.85,texture=next(d.glob('*.png')),alpha=True),w)
         p,uv,f,w,d=self.fit('teeth','teeth_base')
@@ -403,10 +403,11 @@ class Avatar:
         self.doc['buffers']=[{'byteLength':len(self.binary),'uri':'data:application/octet-stream;base64,'+base64.b64encode(self.binary).decode()}]
         self.doc['extras']={'profile':self.profile,'authoring':'CC0 MakeHuman art adapted for Assistente',
                             'rig':'linear blend skinning, 4 normalized influences per vertex',
+                            'facial_animation':'skeletal jaw, muscle chains, eyelids and gaze; reference morph weights stay zero',
                             'body':'complete; clothing is a separate mesh', 'body_triangles':len(body), **self.stats}
         (self.folder/'modelo.gltf').write_text(json.dumps(self.doc,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
         (self.folder/'modelo.ini').write_text('[animations]\n'+'\n'.join(n+'='+n for n in CLIPS)+'\n',encoding='utf-8')
-        (self.folder/'avatar.json').write_text(json.dumps({'id':self.profile,'name':self.label,'model':'modelo.gltf','license':'CC0-1.0','version':3},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        (self.folder/'avatar.json').write_text(json.dumps({'id':self.profile,'name':self.label,'model':'modelo.gltf','license':'CC0-1.0','version':4},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         print(self.profile,self.stats,'buffer',len(self.binary),flush=True)
 
     def details(self):
@@ -439,9 +440,11 @@ class Avatar:
             self.segment('Crucifixo',c+[0,-.035*sc,0],c+[0,.035*sc,0],.004*sc,gold)
             self.segment('Crucifixo transversal',c+[-.022*sc,.014*sc,0],c+[.022*sc,.014*sc,0],.004*sc,gold)
         if self.profile=='bebe':
-            mouth=self.origins['jaw']+[0,-.035*sc,.075*sc]
-            self.accessory('Chupeta',mouth,np.array([.035,.018,.009])*sc,cyan)
-            self.accessory('Anel da chupeta',mouth+[0,-.015*sc,.01*sc],np.array([.013,.015,.016])*sc,gold,kind='torus')
+            # Leave the lips free to articulate. The old head-bound pacifier
+            # sat inside the oral cavity and became visible when the jaw opened.
+            c=self.origins['spine01']+np.array([.025,-.065,.10])*sc
+            self.accessory('Chupeta presa à roupa',c,np.array([.035,.018,.009])*sc,cyan,'spine01')
+            self.accessory('Anel da chupeta',c+[0,-.015*sc,.01*sc],np.array([.013,.015,.016])*sc,gold,'spine01',kind='torus')
         if self.profile=='robo':
             for side in (-1,1):
                 c=head+np.array([side*.093,.045,0])*sc
@@ -527,9 +530,81 @@ class Avatar:
         partial=qblend(quat(),twist,.65)
         return partial,qmul(qinverse(partial),local)
 
+    def facial_drivers(self):
+        # The pinned CGE loader does not implement glTF morph animation. Fit the
+        # CC0 expression references to the existing facial muscle chains instead.
+        # Use exactly the four influences exported by mesh(), including ancestry.
+        self.face_bones=[n for n in self.bones if n.startswith(
+            ('levator','oris','orbicularis','oculi','temporalis','risorius'))]
+        j=np.argsort(-self.weights,axis=1,kind='stable')[:,:4]
+        w=np.take_along_axis(self.weights,j,axis=1);w/=np.maximum(w.sum(1,keepdims=True),1e-12)
+        skin=np.zeros_like(self.weights);np.put_along_axis(skin,j,w,axis=1)
+        descendants={}
+        for name in self.bones:
+            descendants[name]=[]
+            for child in self.bones:
+                ancestor=child
+                while ancestor and ancestor!=name:ancestor=self.rig['bones'][ancestor]['parent']
+                if ancestor==name:descendants[name].append(self.bone_index[child])
+        influence=np.array([skin[:,descendants[n]].sum(1) for n in self.face_bones]).T
+        body=np.unique(self.faces[self.groups=='body',:,0])
+        a=influence[body].astype(float)
+        scale=.075 if self.profile in ('crianca','bebe') else .1
+        mouth=target('mouth-open',len(self.p))*scale
+        # Subtract the mandibular hinge's contribution. Corrective lip/cheek
+        # translations supplement the jaw rather than opening the chin twice.
+        from_hinge=self.world(self.p)-self.origins['jaw']
+        angle=math.radians(22);c,s=math.cos(angle),math.sin(angle)
+        rotation=np.array([[1,0,0],[0,c,-s],[0,s,c]])
+        jaw_delta=(from_hinge@rotation.T-from_hinge)*skin[:,descendants['jaw']].sum(1,keepdims=True)
+        # Eye aperture does not shrink with stature in the age targets. Keep
+        # the full unit conversion for eyelids instead of the mouth age scale.
+        refs=[mouth-jaw_delta,
+              (target('eye-left-closure',len(self.p))+target('eye-right-closure',len(self.p)))*.1,
+              target('mouth-corner-puller',len(self.p))*scale]
+        # Ridge regularization keeps nearly equivalent parent/child muscle
+        # chains bounded, including profiles with small facial proportions.
+        drivers=np.array([np.linalg.solve(a.T@a+np.eye(len(self.face_bones))*.02,a.T@d[body]) for d in refs])
+        drivers[1]*=2.1 if self.profile=='crianca' else 1.5  # Fit the age-specific lid aperture.
+        return drivers
+
+    def finger_pose(self, side, phase, base, raised):
+        if not hasattr(self,'_finger_axes'):self._finger_axes={}
+        if not hasattr(self,'_finger_cache'):self._finger_cache={}
+        key=(side,phase,base,raised)
+        if key in self._finger_cache:return self._finger_cache[key]
+        wrist=self.origins['wrist.'+side]
+        forward=self.origins['finger3-3.'+side]-wrist
+        thumb=self.origins['finger1-1.'+side]-wrist
+        palm=np.cross(thumb,forward) if side=='R' else np.cross(forward,thumb)
+        palm/=np.linalg.norm(palm)
+        result={}
+        for finger in range(1,6):
+            # MCP/PIP/DIP flex together, with a smaller distal contribution.
+            # Axes come from each profile's phalanges and mirrored palm basis.
+            curl=10+5*math.sin(phase+finger*.27)
+            if base in ('talking','applause_talking'):curl=13+10*math.sin(phase*2+finger*.3)
+            if base.startswith('applause'):curl=2+1.2*math.sin(phase*2+finger*.2)
+            if (base=='wave' or raised) and side=='R':curl=3+2*math.sin(phase*2+finger*.35)
+            if base=='thinking' and side=='R':curl=5 if finger==2 else 24+3*math.sin(phase)
+            for segment,factor in ((1,.65 if finger==1 else 1.),(2,1.15),(3,.65)):
+                name=f'finger{finger}-{segment}.{side}'
+                if name not in self._finger_axes:
+                    bone=self.rig['bones'][name]
+                    end=self.world(self.p[self.rig['joints'][bone['tail']]].mean(0))
+                    direction=end-self.origins[name]
+                    axis=np.cross(direction,palm);axis/=np.linalg.norm(axis)
+                    self._finger_axes[name]=axis
+                axis=self._finger_axes[name]
+                angle=math.radians(curl*factor)/2
+                result[name]=np.r_[axis*math.sin(angle),math.cos(angle)]
+        self._finger_cache[key]=result
+        return result
+
     def animate(self):
         sc=(self.world(self.p).max(0)[1]-self.world(self.p).min(0)[1])/1.78
-        animated=['head','jaw','spine02','spine05']+[part+side for part in
+        face_drivers=self.facial_drivers()
+        animated=['head','jaw','spine02','spine05','eye.L','eye.R']+[n for n in self.bones if n.startswith('finger')]+[part+side for part in
           ('clavicle.','shoulder01.','upperarm01.','lowerarm01.','lowerarm02.','wrist.','upperleg01.','lowerleg01.','foot.') for side in ('L','R')]
         variants=[]
         for base in CLIPS+['applause','applause_talking']:
@@ -555,6 +630,7 @@ class Avatar:
                 animation['channels'].append({'sampler':sampler,'target':{'node':node,'path':path}})
             rotations={name:[] for name in animated}
             root=[];morph=[]
+            facial={n:[] for n in self.face_bones}
             for t in times:
                 phase=2*math.pi*t/duration
                 r=defaultdict(lambda:[0.,0.,0.])
@@ -573,7 +649,6 @@ class Avatar:
                     overrides.update(self.arm_ik('R',self.origins['head']+np.array([-.035,-.045,.105])*sc))
                 elif base=='talking':
                     jaw=(.08+.38*math.sin(phase*5+.4)**2+.12*math.sin(phase*7)**2)*(.65+.35*math.cos(phase))
-                    r['jaw'][0]=-jaw*3
                     r['head']=[1.3*math.sin(phase*2),2*math.sin(phase),.6*math.sin(phase*3)]
                     r['upperarm01.R']=[-12-6*math.sin(phase),0,27+4*math.sin(phase)]
                     r['lowerarm01.R']=[-20-7*math.sin(phase-.4),0,0]
@@ -611,13 +686,32 @@ class Avatar:
                 if raised:
                     ik=self.arm_ik('R',self.origins['head']+(np.array([-.17,.20,.09])+np.array([.002*math.sin(phase),.003*math.cos(phase),0]))*sc,shoulder_elevation=1.)
                     overrides.update(ik);r['wrist.R']=[0,-10,2*math.sin(phase)]
+                # Positive X opens downward/backward about the mandibular hinge.
+                # Upper teeth remain head-bound; lower teeth follow the jaw skin.
+                r['jaw'][0]=22*jaw
+                gaze=3.5*math.sin(phase)+1.2*math.sin(phase*3)
+                for side in ('L','R'):
+                    r['eye.'+side]=[1.5*math.sin(phase*2),gaze,0]
+                    overrides.update(self.finger_pose(side,phase,base,raised))
+                expression=np.array([jaw,blink,.35 if smiling else .04])
+                offsets=np.einsum('e,ebc->bc',expression,face_drivers)
+                for name,offset in zip(self.face_bones,offsets):
+                    parent=self.rig['bones'][name]['parent']
+                    ancestor=parent
+                    while ancestor and ancestor!='jaw':ancestor=self.rig['bones'][ancestor]['parent']
+                    if ancestor=='jaw':offset=qrotate(qinverse(quat(*r['jaw'])),offset)
+                    rest=self.origins[name]-self.origins[parent]
+                    facial[name].append(rest+offset)
                 for name in animated:
                     rotations[name].append(overrides[name] if name in overrides else (quat(*r[name]) if name in r else [0,0,0,1]))
                 root.append(self.doc['nodes'][self.bone_nodes['root']]['translation']+np.array([0,bob,0]))
-                morph.append([jaw,blink,.35 if smiling else .04])
+                # Reference morphs are retained for authoring, but remain zero:
+                # the skeletal fallback must not double the expression elsewhere.
+                morph.append([0,0,0])
             # Reset every joint that any clip moves. The other joints stay
             # in bind pose, so duplicating their constant tracks only burdens CGE.
             for name in animated:track(self.bone_nodes[name],'rotation',rotations[name],'VEC4')
+            for name in self.face_bones:track(self.bone_nodes[name],'translation',facial[name],'VEC3')
             track(self.bone_nodes['root'],'translation',root,'VEC3')
             track(self.face_node,'weights',morph,'SCALAR')
             self.doc['animations'].append(animation)

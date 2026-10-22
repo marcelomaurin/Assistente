@@ -109,5 +109,53 @@ for path in paths:
             speed=np.degrees(2*np.arccos(dots))/np.diff(times)
             maximum=float(speed.max());max_speed=max(max_speed,maximum)
             assert maximum<900,'Abrupt joint rotation: '+animation['name']+' / '+d['nodes'][channel['target']['node']]['name']
+    # Check skin displacement in head/wrist coordinates: head or arm motion
+    # alone must not make a stationary face/finger pass these assertions.
+    def local_skin(clip,t,bone):
+        world=pose(clip,t)
+        points=deform(world)
+        return (np.column_stack([points,np.ones(len(points))])@np.linalg.inv(world[names[bone]]).T)[:,:3]
+    talk=next(a for a in d['animations'] if a['name']=='talking')
+    channel=next(c for c in talk['channels'] if c['target']==dict(node=names['jaw'],path='rotation'))
+    sampler=talk['samplers'][channel['sampler']];qs=read(sampler['output']);ts=read(sampler['input'])[:,0]
+    closed=float(ts[np.argmin(qs[:,0])]);opened=float(ts[np.argmax(qs[:,0])])
+    assert qs[:,0].max()>.06 and qs[:,0].min()>=0,'Jaw must open down/back, with visible range'
+    jaw_index=skin['joints'].index(names['jaw'])
+    chin=((j==jaw_index)*w).sum(1)>.5
+    mouth0=local_skin('talking',closed,'head');mouth1=local_skin('talking',opened,'head')
+    assert (mouth1[chin,1]-mouth0[chin,1]).min()<-height*.004,'Jaw skin did not open downward'
+    # Verify tooth attachment from exported skin, separately from lip motion.
+    teeth=next(m['primitives'][0]['attributes'] for m in d['meshes'] if m['name']=='Dentes')
+    tp=read(teeth['POSITION']);tj=read(teeth['JOINTS_0']).astype(int);tw=read(teeth['WEIGHTS_0'])
+    th=np.column_stack([tp,np.ones(len(tp))])
+    def tooth_local(t,bone):
+        world=pose('talking',t);matrices=np.array([world[i] for i in skin['joints']])@inverse
+        points=sum(np.einsum('nij,nj->ni',matrices[tj[:,k]],th)*tw[:,k,None] for k in range(4))
+        return points@np.linalg.inv(world[names[bone]]).T
+    for bone in ('head','jaw'):
+        pure=((tj==skin['joints'].index(names[bone]))*tw).sum(1)>.999
+        assert pure.sum()>50,'Missing teeth attached to '+bone
+        assert np.max(np.abs(tooth_local(opened,bone)[pure]-tooth_local(closed,bone)[pure]))<1e-5,'Teeth detached from '+bone
+    blink0=local_skin('idle',4.,'head');blink1=local_skin('idle',4.32,'head')
+    for side in ('L','R'):
+        eyelid_index=skin['joints'].index(names['orbicularis03.'+side])
+        eyelid=((j==eyelid_index)*w).sum(1)>.5
+        assert np.median(blink1[eyelid,1]-blink0[eyelid,1])<-height*.002,'Upper eyelid did not close: '+side
+        finger_indices=[skin['joints'].index(names[n]) for n in names if n.startswith('finger') and n.endswith('.'+side)]
+        fingers=(np.isin(j,finger_indices)*w).sum(1)>.7
+        first=local_skin('talking',.15,'wrist.'+side);second=local_skin('talking',.75,'wrist.'+side)
+        assert np.max(np.linalg.norm(second[fingers]-first[fingers],axis=1))>height*.002,'Finger skin remained rigid: '+side
+        eye0=pose('idle',1.)[names['eye.'+side]][:3,:3]
+        eye1=pose('idle',3.)[names['eye.'+side]][:3,:3]
+        head0=pose('idle',1.)[head][:3,:3];head1=pose('idle',3.)[head][:3,:3]
+        assert np.max(np.abs(head0.T@eye0-head1.T@eye1))>.03,'No eye gaze independent of head'
+    eye_mesh=next(m for m in d['meshes'] if m['name'].startswith('Olhos:'))
+    assert d['materials'][eye_mesh['primitives'][0]['material']]['alphaMode']=='MASK','Opaque cornea hides iris/pupil'
+    # No simultaneous morph deformation in engines which also support morphs.
+    for animation in d['animations']:
+        for c in animation['channels']:
+            if c['target']['path']=='weights':
+                assert not np.any(read(animation['samplers'][c['sampler']]['output'])),'Double facial deformation'
+    print('PASS:',path.parent.name,'jaw/chin skin, bilateral eyelids, finger flex independent of wrist, coordinated gaze, transparent cornea')
     print('PASS:',path.parent.name,'bind pose, overhead shoulder support, hand/palm direction, skin deformation, gait contact/clearance and loop seams')
     print('Maximum sampled joint speed, deg/s:',round(max_speed,1))

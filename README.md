@@ -4,7 +4,7 @@ Assistente de IA , criado para responder perguntas da FATEC
 ## Instalação Windows
 
 Versão atual: [setup_assistente_0120.exe](bin/setup_assistente_0120.exe).
-Inclui o Release Win32 com as correções do corpo completo, ombro e voz,
+Inclui o Release Win32 com as correções do corpo completo, ombro, voz e articulações,
 os dez avatares e as bibliotecas SSL necessárias. A instalação padrão é por
 usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
 Veja [instalação, conteúdo e verificação](docs/INSTALACAO_0120.md).
@@ -18,10 +18,13 @@ Avatar 3D nativo no formulário Lazarus, com dez perfis selecionáveis e
 animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.
-Os modelos v3 usam anatomia contínua, esqueleto com pesos, texturas de pele e
+Os modelos v4 usam anatomia contínua, esqueleto com pesos, texturas de pele e
 tecido e expressões faciais. O corpo é completo sob a roupa: braços, tronco,
 pernas e pés não dependem do vestuário para existir. A IA pode dirigir gestos no texto com `[sorriso]`,
 `[aplausos]`, `[levantar mao direita]` e `[abaixar mao direita]`.
+A versão v4 articula mandíbula, lábios, pálpebras, olhos e dedos por esqueleto,
+compatível com o motor nativo. O instalador 0.120 foi atualizado com esses
+modelos; consulte o SHA-256 do manifesto para identificar o pacote atual.
 As tags não são pronunciadas. Veja [comandos e sincronização](docs/avatar-comandos-ia.md).
 Veja [arquitetura, modelos, instalação, build e limites](docs/professor-virtual-3d.md).
 O build atualizado fica em `build/professor/assistente.exe`; os executáveis

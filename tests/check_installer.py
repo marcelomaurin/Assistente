@@ -53,6 +53,12 @@ def main():
         assert hashlib.sha256(path.read_bytes()).hexdigest()==record['sha256'],record['path']
     models=list((INSTALL/'AVATARES').glob('*/modelo.gltf'))
     assert len(models)==10,'Missing bundled models'
+    for model in models:
+        profile=json.loads((model.parent/'avatar.json').read_text(encoding='utf-8'))
+        assert profile['version']==4,'Installer contains old avatar: '+profile['id']
+        current=ROOT/'AVATARES'/profile['id']/'modelo.gltf'
+        assert hashlib.sha256(model.read_bytes()).digest()==hashlib.sha256(current.read_bytes()).digest(),'Installer model differs from validated source'
+    REPORT.append('PASS: all ten installed avatars are v4 and match the validated source models byte for byte')
     assert not (INSTALL/'Setmain.cfg').exists() and not (INSTALL/'conversation-history.json').exists()
     REPORT.append(f'PASS: actual installer extracted {len(manifest["files"])} files; all SHA-256 hashes match; ten avatars; no personal configuration')
 

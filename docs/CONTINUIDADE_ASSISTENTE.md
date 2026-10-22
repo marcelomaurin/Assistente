@@ -78,6 +78,19 @@ listadas no guia: assets/movimento dos dez perfis, comandos/estados/catálogo,
 gestos e interface LCL, voz remota local (worker e janela) e receptor TCP local.
 São testes de software com WAV silencioso, sem credenciais ou captura física.
 
+## Articulação dos modelos v4
+
+Mandíbula, cadeias faciais, dedos e olhos agora são animados por esqueleto.
+O loader Castle fixado ignora morph targets: os três targets originais ficam
+somente como referência, com pesos de animação zero. A córnea preserva o alfa
+para deixar íris e pupilas visíveis. A malha corporal e o suporte de ombro
+continuam completos. Veja a regressão numérica em `check_avatar_motion.py` e
+a comparação nativa independente de cabeça/braços em
+`run_articulation_render_checks.py` / `professor_articulation_smoke.lpr`.
+Não há músculos físicos nem alinhamento fonético da boca ou rastreamento de
+olhar por câmera. O instalador 0.120 foi reempacotado com os modelos v4;
+o manifesto identifica o commit de origem e os hashes do pacote atual.
+
 ## Pendências
 
 - [ ] Validar conversa completa com provedor configurado e credenciais reais,
