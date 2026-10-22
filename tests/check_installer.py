@@ -66,7 +66,10 @@ def main():
     # extracted by the installer, without making any network request.
     # Avoid Windows' legacy elevation heuristic for unmanifested programs
     # whose executable name contains "installer".
-    run([r'C:\FPC\3.2.2\bin\i386-win32\fpc.exe','-MObjFPC','-Scghi',f'-FU{TEST}',f'-FE{TEST}',
+    fpc_path = r'C:\FPC\3.2.2\bin\i386-win32\fpc.exe'
+    if not Path(fpc_path).exists():
+        fpc_path = r'C:\lazarus\fpc\3.2.2\bin\i386-win32\fpc.exe'
+    run([fpc_path,'-MObjFPC','-Scghi',f'-FU{TEST}',f'-FE{TEST}','-Fu'+str(ROOT/'src'),
          '-ossl_runtime_probe.exe',ROOT/'tests/installer_ssl_check.lpr'],record_output=False)
     run([TEST/'ssl_runtime_probe.exe',INSTALL],cwd=INSTALL)
 

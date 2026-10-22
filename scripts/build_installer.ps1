@@ -10,6 +10,13 @@ if (-not $Executable) { $Executable = Join-Path $root 'build\professor\assistent
 if (-not $Castle) { $Castle = Join-Path $root '.deps\castle-engine' }
 $Castle = (Resolve-Path -LiteralPath $Castle).Path
 $ChatGPT = (Resolve-Path -LiteralPath $ChatGPT).Path
+if (-not (Test-Path -LiteralPath $Compiler)) {
+    if (Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe') {
+        $Compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+    } elseif (Test-Path 'C:\Program Files\Inno Setup 6\ISCC.exe') {
+        $Compiler = 'C:\Program Files\Inno Setup 6\ISCC.exe'
+    }
+}
 if (-not (Test-Path -LiteralPath $Compiler)) { throw "Inno Setup ausente: $Compiler" }
 if (-not (Test-Path -LiteralPath $Executable)) { throw 'Compile primeiro o professor com -Release.' }
 $work = Join-Path $root ('build\installer_0120\stage-' + [guid]::NewGuid())
@@ -46,7 +53,7 @@ foreach ($file in Get-ChildItem -LiteralPath $payload -File -Recurse | Sort-Obje
     $records += [ordered]@{path=$relative; size=$file.Length; sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
 $log = Join-Path $root 'build\installer_0120\compile.log'
-& $Compiler ('--define=PackageDir=' + $payload) ('--define=RepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
+& $Compiler ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0) { throw "Falha no Inno Setup. Consulte $log" }
 $setup = Join-Path $root 'bin\setup_assistente_0120.exe'
 $manifest = [ordered]@{schema=1; version='0.120'; source_commit=$revision; platform='i386-win32'
