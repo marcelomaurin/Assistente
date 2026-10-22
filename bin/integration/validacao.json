@@ -1,0 +1,93 @@
+{
+  "result": "PASS",
+  "dll_files": [
+    {
+      "path": "bin/integration/win32/assistente_integration.dll",
+      "architecture": "win32",
+      "size": 345600,
+      "sha256": "5ea96c0d2a0fd19572552406c6caf1d018767359d5bcebef643b2de7237e4fbd"
+    },
+    {
+      "path": "bin/integration/win64/assistente_integration.dll",
+      "architecture": "win64",
+      "size": 454144,
+      "sha256": "3ecc7000acdc298d8410b473efb63b36616eb427c15fa47076856d0b941362cf"
+    }
+  ],
+  "checks": {
+    "security_and_abi": [
+      "PASS: absent/wrong tokens, malformed/duplicate JSON, invalid UTF-8, EOF/oversize; fragmented Unicode; main-thread delivery; token removed before handler",
+      "PASS: win32 DLL loaded dynamically, cdecl exports, Unicode and caller buffer; small buffer rejected before sending",
+      "PASS: win64 DLL loaded dynamically, cdecl exports, Unicode and caller buffer; small buffer rejected before sending",
+      "PASS: Python 64-bit ctypes interoperability",
+      "PASS: documented Python SDK example through direct TCP and DLL, including Unicode",
+      "PASS: occupied port fails without replacing active listener",
+      "PASS: real socket peer rejected despite valid token and spoofed IP fields",
+      "PASS: empty/malformed whitelist, hostname and wildcard fail closed",
+      "PASS: silent client cannot prevent bounded server shutdown"
+    ],
+    "real_application": [
+      "PASS: real GUI status, ten avatars, selection persisted, gesture accepted; invalid token/actions/text/IDs and disabled speech rejected",
+      "PASS: authenticated ask executed through existing ChatGPT agent, polled to completed with Portuguese response from local mock provider; isolated history saved",
+      "PASS: concurrent ask returns busy, cancellation reaches terminal cancelled state",
+      "PASS: actual Release application closed normally with integration active",
+      "PASS: restarted application authenticated using DPAPI-protected persisted token"
+    ],
+    "documentation": {
+      "result": "PASS",
+      "markdown_files": 13,
+      "local_links": 68,
+      "checks": [
+        "local file existence",
+        "GitHub filename case",
+        "Markdown heading anchors"
+      ]
+    },
+    "regressions": [
+      {
+        "output": "PASS: professor state transitions and priorities",
+        "result": "PASS",
+        "test": "professor_state_tests"
+      },
+      {
+        "output": "PASS: dynamic catalog, manifest names, refresh, deduplication, malformed metadata",
+        "result": "PASS",
+        "test": "professor_catalog_tests"
+      },
+      {
+        "output": "PASS: user example, command order, clean speech, accents, code/link literals, limits and AI instructions",
+        "result": "PASS",
+        "test": "professor_commands_tests"
+      },
+      {
+        "output": "PASS: ordered speech boundaries, trailing command, no audio/network in silent mode, cancellation while awaiting UI\nPASS: immediate cancellation before thread entry (20 iterations)",
+        "result": "PASS",
+        "test": "professor_speech_commands_tests"
+      },
+      {
+        "output": "PASS: repeated remote WAV, actual completion, metadata chunks, commands before playback\n\nPASS: cancellation during actual playback\n\nPASS: HTTP and invalid audio failures without playback\n\nPASS: remote TTS drives actual thinking/talking clips and input recovers\n\nPASS: synthesis error returns UI and avatar to ready\n\nPASS: Escape during remote playback clears pose and restores input\n\nPASS: 10 local TTS requests, clean text, WAV format, no temporary audio leaks",
+        "result": "PASS",
+        "test": "remote speech + real native avatar"
+      }
+    ],
+    "settings_ui": {
+      "result": "PASS",
+      "test": "integration_settings_check.lpr",
+      "checks": [
+        "disabled defaults",
+        "cryptographic token generation and masking",
+        "whitelist rejection",
+        "load/save roundtrip",
+        "native tab width"
+      ],
+      "evidence": "build/professor/integration-settings.bmp; demonstration token only"
+    },
+    "limits": [
+      "Local mock LLM/TTS only; commercial providers not verified in this change",
+      "IPv4 TCP only; no TLS",
+      "No updated Android APK",
+      "No updated installer; 0.120 predates this integration",
+      "No microphone or Kinect hardware test in this change"
+    ]
+  }
+}

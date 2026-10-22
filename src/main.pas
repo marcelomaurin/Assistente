@@ -6,7 +6,8 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   reception_core, aiagent_memorymap, aiagent_flowevents, voice_input_bridge,
   professor_listener, professor_state, professor_view,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
-  professor_ui, professor_commands, remote_stt_server;
+  professor_ui, professor_commands, fpjson, assistant_integration_protocol,
+  assistant_integration_server, assistant_integration_jobs;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -26,7 +27,14 @@ type
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
     FVoiceInput: TVoiceInputBridge;
-    FRemoteSTT: TRemoteSTTServer;
+    FIntegration: TAssistantIntegrationServer;
+    FIntegrationJobs: TIntegrationJobs;
+    FIntegrationJobID, FIntegrationStatus: string;
+    FIntegrationCancelled, FConfigOpen: Boolean;
+    procedure ConfigureIntegration;
+    procedure IntegrationRequest(Sender:TObject;Request:TJSONObject;out Response:TJSONObject);
+    function IntegrationBusy:Boolean;
+  private
     FContinuousListener: TProfessorListener;
     FMemoryMap: TAIAgentMemoryMap;
     FMemoryItem: TAIAgentMemoryMapItem;
@@ -100,9 +108,7 @@ begin
   FAssistantManager.OnComplete := @OnAgentComplete;
   FMemoryMap := TAIAgentMemoryMap.Create(Self);
   InicializarMemoria;
-  FRemoteSTT := TRemoteSTTServer.Create(18765);
-  FRemoteSTT.OnText := @RemoteVoiceText;
-  FRemoteSTT.Start;
+  FIntegrationJobs:=TIntegrationJobs.Create;
   FVoiceInput := TVoiceInputBridge.Create(Self);
   FVoiceInput.OnText := @VoiceText;
   FVoiceInput.OnState := @VoiceState;
@@ -116,6 +122,7 @@ begin
   KeyPreview:=True;
   OnKeyDown:=@CancelarApresentacao;
   SetEstado('Pronto para conversar', False);
+  ConfigureIntegration;
 end;
 
 procedure Tfrmmain.CriarControles;
@@ -278,7 +285,7 @@ procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
   FClosing := True;
   if Assigned(FTimer) then FTimer.Enabled := False;
-  if Assigned(FRemoteSTT) then FreeAndNil(FRemoteSTT);
+  FreeAndNil(FIntegration);
   if Assigned(FContinuousListener) then FContinuousListener.Stop;
   if Assigned(FVoiceInput) then FVoiceInput.Cancel;
   if Assigned(FAssistantManager) then
@@ -292,6 +299,7 @@ begin
   SalvarMemoria;
   FreeAndNil(FProfessor);
   FreeAndNil(FCatalog);
+  FreeAndNil(FIntegrationJobs);
 end;
 
 procedure Tfrmmain.FormShow(Sender: TObject);
@@ -405,6 +413,9 @@ end;
 
 procedure Tfrmmain.InicializarMemoria;
 begin
+  if GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR')<>'' then
+    FHistoryFile:=IncludeTrailingPathDelimiter(GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR'))+'conversation-history.json'
+  else
   FHistoryFile := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + 'conversation-history.json';
   FMemoryMap.MaxItems := 100;
   FMemoryMap.StoreFullPrompt := True;
@@ -587,6 +598,7 @@ procedure Tfrmmain.TimerTick(Sender: TObject);
 var Ok: Boolean; Err: string; Command: TAvatarCommand;
 begin
   if FClosing then Exit;
+  if Assigned(FIntegration) then FIntegration.Pump;
   FAvatarStatus.Caption := 'Avatar: ' + FProfessor.ActivityLabel;
   if FProfessor.ModelFile <> '' then FRenderStatus.Caption := 'Renderização 3D'
   else FRenderStatus.Caption := '3D indisponível';
@@ -627,6 +639,7 @@ procedure Tfrmmain.btConfigClick(Sender: TObject);
 var F: TfrmConfig;
 begin
   if FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
+  FConfigOpen:=True;
   FContinuousListener.Stop;
   PararVideo;
   FProfessor.SetRenderingActive(False);
@@ -634,13 +647,15 @@ begin
   try
     F := TfrmConfig.Create(Self);
     LoadProfessorSettings(F, FSetMain);
+    F.IntegrationUI.Status.Caption:=FIntegrationStatus;
     if F.ShowModal = mrOk then
     begin
       SaveProfessorSettings(F, FSetMain);
       FSetMain.SalvaContexto(False);
       AplicarConfiguracao;
+      ConfigureIntegration;
     end;
-  finally F.Free;FProfessor.SetRenderingActive(True);IniciarEscuta;IniciarVideo;end;
+  finally FConfigOpen:=False;F.Free;FProfessor.SetRenderingActive(True);IniciarEscuta;IniciarVideo;end;
 end;
 
 procedure Tfrmmain.OnAgentStateChange(Sender: TObject; AState: TAgentState; const ADescription: string);
@@ -677,6 +692,10 @@ begin
   memResposta.Lines.Add('');
   SetEstado('Pronto para conversar', False);
   if ASuccess then FalarResposta(Annotated) else RetomarEscuta;
+  if FIntegrationJobID<>'' then begin
+    FIntegrationJobs.Complete(FIntegrationJobID,T,AProvider,ASuccess,FIntegrationCancelled);
+    FIntegrationJobID:='';FIntegrationCancelled:=False;
+  end;
   FCurrentUserText := '';
 end;
 
@@ -716,4 +735,79 @@ begin
   FDeviceStatus.Hint := Status;
   FDeviceStatus.ShowHint := True;
 end;
+
+function Tfrmmain.IntegrationBusy:Boolean;
+begin Result:=FClosing or FConfigOpen or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy;end;
+
+procedure Tfrmmain.ConfigureIntegration;
+begin
+  FreeAndNil(FIntegration);FIntegrationStatus:='Integração desativada.';
+  if not FSetMain.Integration.Enabled then Exit;
+  try
+    FIntegration:=TAssistantIntegrationServer.Create(FSetMain.Integration);
+    FIntegration.OnRequest:=@IntegrationRequest;FIntegration.Start;
+    FIntegrationStatus:='Integração ativa: '+FSetMain.Integration.BindIP+':'+IntToStr(FSetMain.Integration.Port);
+  except on E:Exception do begin FreeAndNil(FIntegration);FIntegrationStatus:='Integração não iniciada: '+E.Message;end;end;
+end;
+
+procedure Tfrmmain.IntegrationRequest(Sender:TObject;Request:TJSONObject;out Response:TJSONObject);
+const Commands:array[0..7] of string=('','smile','neutral','applause','raise_right_hand','lower_right_hand','wave','walk');
+var RequestAction,RequestText,ID:string;Data:TJSONData;Items:TJSONArray;O:TJSONObject;I:Integer;Command:TAvatarCommand;
+begin
+  RequestAction:=IntegrationString(Request,'action');Response:=nil;
+  if RequestAction='status' then begin
+    Response:=IntegrationOK(TJSONObject.Create(['service','Assistente','busy',IntegrationBusy,
+      'state',FProfessor.ActivityLabel,'profile',FSetMain.Avatar3DProfile,'speaking',Assigned(FSpeechJob)]));Exit;
+  end;
+  if RequestAction='get_job' then begin
+    ID:=IntegrationString(Request,'id');Data:=FIntegrationJobs.Lookup(ID);
+    if Data=nil then Response:=IntegrationError('not_found') else Response:=IntegrationOK(Data);Exit;
+  end;
+  if RequestAction='avatars' then begin
+    Items:=TJSONArray.Create;
+    for I:=0 to FCatalog.Count-1 do Items.Add(TJSONObject.Create(['id',FCatalog[I].ID,'name',FCatalog[I].Name]));
+    Response:=IntegrationOK(Items);Exit;
+  end;
+  if FConfigOpen or FClosing then begin Response:=IntegrationError('busy');Exit;end;
+  if RequestAction='cancel' then begin
+    if FAguardandoResposta then begin FIntegrationCancelled:=True;FAssistantManager.CancelExecution;end;
+    if Assigned(FSpeechJob) then FSpeechJob.Cancel;
+    FProfessor.ResetCommands;Response:=IntegrationOK(TJSONObject.Create(['accepted',True]));Exit;
+  end;
+  if not ((RequestAction='ask') or (RequestAction='speak') or (RequestAction='avatar') or (RequestAction='select_avatar')) then begin
+    Response:=IntegrationError('unknown_action');Exit;
+  end;
+  if IntegrationBusy then begin Response:=IntegrationError('busy');Exit;end;
+  if (RequestAction='ask') or (RequestAction='speak') then begin
+    RequestText:=Trim(IntegrationString(Request,'text'));
+    if (RequestText='') or (Length(RequestText)>8192) then begin Response:=IntegrationError('invalid_text');Exit;end;
+    if RequestAction='speak' then begin
+      if not FSetMain.AutoSpeak then begin Response:=IntegrationError('speech_disabled');Exit;end;
+      FalarResposta(RequestText);
+      if Assigned(FSpeechJob) then Response:=IntegrationOK(TJSONObject.Create(['accepted',True]))
+      else Response:=IntegrationError('speech_unavailable');
+      Exit;
+    end;
+    FIntegrationJobID:=FIntegrationJobs.BeginJob;FIntegrationCancelled:=False;ID:=FIntegrationJobID;
+    ProcessarEntrada(RequestText);
+    if not FAguardandoResposta then begin
+      FIntegrationJobs.Complete(ID,'Não foi possível iniciar a pergunta.','',False,False);FIntegrationJobID:='';
+    end;
+    O:=TJSONObject.Create(['id',ID]);Response:=IntegrationOK(O);Exit;
+  end;
+  if RequestAction='select_avatar' then begin
+    I:=FCatalog.IndexOfID(IntegrationString(Request,'id'));
+    if I<0 then Response:=IntegrationError('not_found')
+    else begin FProfileCombo.ItemIndex:=I;ProfileChange(nil);Response:=IntegrationOK(TJSONObject.Create(['id',FCatalog[I].ID]));end;
+    Exit;
+  end;
+  ID:=IntegrationString(Request,'command');
+  for Command:=Succ(Low(TAvatarCommand)) to High(TAvatarCommand) do
+    if ID=Commands[Ord(Command)] then begin
+      if FProfessor.ExecuteCommand(Command) then Response:=IntegrationOK(TJSONObject.Create(['accepted',True]))
+      else Response:=IntegrationError('unsupported_gesture');Exit;
+    end;
+  Response:=IntegrationError('invalid_command');
+end;
+
 end.

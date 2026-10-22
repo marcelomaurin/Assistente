@@ -10,7 +10,7 @@ unit setmain;
 interface
 
 uses
-  Classes, SysUtils, funcoes, graphics, aivoicecredentialstore, vision_types;
+  Classes, SysUtils, funcoes, graphics, aivoicecredentialstore, vision_types, assistant_integration_protocol;
 
 const filename = 'Setmain.cfg';
 
@@ -21,6 +21,7 @@ type
   TSetMain = class(TObject)
 
   private
+        FIntegration: TIntegrationConfig;
         FAvatar3DModel: string;
         FAvatar3DProfile: string;
         FAdminPIN: string;
@@ -153,6 +154,7 @@ type
   public
         constructor create();
         destructor Destroy(); override;
+        property Integration: TIntegrationConfig read FIntegration write FIntegration;
         procedure SalvaContexto(flag : boolean);
         Procedure CarregaContexto();
         procedure IdentificaArquivo(flag : boolean);
@@ -343,6 +345,7 @@ begin
     FChatGPTModel := '';
     FChatGPTURL := '';
 
+    FIntegration := DefaultIntegrationConfig;
     // JARVIS Defaults
     FJarvisURL := 'https://chorus-gazette-princeton-charter.trycloudflare.com';
     FJarvisAPIKey := 'jarvis_sec_v1_90a934713a4a1191e342ce5af0ffe9fe47b0a9a6b47bb915';
@@ -751,6 +754,13 @@ begin
       FKinectTargetCenter := RetiraInfo(arquivo.Strings[posicao]);
 
 
+    if BuscaChave(arquivo,'INTEGRATION_ENABLED:',posicao) then
+      FIntegration.Enabled := Trim(RetiraInfo(arquivo.Strings[posicao]))='1';
+    if BuscaChave(arquivo,'INTEGRATION_BIND:',posicao) then FIntegration.BindIP:=Trim(RetiraInfo(arquivo.Strings[posicao]));
+    if BuscaChave(arquivo,'INTEGRATION_PORT:',posicao) then FIntegration.Port:=StrToIntDef(RetiraInfo(arquivo.Strings[posicao]),0);
+    if BuscaChave(arquivo,'INTEGRATION_TOKEN:',posicao) then FIntegration.Token:=TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
+    if BuscaChave(arquivo,'INTEGRATION_ALLOWED_IPS:',posicao) then FIntegration.AllowedIPs:=RetiraInfo(arquivo.Strings[posicao]);
+
     // Fallback: se STTToken vazio, reaproveita FCHATGPT
     if (Trim(FSTTToken) = '') and (Trim(FCHATGPT) <> '') then
       FSTTToken := FCHATGPT;
@@ -792,15 +802,20 @@ begin
     FKinectTargetLeft := '';
     FKinectTargetRight := '';
     FKinectTargetCenter := '';
+    FIntegration := DefaultIntegrationConfig;
     IdentificaArquivo(true);
 end;
 
 procedure TSetMain.SalvaContexto(flag: boolean);
+var ProtectedIntegrationToken:string;
 begin
   if (flag) then
   begin
     IdentificaArquivo(false);
   end;
+  ProtectedIntegrationToken:=TVoiceCredentialStore.ProtectToken(FIntegration.Token);
+  if (FIntegration.Token<>'') and (Copy(ProtectedIntegrationToken,1,6)<>'dpapi:') then
+    raise Exception.Create('Nao foi possivel proteger o token de integracao com DPAPI.');
   arquivo.Clear;
   arquivo.Append('DEVICE:'+iif(ckdevice,'1','0'));
   arquivo.Append('POSX:'+inttostr(FPOSX));
@@ -889,6 +904,11 @@ begin
   arquivo.Append('STT_MODEL:'+FSTTModel);
   arquivo.Append('STT_ENDPOINT:'+FSTTEndpoint);
 
+  arquivo.Append('INTEGRATION_ENABLED:'+iif(FIntegration.Enabled,'1','0'));
+  arquivo.Append('INTEGRATION_BIND:'+FIntegration.BindIP);
+  arquivo.Append('INTEGRATION_PORT:'+IntToStr(FIntegration.Port));
+  arquivo.Append('INTEGRATION_TOKEN:'+ProtectedIntegrationToken);
+  arquivo.Append('INTEGRATION_ALLOWED_IPS:'+FIntegration.AllowedIPs);
   arquivo.SaveToFile(fpath+filename);
 end;
 

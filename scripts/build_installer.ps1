@@ -21,7 +21,7 @@ foreach ($name in @('libcrypto-1_1.dll','libssl-1_1.dll')) {
     Copy-Item -LiteralPath (Join-Path $root ('src\' + $name)) -Destination $payload
 }
 foreach ($name in @('professor-virtual-3d.md','avatar-comandos-ia.md','INSTALACAO_0120.md')) {
-    Copy-Item -LiteralPath (Join-Path $root ('docs\' + $name)) -Destination (Join-Path $payload 'docs')
+    Copy-Item -LiteralPath (Join-Path $root ('Docs\' + $name)) -Destination (Join-Path $payload 'docs')
 }
 Copy-Item -LiteralPath (Join-Path $ChatGPT 'LICENSE') -Destination (Join-Path $payload 'LICENSES\CHATGPT-GPL-3.0.txt')
 Copy-Item -LiteralPath (Join-Path $ChatGPT 'OpenSSL License.txt') -Destination (Join-Path $payload 'LICENSES\OpenSSL.txt')

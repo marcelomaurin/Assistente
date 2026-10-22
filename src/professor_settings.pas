@@ -1,12 +1,13 @@
 unit professor_settings;
 {$mode objfpc}{$H+}
 interface
-uses SysUtils, frmconfig, setmain;
+uses SysUtils, frmconfig, setmain, assistant_integration_protocol;
 procedure LoadProfessorSettings(F: TfrmConfig; C: TSetMain);
 procedure SaveProfessorSettings(F: TfrmConfig; C: TSetMain);
 implementation
 procedure LoadProfessorSettings(F: TfrmConfig; C: TSetMain);
 begin
+  F.IntegrationUI.Load(C.Integration);
   F.edAvatarModel.Text := C.Avatar3DModel;
   F.chkAvatarAutoIdle.Checked := C.Avatar3DAutoIdle;
   { These legacy options need phonemes / blend-shapes on the selected model.
@@ -57,7 +58,10 @@ begin
 end;
 
 procedure SaveProfessorSettings(F: TfrmConfig; C: TSetMain);
+var Integration:TIntegrationConfig;Error:string;
 begin
+  if not F.IntegrationUI.Read(Integration,Error) then raise Exception.Create(Error);
+  C.Integration:=Integration;
   if (Trim(F.edAvatarModel.Text) <> '') and
     (Trim(F.edAvatarModel.Text) <> C.Avatar3DModel) then C.Avatar3DProfile := 'custom';
   C.Avatar3DModel := Trim(F.edAvatarModel.Text);

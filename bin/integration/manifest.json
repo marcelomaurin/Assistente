@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "abi": "1.0",
+  "api_version_hex": "0x00010000",
+  "protocol": 1,
+  "platform": "Windows IPv4 TCP",
+  "host_requirement": "Running Assistente compiled from current sources, integration enabled; installer 0.120 predates this API",
+  "authentication": "64 hexadecimal token and actual peer IPv4 allowlist, required for DLL and direct socket",
+  "transport_encryption": false,
+  "files": [
+    {
+      "path": "bin/integration/win32/assistente_integration.dll",
+      "architecture": "win32",
+      "size": 345600,
+      "sha256": "5ea96c0d2a0fd19572552406c6caf1d018767359d5bcebef643b2de7237e4fbd"
+    },
+    {
+      "path": "bin/integration/win64/assistente_integration.dll",
+      "architecture": "win64",
+      "size": 454144,
+      "sha256": "3ecc7000acdc298d8410b473efb63b36616eb427c15fa47076856d0b941362cf"
+    }
+  ],
+  "verified_local_host": {
+    "path": "build/professor/assistente.exe",
+    "size": 12471808,
+    "sha256": "a2f0c7720bad6313c5c849e41a4d308894550eb3c7d2da91b632fc67d0a230ab",
+    "distributed_in_this_directory": false
+  }
+}

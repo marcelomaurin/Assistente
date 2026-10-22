@@ -1,6 +1,6 @@
 param(
     [string]$Lazarus = 'C:\lazarus',
-    [string]$ChatGPT = (Join-Path $PSScriptRoot '..\..\CHATGPT'),
+    [string]$ChatGPT = '',
     [string]$Castle = $env:CASTLE_ENGINE_PATH,
     [ValidateSet('i386-win32','x86_64-win64')][string]$Platform = 'i386-win32',
     [string]$Compiler = '',
@@ -14,6 +14,10 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Castle) { $Castle = Join-Path $root '.deps\castle-engine' }
 $Castle = (Resolve-Path -LiteralPath $Castle).Path
+if (-not $ChatGPT) {
+    & (Join-Path $PSScriptRoot 'prepare_chatgpt_baseline.ps1')
+    $ChatGPT = Join-Path $root '.deps\chatgpt-integration-baseline'
+}
 $ChatGPT = (Resolve-Path -LiteralPath $ChatGPT).Path
 $out = Join-Path $root 'build\professor'
 $units = Join-Path $out ('units\' + $Platform)

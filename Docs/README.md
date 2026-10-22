@@ -1,0 +1,28 @@
+# Documentação do Assistente
+
+O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar com IA por texto e voz e apresentar respostas com um professor virtual 3D.
+
+| Guia | Conteúdo |
+| --- | --- |
+| [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
+| [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
+| [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
+| [Manual do usuário](ManualUsuario/README.md) | Instalação, primeiro uso, conversa, voz, avatar, vídeo e integração |
+
+Comece pelo manual se deseja usar o programa. Para desenvolver uma integração, configure o acesso no manual, leia o protocolo e escolha o cliente socket ou DLL. Os dois caminhos exigem o aplicativo em execução e usam a mesma autorização.
+
+## Versões e documentação anterior
+
+Esta documentação descreve as fontes atuais, incluindo a integração externa v1. O instalador histórico **0.120**, publicado antes dessa integração, contém os avatares v4 e as correções de voz/anatomia; **não contém a nova API DLL/socket**. Para a integração, compile as fontes atuais conforme o [guia do projeto](Projeto/README.md#compilação). Não basta copiar uma DLL para uma instalação antiga.
+
+| Referência | Finalidade |
+| --- | --- |
+| [Instalador 0.120](INSTALACAO_0120.md) | Pacote anterior, instalação, hashes e validação daquele pacote |
+| [Professor virtual 3D](professor-virtual-3d.md) | Modelos, esqueleto, renderer, áudio, autoria e limites |
+| [Comandos da IA para o avatar](avatar-comandos-ia.md) | Tags de gesto, composição e sincronização da apresentação |
+| [Assinatura vocal Android](ASSINATURA_VOCAL_ANDROID.md) | Protótipo e contexto histórico do fluxo Android |
+| [Continuidade técnica](CONTINUIDADE_ASSISTENTE.md) | Registro histórico para manutenção |
+
+O antigo receptor de texto bruto na porta 18765 não é iniciado pela aplicação atual. Clientes desse protótipo precisam migrar para o protocolo autenticado v1. Código legado preservado não equivale a um serviço ativo.
+
+As versões são independentes: versão do instalador, versão artística do avatar (v4), versão JSON do protocolo (`v:1`) e versão da ABI da DLL (`0x00010000`). Confira sempre qual delas um documento descreve.

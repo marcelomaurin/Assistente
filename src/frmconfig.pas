@@ -15,7 +15,8 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls, ExtCtrls,
 
   chatgpt, aivoicesynthesizer, jarvis_api, vision_types, webcam_vision, aikinectsensor, aikinect_types,
-  Windows, mmsystem, Math, fphttpclient, opensslsockets, ComObj, ActiveX;
+  Windows, mmsystem, Math, fphttpclient, opensslsockets, ComObj, ActiveX,
+  assistant_integration_protocol, assistant_integration_settings_ui;
 
 
 
@@ -28,6 +29,7 @@ type
 
 
   TfrmConfig = class(TForm)
+    IntegrationUI: TIntegrationSettingsUI;
 
     pcConfig: TPageControl;
 
@@ -924,6 +926,7 @@ end;
 procedure TfrmConfig.FormCreate(Sender: TObject);
 
 begin
+  IntegrationUI:=TIntegrationSettingsUI.CreateFor(Self,pcConfig);
 
   FLoading := True;
 
@@ -1346,8 +1349,11 @@ begin
 end;
 
 procedure TfrmConfig.btSalvarClick(Sender: TObject);
-
+var Integration:TIntegrationConfig;Error:string;
 begin
+  if not IntegrationUI.Read(Integration,Error) then begin
+    pcConfig.ActivePage:=IntegrationUI.Page;ShowMessage(Error);Exit;
+  end;
 
   if chkEnableKinect.Checked and (cbKinectDevice.Items.Count > 0) and
 

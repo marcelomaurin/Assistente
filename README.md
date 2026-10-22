@@ -1,13 +1,26 @@
 # Assistente
 Assistente de IA , criado para responder perguntas da FATEC
 
+## Documentação e integração
+
+Consulte o [índice de documentação](Docs/README.md), o
+[manual do usuário](Docs/ManualUsuario/README.md), o
+[projeto e funcionalidades](Docs/Projeto/README.md), o
+[SDK por DLL](Docs/DLL/README.md) e o
+[protocolo socket autenticado](Docs/Socket/README.md).
+
+As fontes atuais oferecem API JSON v1 com token e lista de IPs permitidos,
+além de DLLs cliente Win32/Win64 em `bin/integration`. Requerem o aplicativo
+compilado dessas fontes e a opção Integração externa habilitada.
+O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servidor.
+
 ## Instalação Windows
 
 Versão atual: [setup_assistente_0120.exe](bin/setup_assistente_0120.exe).
 Inclui o Release Win32 com as correções do corpo completo, ombro, voz e articulações,
 os dez avatares e as bibliotecas SSL necessárias. A instalação padrão é por
 usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação, conteúdo e verificação](docs/INSTALACAO_0120.md).
+Veja [instalação, conteúdo e verificação](Docs/INSTALACAO_0120.md).
 Hashes do pacote e dos arquivos estão no [manifesto](bin/setup_assistente_0120.manifest.json).
 O [resultado dos testes de instalação](bin/setup_assistente_0120.validacao.json) registra
 extração, abertura do aplicativo, reinstalação e desinstalação verificadas.
@@ -25,8 +38,8 @@ pernas e pés não dependem do vestuário para existir. A IA pode dirigir gestos
 A versão v4 articula mandíbula, lábios, pálpebras, olhos e dedos por esqueleto,
 compatível com o motor nativo. O instalador 0.120 foi atualizado com esses
 modelos; consulte o SHA-256 do manifesto para identificar o pacote atual.
-As tags não são pronunciadas. Veja [comandos e sincronização](docs/avatar-comandos-ia.md).
-Veja [arquitetura, modelos, instalação, build e limites](docs/professor-virtual-3d.md).
+As tags não são pronunciadas. Veja [comandos e sincronização](Docs/avatar-comandos-ia.md).
+Veja [arquitetura, modelos, instalação, build e limites](Docs/professor-virtual-3d.md).
 O build atualizado fica em `build/professor/assistente.exe`; os executáveis
 antigos presentes no repositório não são atualizados automaticamente.
 
@@ -78,7 +91,7 @@ preservando a biblioteca CHATGPT externa. Para a versão com professor 3D, use
 Feche versões antigas antes de abrir esse arquivo; instalações e executáveis
 antigos não são atualizados automaticamente. A configuração atual contém a aba
 Vídeo local, sem servidor de captura. Os testes locais de TTS remoto e avatar
-estão documentados em [professor-virtual-3d.md](docs/professor-virtual-3d.md).
+estão documentados em [professor-virtual-3d.md](Docs/professor-virtual-3d.md).
 
 Com Kinect físico disponível, validar ambos ativos, desligamento independente,
 troca de dispositivos e recuperação quando um dispositivo está ausente.
