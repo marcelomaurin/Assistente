@@ -1,0 +1,24 @@
+# Android Remote STT — protótipo inicial
+
+Objetivo: microfone conectado ao Android -> reconhecimento nativo Android -> texto UTF-8 via TCP/Wi-Fi -> Assistente Lazarus. O áudio não sai do celular.
+
+## Contrato de comunicação v0
+- TCP porta 18765 no computador (configurável).
+- Uma conexão por frase; uma linha UTF-8 terminada em LF; o receptor fecha a conexão.
+- Somente resultados finais do SpeechRecognizer, sem parciais.
+- Protocolo experimental para LAN confiável. **Não expor à internet**: ainda não há autenticação nem criptografia.
+- O receptor Lazarus deve validar tamanho (ex.: 4096 bytes), rejeitar caracteres de controle e encaminhar ao ProcessarEntrada na thread principal LCL; nunca chamar a UI diretamente da thread de socket.
+
+## Android
+O arquivo `RemoteSpeechService.kt` é o núcleo do serviço, **não é ainda um APK compilável**. Faltam projeto Gradle, Activity de configuração (IP/porta/iniciar/parar), manifesto, permissões RECORD_AUDIO/INTERNET/FOREGROUND_SERVICE/FOREGROUND_SERVICE_MICROPHONE, notificação e testes em dispositivo.
+
+Em Android recente, o usuário deve iniciar o serviço com o aplicativo visível e conceder permissão de microfone. O serviço foreground pode continuar com tela apagada, mas reconhecimento contínuo não é garantido: o SpeechRecognizer pode parar ou falhar dependendo do aparelho e do provedor. Validar o microfone externo selecionado pelo Android e política de bateria do fabricante.
+
+## Próximas etapas
+1. Criar Activity e Gradle, permissões e fluxo de inicialização.
+2. Implementar receptor TCP Lazarus com fila thread-safe e despacho pela thread da interface.
+3. Acrescentar opção de entrada Android nas configurações, porta e token de pareamento.
+4. Implementar autenticação e proteção contra duplicatas/reenvios; testar rede, tela apagada, reconexão e frases longas.
+5. Compilar APK e executar testes reais no Android e no Lazarus.
+
+Não foram executados compilação nem testes reais.

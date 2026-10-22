@@ -6,7 +6,7 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   reception_core, aiagent_memorymap, aiagent_flowevents, voice_input_bridge,
   professor_listener, professor_state, professor_view,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
-  professor_ui, professor_commands;
+  professor_ui, professor_commands, remote_stt_server;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -26,6 +26,7 @@ type
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
     FVoiceInput: TVoiceInputBridge;
+    FRemoteSTT: TRemoteSTTServer;
     FContinuousListener: TProfessorListener;
     FMemoryMap: TAIAgentMemoryMap;
     FMemoryItem: TAIAgentMemoryMapItem;
@@ -54,6 +55,7 @@ type
     procedure EnviarPergunta;
     procedure ProcessarEntrada(const ATexto: string);
     procedure VoiceText(Sender: TObject; const AText: string);
+    procedure RemoteVoiceText(Sender: TObject; const AText: string);
     procedure VoiceState(Sender: TObject; const AState: string);
     procedure SpeechReady(Sender: TObject; const AFileName: string);
     procedure ListenerState(Sender: TObject; AState: TProfessorListenState);
@@ -98,6 +100,9 @@ begin
   FAssistantManager.OnComplete := @OnAgentComplete;
   FMemoryMap := TAIAgentMemoryMap.Create(Self);
   InicializarMemoria;
+  FRemoteSTT := TRemoteSTTServer.Create(18765);
+  FRemoteSTT.OnText := @RemoteVoiceText;
+  FRemoteSTT.Start;
   FVoiceInput := TVoiceInputBridge.Create(Self);
   FVoiceInput.OnText := @VoiceText;
   FVoiceInput.OnState := @VoiceState;
@@ -273,6 +278,7 @@ procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
   FClosing := True;
   if Assigned(FTimer) then FTimer.Enabled := False;
+  if Assigned(FRemoteSTT) then FreeAndNil(FRemoteSTT);
   if Assigned(FContinuousListener) then FContinuousListener.Stop;
   if Assigned(FVoiceInput) then FVoiceInput.Cancel;
   if Assigned(FAssistantManager) then
@@ -373,6 +379,15 @@ begin
     plsPaused: lblStatus.Caption := 'Microfone pausado';
     plsError: begin FProfessor.SetActivity(psIdle); lblStatus.Caption := 'Erro no microfone'; end;
   end;
+end;
+
+procedure Tfrmmain.RemoteVoiceText(Sender: TObject; const AText: string);
+begin
+  { Called by TThread.Synchronize on the Lazarus main thread. }
+  if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or
+    FVoiceInput.Busy then Exit;
+  PausarEscuta;
+  ProcessarEntrada(AText);
 end;
 
 procedure Tfrmmain.VoiceText(Sender: TObject; const AText: string);
