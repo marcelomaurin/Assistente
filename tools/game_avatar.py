@@ -580,7 +580,8 @@ class Avatar:
         palm/=np.linalg.norm(palm)
         result={}
         for finger in range(1,6):
-            # MCP/PIP/DIP flex together, with a smaller distal contribution.
+            # Long fingers use MCP/PIP/DIP; the thumb uses CMC/MCP/IP.
+            # Flexion is smaller at the distal control.
             # Axes come from each profile's phalanges and mirrored palm basis.
             curl=10+5*math.sin(phase+finger*.27)
             if base in ('talking','applause_talking'):curl=13+10*math.sin(phase*2+finger*.3)

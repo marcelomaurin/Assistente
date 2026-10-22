@@ -93,8 +93,9 @@ com pesos de animação zero para não duplicar a deformação em outros motores
 Os dois globos oculares giram em conjunto com pequenos desvios de olhar. A
 córnea usa o alfa original da textura: a camada opaca anterior escondia íris e
 pupilas. As pálpebras piscam pela musculatura do esqueleto facial. Cada mão
-articula as três falanges dos cinco dedos ao redor de eixos derivados da própria
-anatomia e do lado da palma, com flexão menor na ponta. Repouso/fala, aceno,
+articula as cadeias dos cinco dedos: três falanges nos dedos longos; no polegar,
+o metacarpo e as duas falanges. Os eixos seguem a anatomia e o lado da palma,
+com flexão menor na ponta. Repouso/fala, aceno,
 pensamento, mão levantada e aplausos têm flexões distintas; todos os clipes
 redefinem essas juntas para não herdar dedos ou expressões do estado anterior.
 
