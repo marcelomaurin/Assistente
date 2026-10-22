@@ -47,8 +47,17 @@ O gerador aplica os alvos de idade/anatomia, ajusta roupas/cabelo por
 coordenadas baricêntricas e transfere pesos. Exporta quatro influências
 normalizadas por vértice, matrizes inversas da pose de vínculo, hierarquia
 com 163 juntas, normais suaves, UVs, materiais PBR e recorte alfa no cabelo.
-Só rosto/pescoço e mãos da malha de pele são exportados; tronco e pelve são
-cobertos por vestuário próprio, inclusive nos modelos criança e bebê.
+A malha corporal inteira é exportada: cabeça, tronco, pelve, braços, mãos,
+pernas e pés. Roupas e calçados são malhas separadas sobre esse corpo; ocultar
+ou trocar a roupa não remove a anatomia. Os dez perfis são distribuídos vestidos.
+O recorte anterior em cabeça/pescoço/mãos causava braços ausentes nas mangas
+curtas e foi eliminado. `tests/check_avatar_body.py` exige a topologia completa
+da fonte (26.756 triângulos) e conexão entre as regiões anatômicas de cada perfil.
+O vestuário é projetado para fora da superfície corporal com folga de 8 mm,
+recebendo pesos interpolados da pele próxima para acompanhar a deformação.
+Não há remoção de pele por `delete_verts`. Elevação de braço é distribuída
+entre clavícula, ombro e braço; `check_avatar_motion.py` verifica a elevação
+da raiz do braço e limita o deslocamento dessa região nos gestos acima da cabeça.
 
 As seis animações e os acessórios novos são autoria do Assistente, CC0.
 `jawOpen` e `blink` são morph targets animados; abertura de boca é genérica,

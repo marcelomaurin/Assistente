@@ -223,7 +223,78 @@ class Avatar:
         p=(self.p[refs]*mixes[:,:,None]).sum(axis=1)+np.array(offsets)*scale
         w=(self.weights[refs]*np.maximum(mixes[:,:,None],0)).sum(axis=1)
         w/=np.maximum(w.sum(axis=1,keepdims=True),1e-12)
-        return self.world(p), uv, faces, w, directory
+        p=self.world(p)
+        if category=='clothes':p,w=self.cloth_clearance(p,w)
+        return p, uv, faces, w, directory
+
+    def cloth_clearance(self, p, weights, clearance=.008):
+        # Fit to the actual body surface, not just the MakeHuman helper cage.
+        # A small outward allowance prevents skin from crossing tight garments.
+        # The body remains intact and can be rendered without the clothing.
+        if not hasattr(self, '_body_surface'):
+            points=self.world(self.p)
+            triangles=self.faces[self.groups=='body',:,0]
+            normal=normals(points,triangles)
+            grid=defaultdict(list);adjacent=defaultdict(set)
+            for vertex in np.unique(triangles):
+                grid[tuple(np.floor(points[vertex]/.05).astype(int))].append(vertex)
+            for i,tri in enumerate(triangles):
+                for vertex in tri:adjacent[vertex].add(i)
+            self._body_surface=points,triangles,normal,grid,adjacent
+        points,triangles,normal,grid,adjacent=self._body_surface
+        p=p.copy();weights=weights.copy()
+        field=np.zeros(len(points));queries=[]
+        for i,point in enumerate(p):
+            cell=np.floor(point/.05).astype(int)
+            near=[]
+            for x in range(-1,2):
+                for y in range(-1,2):
+                    for z in range(-1,2):near.extend(grid.get(tuple(cell+[x,y,z]),()))
+            if not near:continue
+            near=np.array(near)
+            distances=((points[near]-point)**2).sum(1)
+            nearest=near[np.argsort(distances)[:8]]
+            candidates=set()
+            for vertex in nearest:candidates.update(adjacent[vertex])
+            ids=np.array(sorted(candidates));tri=triangles[ids]
+            a,b,c=points[tri].transpose(1,0,2)
+            ab=b-a;ac=c-a;ap=point-a
+            aa=(ab*ab).sum(1);bb=(ab*ac).sum(1);cc=(ac*ac).sum(1)
+            pa=(ap*ab).sum(1);pc=(ap*ac).sum(1)
+            denom=np.maximum(aa*cc-bb*bb,1e-18)
+            v=(cc*pa-bb*pc)/denom;w=(aa*pc-bb*pa)/denom
+            projected=a+ab*v[:,None]+ac*w[:,None]
+            valid=(v>=0)&(w>=0)&(v+w<=1)
+            choices=[projected]
+            for start,end in ((a,b),(b,c),(c,a)):
+                edge=end-start
+                u=np.clip(((point-start)*edge).sum(1)/np.maximum((edge*edge).sum(1),1e-18),0,1)
+                choices.append(start+u[:,None]*edge)
+            choices=np.array(choices)
+            distance=((choices-point)**2).sum(2);distance[0,~valid]=np.inf
+            choice,index=np.unravel_index(np.argmin(distance),distance.shape)
+            closest=choices[choice,index]
+            if distance[choice,index]>.07**2:continue
+            delta=closest-a[index]
+            da=np.dot(delta,ab[index]);dc=np.dot(delta,ac[index])
+            v=(cc[index]*da-bb[index]*dc)/denom[index]
+            w=(aa[index]*dc-bb[index]*da)/denom[index]
+            bary=np.maximum([1-v-w,v,w],0);bary/=bary.sum()
+            n=(normal[tri[index]]*bary[:,None]).sum(0)
+            n/=max(np.linalg.norm(n),1e-12)
+            signed=np.dot(point-closest,n)
+            needed=max(0,clearance-signed)
+            for vertex in tri[index]:field[vertex]=max(field[vertex],needed)
+            queries.append((i,n,nearest))
+            # Follow the same nearby skin as the fitted cloth to retain the
+            # allowance when arms and shoulders move.
+            weights[i]=(self.weights[tri[index]]*bary[:,None]).sum(0)
+        # Move nearby layers by a common body-surface allowance. Clamping
+        # each layer independently to the same distance collapses a shirt and
+        # overalls into one surface and creates depth-fighting patches.
+        for i,n,nearest in queries:p[i]+=field[nearest].max()*n
+        weights/=np.maximum(weights.sum(1,keepdims=True),1e-12)
+        return p,weights
 
     def accessory(self, name, center, radii, mat, bone='head', kind='sphere', rotation=0):
         p=[]; uv=[]; faces=[]
@@ -267,15 +338,15 @@ class Avatar:
         skin_dir=SOURCE/'system'/'skins'/(self.skin or 'young_caucasian_female')
         skin_tex=next(skin_dir.glob('*.png'))
         skinmat=self.material('Pele com textura',rough=.58,texture=skin_tex) if self.skin else self.material('Cerâmica branca',(.77,.81,.84),.28,.35)
-        # Do not ship/render bare torso or pelvis: only head/neck and hands are exposed.
-        hand_bones=[i for i,n in enumerate(self.bones) if n.startswith(('wrist.','finger','metacarpal'))]
-        exposed=(self.p[:,1]>self.p[self.rig['joints'][self.rig['bones']['neck01']['head']]].mean(0)[1]-.15) | (self.weights[:,hand_bones].sum(1)>.65)
-        body=self.faces[(self.groups=='body') & exposed[self.faces[:,:,0]].all(1)]
+        # Keep the complete skinned body underneath independent clothing meshes.
+        # Cropping to head/hands leaves floating hands with short sleeves and
+        # removes anatomy when a garment is hidden or replaced.
+        body=self.faces[self.groups=='body']
         expression_scale=.075 if self.profile in ('crianca','bebe') else .1
         mouth=target('mouth-open',len(self.p))*expression_scale
         blink=(target('eye-left-closure',len(self.p))+target('eye-right-closure',len(self.p)))*expression_scale
         smile=target('mouth-corner-puller',len(self.p))*expression_scale
-        self.face_node=self.mesh('Pele contínua: rosto pescoço mãos',self.world(self.p),self.uv,body,skinmat,self.weights,morphs=[mouth,blink,smile])
+        self.face_node=self.mesh('Corpo completo: pele e anatomia',self.world(self.p),self.uv,body,skinmat,self.weights,morphs=[mouth,blink,smile])
         p,uv,f,w,d=self.fit('clothes',self.outfit)
         diffuse=next(d.glob('*diffuse.png'))
         normal=next(d.glob('*normal.png'),None);ao=next(d.glob('*_ao.png'),None)
@@ -331,7 +402,8 @@ class Avatar:
         self.animate()
         self.doc['buffers']=[{'byteLength':len(self.binary),'uri':'data:application/octet-stream;base64,'+base64.b64encode(self.binary).decode()}]
         self.doc['extras']={'profile':self.profile,'authoring':'CC0 MakeHuman art adapted for Assistente',
-                            'rig':'linear blend skinning, 4 normalized influences per vertex', **self.stats}
+                            'rig':'linear blend skinning, 4 normalized influences per vertex',
+                            'body':'complete; clothing is a separate mesh', 'body_triangles':len(body), **self.stats}
         (self.folder/'modelo.gltf').write_text(json.dumps(self.doc,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
         (self.folder/'modelo.ini').write_text('[animations]\n'+'\n'.join(n+'='+n for n in CLIPS)+'\n',encoding='utf-8')
         (self.folder/'avatar.json').write_text(json.dumps({'id':self.profile,'name':self.label,'model':'modelo.gltf','license':'CC0-1.0','version':3},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -388,7 +460,16 @@ class Avatar:
                     self.accessory('Placa de braço',(start+tail)/2+[0,0,.025*sc],np.array([.045,.09,.030])*sc,white,bone+side)
                     self.segment('Inserto ciano',start+[0,-.025*sc,.05*sc],tail+[0,.03*sc,.05*sc],.007*sc,cyan,bone+side)
 
-    def arm_ik(self, side, target, pole=None):
+    def arm_ik(self, side, target, pole=None, shoulder_elevation=0.):
+        # Share overhead reach across clavicle, shoulder and upper arm. Rotating
+        # only upperarm01 bends the skin below the deltoid and leaves the shoulder
+        # fixed in its bind pose, producing a displaced/pinched shoulder.
+        sign=1 if side=='L' else -1
+        clavicle=quat(0,0,sign*8*shoulder_elevation)
+        shoulder=quat(-2*shoulder_elevation,0,sign*25*shoulder_elevation)
+        c=self.origins['clavicle.'+side];sh=self.origins['shoulder01.'+side]
+        target=c+qrotate(qinverse(clavicle),np.array(target)-c)
+        target=sh+qrotate(qinverse(shoulder),target-sh)
         h=self.origins['upperarm01.'+side];k=self.origins['lowerarm01.'+side];a=self.origins['wrist.'+side]
         l1=np.linalg.norm(k-h);l2=np.linalg.norm(a-k)
         d=np.array(target)-h;distance=np.linalg.norm(d);direction=d/distance
@@ -399,7 +480,8 @@ class Avatar:
         elbow=h+direction*x+pole*math.sqrt(max(0,l1*l1-x*x))
         q1=between(k-h,elbow-h)
         q2=between(a-k,qrotate(qinverse(q1),np.array(target)-elbow))
-        return {'upperarm01.'+side:q1,'lowerarm01.'+side:q2}
+        return {'clavicle.'+side:clavicle,'shoulder01.'+side:shoulder,
+                'upperarm01.'+side:q1,'lowerarm01.'+side:q2}
 
     def leg_ik(self, side, u, bob):
         h=self.origins['upperleg01.'+side];k=self.origins['lowerleg01.'+side];a=self.origins['foot.'+side]
@@ -448,7 +530,7 @@ class Avatar:
     def animate(self):
         sc=(self.world(self.p).max(0)[1]-self.world(self.p).min(0)[1])/1.78
         animated=['head','jaw','spine02','spine05']+[part+side for part in
-          ('upperarm01.','lowerarm01.','lowerarm02.','wrist.','upperleg01.','lowerleg01.','foot.') for side in ('L','R')]
+          ('clavicle.','shoulder01.','upperarm01.','lowerarm01.','lowerarm02.','wrist.','upperleg01.','lowerleg01.','foot.') for side in ('L','R')]
         variants=[]
         for base in CLIPS+['applause','applause_talking']:
             for smiling in (False,True):
@@ -499,7 +581,9 @@ class Avatar:
                 elif base=='wave':
                     envelope=ease(t/.5)*(1-ease((t-1.8)/.6))
                     elbow=ease((t-.08)/.55)*(1-ease((t-1.78)/.57))
-                    r['upperarm01.R']=[-7*envelope,0,25-109*envelope]
+                    r['clavicle.R'][2]=-8*envelope
+                    r['shoulder01.R']=[-2*envelope,0,-25*envelope]
+                    r['upperarm01.R']=[-5*envelope,0,25-76*envelope]
                     r['lowerarm01.R']=[-9-8*elbow,0,-42*elbow]
                     r['wrist.R'][2]=15*math.sin(2*math.pi*(t-.45)/.65)*ease((t-.5)/.2)*(1-ease((t-1.65)/.25))
                     r['head'][2]=-2*envelope
@@ -525,7 +609,7 @@ class Avatar:
                     r['head'][0]=-2*envelope
                     if base=='applause_talking':jaw=.12+.32*math.sin(phase*5)**2
                 if raised:
-                    ik=self.arm_ik('R',self.origins['head']+(np.array([-.17,.20,.09])+np.array([.002*math.sin(phase),.003*math.cos(phase),0]))*sc)
+                    ik=self.arm_ik('R',self.origins['head']+(np.array([-.17,.20,.09])+np.array([.002*math.sin(phase),.003*math.cos(phase),0]))*sc,shoulder_elevation=1.)
                     overrides.update(ik);r['wrist.R']=[0,-10,2*math.sin(phase)]
                 for name in animated:
                     rotations[name].append(overrides[name] if name in overrides else (quat(*r[name]) if name in r else [0,0,0,1]))

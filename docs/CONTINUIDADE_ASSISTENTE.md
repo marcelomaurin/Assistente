@@ -1,106 +1,98 @@
 # Continuidade do projeto Assistente
 
-Atualizado em 28/09/2026.
+Atualizado em 22/10/2026.
 
-Este documento existe para que outro agente/bot consiga continuar o trabalho sem reconstruir decisões já tomadas.
+## Arquitetura e fluxo atual
 
-## Diretrizes de arquitetura
+A tela de Configurações é a fonte de verdade: configurações salvas →
+`TSetMain` → tela principal → componentes. Texto digitado e fala reconhecida
+entram em `ProcessarEntrada`, compartilhando agente e `TAIAgentMemoryMap`.
+O histórico permanece em `conversation-history.json` ao lado do executável.
 
-A tela de Configurações existente é a fonte de verdade. Não duplicar configurações no `main` e não reconstruir a tela. O fluxo desejado é:
+O professor 3D já está integrado à janela Lazarus por `TProfessorView`/Castle,
+com catálogo em `AVATARES`, seleção de perfil, zoom e comandos de gesto na
+resposta da IA. Não reconstruir essa integração nem a tela de configurações.
+Somente a thread LCL modifica o renderer. Os dez modelos agora incluem
+o corpo completo sob roupas/calçados separados. O recorte antigo da pele em
+cabeça/pescoço/mãos foi removido para corrigir braços ausentes nas mangas curtas.
+`check_avatar_body.py` verifica topologia e conexão de todos os membros;
+`run_body_render_checks.py` captura poses vestidas e uma cópia adulta neutra
+sem roupa em `build`, sem alterar os perfis vestidos do aplicativo.
 
-`configurações salvas -> TSetMain -> tela principal -> módulos/componentes`
+O áudio usa os componentes CHATGPT existentes, com as unidades de voz fixadas
+em `vendor/chatgpt-voice` antes da biblioteca externa:
 
-O `main` deve permanecer simples. Texto digitado e fala reconhecida devem entrar no mesmo caminho de agente e memória.
+`microfone → TProfessorListener/TAIContinuousListener/VAD → WAV →
+TVoiceInputBridge/STT → ProcessarEntrada → agente/memória → resposta →
+TReceptionJob/TTS → avatar e áudio`
 
-Não adicionar botão de microfone nem atalho F9. Com `ContinuousListening` habilitado, a captura deve permanecer automática enquanto o Assistente estiver ativo.
+Com `ContinuousListening` habilitado, a escuta começa automaticamente em
+`FormShow`. Não adicionar botão de captura manual nem atalho F9. A entrada
+Android existente chega pelo receptor TCP e usa o mesmo `ProcessarEntrada`;
+não implementa identificação de locutor nem sincronização labial.
+O polling do receptor usa `WinSock2.select` no Windows; as funções `fpSelect`
+exigem `BaseUnix` no outro caminho. A compilação Windows do código anterior
+falhava por utilizar somente as funções Unix sem importar essas unidades.
+`tests/remote_stt_tests.lpr` exercita entrega UTF-8 na thread principal,
+rejeição por tamanho, recuperação e encerramento com cliente silencioso.
 
-## Fluxo atual
+## Ciclo de fala e avatar
 
-Fluxo de entrada por voz integrado:
+O microfone fica pausado durante STT, agente, preparação e reprodução de voz.
+O timer LCL acompanha o job, aplica e confirma os comandos do avatar e retoma
+a escuta apenas depois da conclusão, falha ou cancelamento do job.
 
-`microfone -> TAIAudioInput -> TAIContinuousListener/VAD -> WAV -> TVoiceInputBridge -> STT -> ProcessarEntrada -> agente + TAIAgentMemoryMap -> resposta -> TTS`
+No TTS remoto, `TReceptionJob` desativa `AutoPlay` e o cache interno do
+sintetizador: o job precisa controlar o início do áudio e ser dono do arquivo
+temporário solicitado. Os padrões anteriores iniciavam áudio antes do gesto
+e direcionavam a saída ao cache, deixando o caminho esperado pelo job ausente.
 
-A entrada digitada chama a mesma `ProcessarEntrada`, portanto texto e voz compartilham contexto, memória e agente.
+`TAIAudioPlayer` agora consulta o estado real do dispositivo MCI no Windows,
+com identificador próprio por instância. O job aguarda `Playing=False`, sem
+estimar duração pelo tamanho do WAV. Cancelar interrompe a espera e fecha o
+player. `PlaybackActive` controla o estado de fala do avatar. A geração remota
+ainda pode aguardar o timeout do provedor; SAPI síncrono ainda pode demorar até
+terminar o trecho corrente.
 
-## Implementações já realizadas
+`ASSISTENTE_CONFIG_DIR` também isola os temporários e traces de recepção em
+`reception/`. Sem a variável, permanece o diretório de dados anterior. Isso
+permite regressões locais sem utilizar a configuração ou cache do usuário.
 
-### Tela principal reconstruída
+## Compilação e regressão
 
-O `main` foi simplificado para usar `TSetMain`, `TAssistantManager` e `TJarvisAPIClient`, mantendo avatar estático e campo de texto. Não reintroduzir a antiga arquitetura altamente acoplada.
+Use `scripts/build_professor.ps1`; o executável fica em
+`build/professor/assistente.exe`, acompanhado de `AVATARES`. Não atualizar
+automaticamente os binários antigos rastreados em `src`.
 
-### Memória da conversa
+As regressões de TTS remoto estão em `tests/professor_remote_speech_tests.lpr`,
+`tests/professor_audio_smoke.lpr` e `tests/run_remote_speech_checks.py`.
+O runner fornece HTTP local, chave fictícia e WAV de silêncio com metadados,
+verificando término, comandos, cancelamento, falhas e limpeza de arquivos.
+O smoke LCL verifica preparação/fala do renderer real, recuperação dos
+controles e Esc. Requer saída de áudio Windows e OpenGL; não usa captura,
+câmera ou serviço remoto pago. Veja comandos e limites em
+[professor-virtual-3d.md](professor-virtual-3d.md).
 
-`TAIAgentMemoryMap` armazena as falas do usuário e respostas. O histórico é salvo em `conversation-history.json`, recarregado na inicialização e incluído no contexto de novas solicitações.
+Em 22/10/2026 passaram a compilação i386-win32 do aplicativo e as regressões
+listadas no guia: assets/movimento dos dez perfis, comandos/estados/catálogo,
+gestos e interface LCL, voz remota local (worker e janela) e receptor TCP local.
+São testes de software com WAV silencioso, sem credenciais ou captura física.
 
-Commit de referência: `12c6e09d4bf9b6221278f8fd408660c529663b53`.
+## Pendências
 
-### TTS
+- [ ] Validar conversa completa com provedor configurado e credenciais reais,
+  incluindo memória entre perguntas por teclado e por voz.
+- [ ] Validar microfone/VAD/STT físico: pausas naturais, retomada após TTS,
+  falha/cancelamento e ausência de reconhecimento da própria voz do Assistente.
+- [ ] Calibrar thresholds e validar filtros de ruído com microfone real;
+  não mascarar falhas alterando números arbitrariamente.
+- [ ] Validar SAPI com voz audível e a latência de encerramento durante fala.
+- [ ] Validar câmera e Kinect físicos simultâneos, desconexão e recuperação.
+- [ ] Implementar e validar identificação/aceitação de locutor no Android
+  conforme a política documentada em `ASSINATURA_VOCAL_ANDROID.md`.
+- [ ] Validar build Win64; o caminho verificado segue sendo i386-win32.
+- [ ] Depois da validação física do áudio, continuar RAG e demais módulos,
+  mantendo o `main` simples.
 
-`TReceptionJob` com `rjSpeak` usa as configurações de voz do `TSetMain`. Commit de referência: `31425f23ad116bc976b3c56c9d571920b98fcf88`.
-
-### Ponte STT
-
-Arquivo `src/voice_input_bridge.pas`.
-
-`TVoiceInputBridge` recebe um WAV finalizado, monta `TReceptionConfig` a partir de `TSetMain`, executa `TReceptionJob(rjTranscribe)` e devolve o texto em `OnText`. O bridge não captura microfone e não implementa VAD; essas responsabilidades pertencem ao pacote CHATGPT.
-
-Commit: `23b49e70b0405357f8cb0f60aee7ff52809daa39`.
-
-### Ponte conectada ao main
-
-`VoiceText` encaminha o texto reconhecido para a mesma `ProcessarEntrada` usada pelo teclado.
-
-Commit: `9d16d3d930b0de3ac4989a37b5cfbea69259aea1`.
-
-### Escuta contínua integrada
-
-O `main` passou a criar `TAIAudioInput` e `TAIContinuousListener`. Com `FSetMain.ContinuousListening`, inicia automaticamente a escuta em `FormShow`.
-
-Configurações consumidas do `TSetMain`:
-- `AudioSampleRate`
-- `AudioChannels`
-- `VoiceThreshold`
-- `SilenceTimeoutMs`
-- `MinSpeechMs`
-- `MaxSpeechMs`
-- `EchoSuppressionEnabled`
-- `SelfAudioCorrelationThreshold`
-
-`OnSpeechReady` pausa a escuta e envia o WAV ao `TVoiceInputBridge`. O texto transcrito entra no agente/memória pelo fluxo comum.
-
-Commit: `b432da9187f7f1e77f452bca8283672113f2bb5c`.
-
-O pacote CHATGPT correspondente contém `TAIContinuousListener` e a evolução de `TAIAudioInput`. Consulte também `docs/CONTINUIDADE_AUDIO_VAD.md` no repositório CHATGPT.
-
-## Regra de microfone durante TTS
-
-O Assistente não deve reconhecer a própria fala. A escuta precisa permanecer pausada enquanto o agente está processando e principalmente enquanto o TTS estiver reproduzindo. Deve ser retomada somente após confirmação real de término do TTS.
-
-O código atual ainda não concluiu esse ciclo: cria `FSpeechJob`, mas falta acompanhar corretamente o término do job para chamar `RetomarEscuta`.
-
-## Limitações e pontos a validar
-
-- Nenhuma das alterações recentes de áudio foi considerada compilada/testada ainda.
-- É necessário compilar primeiro o CHATGPT atualizado e depois o Assistente.
-- O fluxo real de microfone/VAD/STT precisa ser testado de ponta a ponta.
-- O backend de nível/VAD do CHATGPT está inicialmente focado em Windows/MCI; Linux/ALSA ainda é pendência no pacote.
-- Calibrar thresholds somente após teste real; não mascarar falhas de captura aumentando/diminuindo números arbitrariamente.
-- A tela de configurações deve permanecer intacta.
-
-## Tarefas pendentes para o próximo agente
-
-- [ ] Corrigir o ciclo TTS/microfone: observar término real de `FSpeechJob` e executar `RetomarEscuta` somente após o TTS terminar.
-- [ ] Compilar o pacote CHATGPT atualizado no Lazarus/Free Pascal e corrigir erros encontrados sem remover a arquitetura de escuta contínua.
-- [ ] Compilar o Assistente com o pacote atualizado.
-- [ ] Testar: iniciar Assistente -> escuta automática -> começar fala -> pausa curta -> continuar fala -> silêncio final -> WAV -> STT -> texto -> agente -> resposta.
-- [ ] Confirmar que nenhuma palavra é cortada nas pausas normais da fala.
-- [ ] Confirmar que o Assistente não transcreve o próprio TTS.
-- [ ] Calibrar `VoiceThreshold`, `SilenceTimeoutMs`, `MinSpeechMs` e `MaxSpeechMs` com microfone real.
-- [ ] Integrar/validar filtros de ruído do pacote CHATGPT no caminho de áudio.
-- [ ] Depois que o áudio estiver estável, retomar as próximas etapas do projeto (RAG e demais módulos) sem voltar a acoplar tudo ao `main`.
-
-## Regra obrigatória de manutenção desta lista
-
-**Quando uma tarefa acima for concluída, APAGUE a tarefa da lista. Não deixe item marcado como concluído.** Este documento deve mostrar para o próximo agente apenas o trabalho que continua pendente.
-
-Se surgir uma nova pendência durante compilação/teste, acrescente-a. Não declarar compilação ou teste bem-sucedido sem realmente executá-lo.
+Ao concluir uma pendência, apague o item; não mantenha tarefas marcadas como
+concluídas. Registre novos problemas e nunca declare testes que não executou.

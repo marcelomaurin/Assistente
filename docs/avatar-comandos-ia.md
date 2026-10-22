@@ -47,6 +47,10 @@ antes de começar o trecho falado. Nenhum callback de voz altera OpenGL.
 
 No TTS remoto, o áudio do trecho é preparado antes de disparar as tags que o
 precedem. Isso evita que o gesto comece durante a espera pelo provedor.
+O job desativa `AutoPlay` e o cache do sintetizador para controlar o início
+e o arquivo temporário do áudio. O player consulta o dispositivo MCI no Windows
+até o término real; tamanho de arquivo e metadados WAV não determinam a espera.
+A escuta permanece pausada até o job concluir ou cancelar a reprodução.
 A geração de cada trecho remoto ainda pode introduzir pausas entre trechos;
 não há alinhamento por palavra ou por fonema, nem antecipação de áudio.
 No SAPI, o comando é aplicado imediatamente antes da chamada síncrona.
@@ -79,6 +83,10 @@ usa os morph targets `jawOpen`, `blink` e `smile`.
 As trajetórias são amostradas a 60 Hz: aceleração/desaceleração suave nos gestos,
 respiração, movimento discreto de cabeça e quadril, oposição dos braços e
 pernas na caminhada, IK de dois segmentos para pernas e poses de mãos.
+Aceno e mão levantada distribuem a elevação entre clavícula, ombro e braço,
+evitando manter o ombro fixo enquanto o segmento abaixo do deltoide gira.
+Os dez modelos incluem corpo completo sob roupas separadas; o ajuste do tecido
+à pele mantém os braços visíveis sem atravessar a roupa nas poses inspecionadas.
 O renderer mistura estados em 0,32 s; levantar/baixar a mão usa 0,6 s.
 Isso é animação criada para tempo real, sem captura de movimento e sem
 simulação física de tecido ou locomoção pelo ambiente.
@@ -88,9 +96,10 @@ lateralidade, e a rotação é distribuída entre antebraço e punho. Os testes
 verificam o sentido das duas palmas, e não apenas a posição dos pulsos.
 A janela principal pausa seu renderer durante as configurações/prévia,
 evitando duas superfícies OpenGL animadas em paralelo atrás do diálogo.
-Na medição local em reprodução contínua, sem captura concorrente, o professor
-teve média de 59,69 FPS, percentil 95 de 17,46 ms por quadro e máximo de
-49,64 ms. Esses números descrevem a máquina do teste, não uma garantia geral.
+Na medição de 22/10/2026 em reprodução contínua, sem captura concorrente,
+o Engenheiro com corpo completo teve média de 59,91 FPS, percentil 95 de
+17,91 ms por quadro e máximo de 50,52 ms, em 602 quadros medidos. Esses números
+descrevem a máquina e a execução do teste, não uma garantia geral.
 
 Arquivos externos continuam podendo ter somente os seis clipes básicos.
 Composições seguem nomes como `talking_smile_right_hand_up`, `idle_smile`,

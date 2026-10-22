@@ -14,11 +14,21 @@ O arquivo `RemoteSpeechService.kt` é o núcleo do serviço, **não é ainda um 
 
 Em Android recente, o usuário deve iniciar o serviço com o aplicativo visível e conceder permissão de microfone. O serviço foreground pode continuar com tela apagada, mas reconhecimento contínuo não é garantido: o SpeechRecognizer pode parar ou falhar dependendo do aparelho e do provedor. Validar o microfone externo selecionado pelo Android e política de bateria do fabricante.
 
+## Receptor Lazarus
+
+`src/remote_stt_server.pas` recebe o texto TCP e entrega o callback por
+`TThread.Synchronize` à thread principal. `RemoteVoiceText` usa a mesma
+`ProcessarEntrada` do teclado e da transcrição local, respeitando o estado
+ocupado da conversa. O polling usa WinSock2 no Windows e BaseUnix no caminho
+Unix. Em 22/10/2026 o aplicativo i386-win32 compilou e
+`tests/remote_stt_tests.lpr` passou com conexões locais: UTF-8, thread principal,
+rejeição por tamanho, recuperação e encerramento com cliente silencioso.
+Isso não valida o serviço Android nem a política de locutor.
+
 ## Próximas etapas
 1. Criar Activity e Gradle, permissões e fluxo de inicialização.
-2. Implementar receptor TCP Lazarus com fila thread-safe e despacho pela thread da interface.
-3. Acrescentar opção de entrada Android nas configurações, porta e token de pareamento.
-4. Implementar autenticação e proteção contra duplicatas/reenvios; testar rede, tela apagada, reconexão e frases longas.
-5. Compilar APK e executar testes reais no Android e no Lazarus.
+2. Acrescentar opção de entrada Android nas configurações, porta e token de pareamento.
+3. Implementar autenticação e proteção contra duplicatas/reenvios; testar rede, tela apagada, reconexão e frases longas.
+4. Compilar APK e executar testes reais no Android e no Lazarus.
 
-Não foram executados compilação nem testes reais.
+Não foram executados compilação de APK nem testes com aparelho Android.

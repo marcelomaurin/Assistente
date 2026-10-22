@@ -28,11 +28,12 @@ type
     FProcess: TProcess;
     FLastError: string;
     FPlaying: Boolean;
-    FUsingMCI: Boolean;
+    {$IFDEF MSWINDOWS}FDeviceID: MCIDEVICEID;{$ENDIF}
     FOnPlaybackBuffer: TAIPlaybackBufferEvent;
     FOnPlaybackStart: TAIPlaybackFileEvent;
     FOnPlaybackStop: TNotifyEvent;
 
+    function GetPlaying: Boolean;
     procedure DispatchWavBuffer(const AFileName: string);
   public
     constructor Create(AOwner: TComponent); override;
@@ -41,7 +42,7 @@ type
     procedure Stop;
   published
     property LastError: string read FLastError;
-    property Playing: Boolean read FPlaying;
+    property Playing: Boolean read GetPlaying;
     property OnPlaybackBuffer: TAIPlaybackBufferEvent read FOnPlaybackBuffer write FOnPlaybackBuffer;
     property OnPlaybackStart: TAIPlaybackFileEvent read FOnPlaybackStart write FOnPlaybackStart;
     property OnPlaybackStop: TNotifyEvent read FOnPlaybackStop write FOnPlaybackStop;
@@ -62,7 +63,7 @@ begin
   FProcess := nil;
   FLastError := '';
   FPlaying := False;
-  FUsingMCI := False;
+  {$IFDEF MSWINDOWS}FDeviceID := 0;{$ENDIF}
 end;
 
 destructor TAIAudioPlayer.Destroy;
@@ -101,7 +102,9 @@ function TAIAudioPlayer.Play(const AFileName: string): Boolean;
 var
   Ext: string;
   {$IFDEF MSWINDOWS}
-  OpenCmd: string;
+  OpenParams: TMCI_WAVE_OPEN_PARMSW;
+  PlayParams: TMCI_PLAY_PARMS;
+  FileNameW, DeviceTypeW: UnicodeString;
   Ret: MCIERROR;
   {$ENDIF}
 begin
@@ -118,32 +121,26 @@ begin
   Ext := LowerCase(ExtractFileExt(AFileName));
 
   {$IFDEF MSWINDOWS}
-  if (Ext = '.mp3') then
+  { Each player owns its device. No shared alias or process-wide
+    sndPlaySound: status queries observe actual completion of this file. }
+  FileNameW := UTF8Decode(ExpandFileName(AFileName));
+  if Ext = '.mp3' then DeviceTypeW := 'mpegvideo'
+  else DeviceTypeW := 'waveaudio';
+  FillChar(OpenParams, SizeOf(OpenParams), 0);
+  OpenParams.lpstrDeviceType := PWideChar(DeviceTypeW);
+  OpenParams.lpstrElementName := PWideChar(FileNameW);
+  Ret := mciSendCommandW(0, MCI_OPEN,
+    MCI_OPEN_TYPE or MCI_OPEN_ELEMENT or MCI_WAIT, PtrUInt(@OpenParams));
+  if Ret = 0 then
   begin
-    FUsingMCI := True;
-    mciSendString('close voice_playback_alias', nil, 0, 0);
-    OpenCmd := 'open "' + AFileName + '" type mpegvideo alias voice_playback_alias';
-    Ret := mciSendString(PChar(OpenCmd), nil, 0, 0);
-    if Ret = 0 then
-    begin
-      Ret := mciSendString('play voice_playback_alias', nil, 0, 0);
-      Result := (Ret = 0);
-      if not Result then
-        FLastError := Format('Falha ao reproduzir MP3 via MCI (Erro %d)', [Ret]);
-    end
-    else
-    begin
-      FLastError := Format('Falha ao abrir MP3 via MCI (Erro %d)', [Ret]);
-    end;
-  end
-  else
-  begin
-    // WAV playback via sndPlaySound
-    FUsingMCI := False;
-    Result := sndPlaySound(PChar(AFileName), SND_ASYNC or SND_FILENAME or SND_NODEFAULT);
-    if not Result then
-      FLastError := 'Windows nao conseguiu reproduzir o audio WAV.';
+    FDeviceID := OpenParams.wDeviceID;
+    FillChar(PlayParams, SizeOf(PlayParams), 0);
+    Ret := mciSendCommandW(FDeviceID, MCI_PLAY, 0, PtrUInt(@PlayParams));
+    Result := Ret = 0;
+    if not Result then Stop;
   end;
+  if not Result then
+    FLastError := Format('Falha ao reproduzir audio via MCI (Erro %d)', [Ret]);
   {$ELSE}
   FProcess := TProcess.Create(nil);
   if Ext = '.mp3' then
@@ -174,28 +171,51 @@ begin
   end;
 end;
 
-procedure TAIAudioPlayer.Stop;
+function TAIAudioPlayer.GetPlaying: Boolean;
+{$IFDEF MSWINDOWS}
+var Status: TMCI_STATUS_PARMS; Ret: MCIERROR;
+{$ENDIF}
 begin
-  if FPlaying and Assigned(FOnPlaybackStop) then
-    FOnPlaybackStop(Self);
-
-  {$IFDEF MSWINDOWS}
-  if FUsingMCI then
+  if FPlaying then
   begin
-    mciSendString('stop voice_playback_alias', nil, 0, 0);
-    mciSendString('close voice_playback_alias', nil, 0, 0);
-    FUsingMCI := False;
+    {$IFDEF MSWINDOWS}
+    FillChar(Status, SizeOf(Status), 0);
+    Status.dwItem := MCI_STATUS_MODE;
+    Ret := mciSendCommandW(FDeviceID, MCI_STATUS,
+      MCI_STATUS_ITEM or MCI_WAIT, PtrUInt(@Status));
+    if Ret <> 0 then
+    begin
+      FLastError := Format('Falha ao consultar reproducao MCI (Erro %d)', [Ret]);
+      Stop;
+    end
+    else if Status.dwReturn = MCI_MODE_STOP then Stop;
+    {$ELSE}
+    if not Assigned(FProcess) or not FProcess.Running then Stop;
+    {$ENDIF}
   end;
-  sndPlaySound(nil, SND_ASYNC);
+  Result := FPlaying;
+end;
+
+procedure TAIAudioPlayer.Stop;
+var WasPlaying: Boolean;
+begin
+  WasPlaying := FPlaying;
+  FPlaying := False;
+  {$IFDEF MSWINDOWS}
+  if FDeviceID <> 0 then
+  begin
+    mciSendCommandW(FDeviceID, MCI_STOP, MCI_WAIT, 0);
+    mciSendCommandW(FDeviceID, MCI_CLOSE, MCI_WAIT, 0);
+    FDeviceID := 0;
+  end;
   {$ELSE}
   if Assigned(FProcess) then
   begin
-    if FProcess.Running then
-      FProcess.Terminate(0);
+    if FProcess.Running then FProcess.Terminate(0);
     FreeAndNil(FProcess);
   end;
   {$ENDIF}
-  FPlaying := False;
+  if WasPlaying and Assigned(FOnPlaybackStop) then FOnPlaybackStop(Self);
 end;
 
 initialization

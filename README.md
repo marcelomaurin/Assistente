@@ -8,7 +8,8 @@ animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.
 Os modelos v3 usam anatomia contínua, esqueleto com pesos, texturas de pele e
-tecido e expressões faciais. A IA pode dirigir gestos no texto com `[sorriso]`,
+tecido e expressões faciais. O corpo é completo sob a roupa: braços, tronco,
+pernas e pés não dependem do vestuário para existir. A IA pode dirigir gestos no texto com `[sorriso]`,
 `[aplausos]`, `[levantar mao direita]` e `[abaixar mao direita]`.
 As tags não são pronunciadas. Veja [comandos e sincronização](docs/avatar-comandos-ia.md).
 Veja [arquitetura, modelos, instalação, build e limites](docs/professor-virtual-3d.md).
@@ -55,12 +56,15 @@ Execute `tests/run_vision_checks.ps1` para validar o formulário e as quatro
 combinações. Use `-Hardware` para incluir captura real com exatamente uma câmera.
 O teste anterior de câmera capturou RGB de 640×480.
 
-A compilação completa usa as dependências de voz originais fixadas em
-`vendor/chatgpt-voice` (origem e commit documentados nessa pasta), preservando a
-biblioteca CHATGPT externa. Compile com `C:\lazarus\lazbuild.exe --build-all
-src\assistente.lpi`. O executável atualizado é `src/assistente.exe`.
-Feche versões antigas antes de abrir esse arquivo; instalações antigas não são
-atualizadas automaticamente. A configuração atual contém a aba Vídeo, sem servidor.
+A compilação completa usa as dependências de voz fixadas e adaptadas em
+`vendor/chatgpt-voice` (origem, commit e adaptações documentados nessa pasta),
+preservando a biblioteca CHATGPT externa. Para a versão com professor 3D, use
+`scripts/build_professor.ps1` conforme o guia acima. O executável atualizado é
+`build/professor/assistente.exe`, acompanhado de `AVATARES`.
+Feche versões antigas antes de abrir esse arquivo; instalações e executáveis
+antigos não são atualizados automaticamente. A configuração atual contém a aba
+Vídeo local, sem servidor de captura. Os testes locais de TTS remoto e avatar
+estão documentados em [professor-virtual-3d.md](docs/professor-virtual-3d.md).
 
 Com Kinect físico disponível, validar ambos ativos, desligamento independente,
 troca de dispositivos e recuperação quando um dispositivo está ausente.

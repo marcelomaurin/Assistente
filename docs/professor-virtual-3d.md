@@ -32,10 +32,25 @@ No cartão há seletor, atualizar lista (↻), acenar e caminhar. O mínimo é
 Incluídos: Professor, Médico, Engenheiro, Programador, Dona de casa,
 Empresário, Padre, Criança, Bebê e Robô. A versão 3 substitui a montagem de
 primitivas por anatomia contínua e vestuário ajustado, derivados dos recursos
-oficiais CC0 do MakeHuman. São aproximadamente 33–54 mil triângulos por modelo,
+oficiais CC0 do MakeHuman. Com o corpo completo, são aproximadamente 45–66 mil triângulos por modelo,
 163 juntas, quatro influências normalizadas por vértice, UVs, texturas de pele,
 mechas de cabelo com recorte alfa e materiais com normais/oclusão de tecido.
 O professor inclui um colete argyle; o robô tem cerâmica clara e headset ciano.
+Todos os dez perfis incluem a malha corporal inteira, com 26.756 triângulos de
+pele/anatomia, independente do vestuário. Roupas e calçados ficam sobre esse corpo
+em malhas separadas; mangas curtas deixam braços e antebraços visíveis. Remover
+uma camada de roupa na autoria não apaga partes do corpo. Os perfis do aplicativo
+continuam vestidos. O recorte antigo que exportava somente cabeça/pescoço/mãos
+foi removido; a regressão de topologia/conexão reprova esse formato antigo.
+O vestuário é ajustado para fora da superfície corporal, com folga de 8 mm e
+pesos interpolados da pele próxima. Isso corrige a interpenetração que o recorte
+antigo escondia, preservando o corpo inteiro. É ajuste geométrico de autoria,
+sem simulação física de tecido.
+
+Ao levantar a mão ou acenar, a elevação passa por clavícula, ombro e braço.
+O código anterior girava somente o braço abaixo do deltoide, mantendo a região
+do ombro imóvel. A regressão de movimento verifica elevação e limites da raiz
+do braço nos clipes acima da cabeça, além de lateralidade e apoio dos pés.
 
 Cada modelo tem 28 clipes: seis estados básicos e composições de sorriso,
 mão direita levantada e aplausos com/sem fala. Boca, pálpebras e sorriso usam
@@ -132,9 +147,11 @@ adaptador ficam desabilitadas, preservando os valores anteriores.
 - Lazarus e FPC 3.2.2 com unidades **i386-win32**. O executável 32 bits também
   funciona em Windows 64 bits via WOW64.
 - Biblioteca externa `marcelomaurin/CHATGPT`, normalmente irmã de Assistente.
-  A validação usa `febb8e26b2ccfdac58cff175577088b1c48e2b84`; havia alterações
-  locais em componentes de joystick não relacionados, que não foram alteradas
-  por esta implementação. Vendor de voz tem precedência conforme seu README.
+  A validação Windows de 22/10/2026 usa
+  `3c845b998c7c631c0608c12b766a04b39da13be1`. O checkout compartilhado recebeu
+  atualizações somente de documentação durante esta tarefa, preservadas;
+  as unidades Pascal permaneceram iguais. Esta entrega não editou a biblioteca
+  externa. Vendor de voz tem precedência conforme seu README.
 - Castle fixado em `6a433378a8cc7117f5deccbec2fb70a42fdb98f3`.
 - Driver OpenGL e suporte à renderização; MSAA 4 é solicitado pelo controle.
 - Kinect físico requer SDK/driver correspondente.
@@ -158,13 +175,16 @@ Win64 completo encontrou erro preexistente de `QueryInterface` em
 No IDE, disponibilize `packages/lazarus/castle_engine_lcl.lpk` e dependências;
 `assistente.lpi` já o requer. Use `castle_engine_lcl`, sem `castle_engine_window`.
 `ASSISTENTE_CONFIG_DIR` permite isolar a configuração; sem a variável permanece
-o caminho original. Nenhuma credencial é incluída nos testes ou modelos novos.
+o caminho original. A variável também direciona temporários/traces de recepção para
+`ASSISTENTE_CONFIG_DIR/reception`; sem ela, o caminho anterior é preservado.
+Nenhuma credencial é incluída nos testes ou modelos novos.
 
 ## Verificação
 
 ```powershell
 python tests/check_avatar_assets.py
 python tests/check_avatar_motion.py
+python tests/check_avatar_body.py
 .\scripts\build_professor.ps1 -Target tests\professor_commands_tests.lpr -Run
 .\scripts\build_professor.ps1 -Target tests\professor_speech_commands_tests.lpr -Run
 .\scripts\build_professor.ps1 -Target tests\professor_state_tests.lpr -Run
@@ -178,6 +198,25 @@ Get-ChildItem AVATARES -Filter modelo.gltf -Recurse | ForEach-Object {
 .\scripts\build_professor.ps1 -Target tests\professor_directive_smoke.lpr
 .\scripts\build_professor.ps1 -Target tests\professor_animation_smoke.lpr
 ```
+
+Regressão de voz remota com HTTP local e WAV silencioso, sem credenciais
+reais ou serviços pagos (requer saída de áudio Windows e OpenGL para o smoke):
+
+```powershell
+.\scripts\build_professor.ps1 -Target tests\professor_remote_speech_tests.lpr
+.\scripts\build_professor.ps1 -Target tests\professor_audio_smoke.lpr
+python tests/run_remote_speech_checks.py build/professor/professor_remote_speech_tests.exe build/professor/professor_audio_smoke.exe
+```
+
+O runner inicia o provedor local em porta livre e isola os arquivos de runtime.
+Verifica texto limpo, WAV com metadados, comandos antes da reprodução, término
+real, repetição da síntese, erro HTTP, áudio inválido e cancelamento. O teste
+LCL observa os clipes reais de preparação/fala, o bloqueio/retorno dos controles
+e Esc durante reprodução. Silêncio no dispositivo não comprova qualidade da
+voz nem captação de microfone. O cache interno é desativado neste job, pois ele
+controla e remove o arquivo temporário; não há reprodução automática paralela.
+O player consulta [MCI_STATUS_MODE](https://learn.microsoft.com/en-us/windows/win32/multimedia/mci-status),
+em vez de estimar duração pelo tamanho do arquivo.
 
 Execute `professor_ui_smoke.exe` para o teste gráfico isolado: desativa captura,
 fala e serviços de IA, percorre o seletor dinâmico, testa o evento da roda,
@@ -201,6 +240,43 @@ angulares e continuidade das poses nos ciclos. `professor_performance_smoke`
 mede a reprodução real durante dez segundos após aquecimento, sem capturar
 imagens. A prévia das configurações percorre estados e comandos em reprodução
 contínua; o renderer principal fica pausado enquanto o diálogo está aberto.
+
+## Validação em 22/10/2026
+
+Compilados aplicativo e onze executáveis de teste com FPC 3.2.2, i386-win32,
+Lazarus local e Castle no commit fixado acima. A recompilação da unidade de voz
+produziu três avisos de conversão de strings em `reception_core`, sem erros.
+Passaram os testes de assets e movimento dos dez avatares, parser de comandos,
+sequência de fala/cancelamento, estados, catálogo, apresentação de gestos,
+interface OpenGL com os dez perfis, TTS remoto local e janela com áudio local.
+O receptor TCP também passou entrega UTF-8 na thread principal, rejeição por
+tamanho, recuperação e fechamento com cliente silencioso.
+
+O runner de voz confirmou dez requisições locais com texto sem tags, WAV e
+limpeza dos temporários. O teste da janela confirmou os clipes de preparação e
+fala, recuperação após falha e Esc durante reprodução. Áudio de teste é silêncio;
+esses resultados não validam qualidade de voz, API externa, conversa completa,
+microfone/VAD/STT físico, Kinect/Android físico, Linux ou Win64.
+
+Para repetir o teste isolado do receptor:
+
+```powershell
+.\scripts\build_professor.ps1 -Target tests\remote_stt_tests.lpr -Run
+```
+
+Para conferir o corpo completo no renderer, incluindo uma cópia neutra
+adulta sem a camada de roupas:
+
+```powershell
+.\scripts\build_professor.ps1 -Target tests\professor_animation_smoke.lpr
+python tests/run_body_render_checks.py
+```
+
+O script captura treze poses de Engenheiro, Dona de casa e uma cópia técnica do
+corpo do Engenheiro sem roupas/acessórios, com material neutro. As capturas e a
+cópia temporária ficam em `build/professor/body-validation`; não entram no
+catálogo `AVATARES`. O teste estrutural verifica todos os dez perfis sem depender
+da visibilidade da roupa e exige conexão de tronco, cabeça e membros.
 
 ## Limites
 

@@ -69,7 +69,9 @@ uses {$IFDEF WINDOWS}ActiveX, Windows,{$ENDIF} Math;
 
 function ReceptionDataDir: string;
 begin
-  Result := IncludeTrailingPathDelimiter(GetAppConfigDir(False)) + 'reception' + PathDelim;
+  Result := SysUtils.GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+  if Result = '' then Result := GetAppConfigDir(False);
+  Result := IncludeTrailingPathDelimiter(Result) + 'reception' + PathDelim;
   ForceDirectories(Result);
 end;
 
@@ -155,8 +157,8 @@ end;
 
 procedure TReceptionJob.ExecuteSpeech;
 var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
-  Player: TAIAudioPlayer; Pending: array of TAvatarCommand; Wav: TFileStream;
-  UntilTime: QWord; BytesPerSecond: LongWord; Part,SpeechFile: string;
+  Player: TAIAudioPlayer; Pending: array of TAvatarCommand;
+  Part,SpeechFile: string;
   procedure FlushCommands;
   var K: Integer;
   begin
@@ -182,6 +184,10 @@ begin
       if (Synth.Engine=seOpenAI) and (FConfig.Voice<>'') then Synth.OpenAIVoice:=FConfig.Voice;
       Synth.Language:=FConfig.Language;Synth.Volume:=FConfig.Volume;Synth.Rate:=FConfig.Rate;
       Synth.Asynchronous:=False;Synth.OpenAIOutputFormat:='wav';
+      { This job owns playback and its temporary file. AutoPlay would start
+        sound before the LCL acknowledges the avatar command; the component
+        cache otherwise redirects OutputFile to a different file. }
+      Synth.AutoPlay:=False;Synth.EnableCache:=False;
     end;
     for I:=0 to High(Script.Steps) do
     begin
@@ -204,22 +210,19 @@ begin
         Synth.Say(Part);
         if Synth.LastError<>'' then begin ErrorText:=Synth.LastError;Break;end;
         if Terminated then Break;
-        Wav:=TFileStream.Create(SpeechFile,fmOpenRead or fmShareDenyNone);
-        try
-          if Wav.Size<44 then raise Exception.Create('WAV de fala invalido');
-          Wav.Position:=28;Wav.ReadBuffer(BytesPerSecond,4);
-          if BytesPerSecond=0 then raise Exception.Create('WAV de fala invalido');
-          UntilTime:=QWord(Wav.Size)*1000 div BytesPerSecond;
-        finally Wav.Free;end;
         { Remote synthesis finishes before applying tags: gestures start at the
           audible segment boundary, not while waiting for the provider. }
         FlushCommands;
         if Terminated then Break;
         if not Player.Play(SpeechFile) then begin ErrorText:=Player.LastError;Break;end;
         InterlockedExchange(FPlaybackActive,1);
-        WaitUntil(GetTickCount64+UntilTime);
+        { Playing queries the backend, not the WAV size or an estimated timer.
+          Keep capture paused and talking active until completion or cancel. }
+        while not Terminated and Player.Playing do Sleep(10);
+        if Player.LastError<>'' then ErrorText:=Player.LastError;
         Player.Stop;InterlockedExchange(FPlaybackActive,0);
         SysUtils.DeleteFile(SpeechFile);SpeechFile:='';
+        if ErrorText<>'' then Break;
       end else
       begin
         FlushCommands;

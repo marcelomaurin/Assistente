@@ -53,6 +53,15 @@ for path in paths:
     assert wave[right][1,3]>idle[right][1,3]+height*.2,'Wave failed to raise right hand'
     assert up[right][1,3]>up[head][1,3]+height*.04,'Held hand is not raised'
     assert abs(up[left][1,3]-idle[left][1,3])<height*.03,'Wrong hand moved'
+    # Overhead reach must lift the shoulder girdle. The old clips rotated only
+    # the upper-arm bone below the deltoid, leaving a pinched/displaced shoulder.
+    upper=names['upperarm01.R'];shoulder=names['shoulder01.R']
+    for clip,t in (('wave',1.1),('idle_right_hand_up',.6),('talking_smile_right_hand_up',.6)):
+        overhead=pose(clip,t)
+        assert overhead[upper][1,3]>idle[upper][1,3]+height*.02,'Overhead shoulder remained fixed: '+clip
+        assert np.linalg.norm(overhead[upper][:3,3]-idle[upper][:3,3])<height*.10,'Shoulder left anatomical region: '+clip
+        assert np.linalg.norm(overhead[shoulder][:3,3]-idle[shoulder][:3,3])<height*.04,'Clavicle moved excessively: '+clip
+
     # Inspect the exported palm basis on BOTH mirrored hands. Checking only
     # wrist positions misses a clap that hits the back of the other hand.
     for clip in ('applause','applause_smile','applause_talking_smile'):
@@ -100,5 +109,5 @@ for path in paths:
             speed=np.degrees(2*np.arccos(dots))/np.diff(times)
             maximum=float(speed.max());max_speed=max(max_speed,maximum)
             assert maximum<900,'Abrupt joint rotation: '+animation['name']+' / '+d['nodes'][channel['target']['node']]['name']
-    print('PASS:',path.parent.name,'bind pose, hand/palm direction, skin deformation, gait contact/clearance and loop seams')
+    print('PASS:',path.parent.name,'bind pose, overhead shoulder support, hand/palm direction, skin deformation, gait contact/clearance and loop seams')
     print('Maximum sampled joint speed, deg/s:',round(max_speed,1))

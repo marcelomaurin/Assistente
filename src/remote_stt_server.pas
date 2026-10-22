@@ -20,6 +20,27 @@ type
     property OnText: TRemoteTextEvent read FOnText write FOnText;
   end;
 implementation
+uses {$IFDEF MSWINDOWS}WinSock2{$ELSE}BaseUnix{$ENDIF};
+
+function SocketReadable(ASocket: LongInt; ATimeoutMs: Integer): Boolean;
+var Ready: TFDSet; Timeout: TTimeVal;
+begin
+  {$IFDEF MSWINDOWS}
+  WinSock2.FD_ZERO(Ready);
+  WinSock2.FD_SET(ASocket, Ready);
+  {$ELSE}
+  fpFD_ZERO(Ready);
+  fpFD_SET(ASocket, Ready);
+  {$ENDIF}
+  Timeout.tv_sec := ATimeoutMs div 1000;
+  Timeout.tv_usec := (ATimeoutMs mod 1000) * 1000;
+  {$IFDEF MSWINDOWS}
+  Result := WinSock2.select(0, @Ready, nil, nil, @Timeout) > 0;
+  {$ELSE}
+  Result := fpSelect(ASocket+1, @Ready, nil, nil, @Timeout) > 0;
+  {$ENDIF}
+end;
+
 constructor TRemoteSTTServer.Create(APort: Word);
 begin
   inherited Create(True);
@@ -49,8 +70,6 @@ var
   Client, N, I: LongInt;
   Buf: array[0..1023] of Byte;
   Line: RawByteString;
-  Ready: TFDSet;
-  Timeout: TTimeVal;
   Deadline: QWord;
 begin
   FServer := fpSocket(AF_INET, SOCK_STREAM, 0);
@@ -64,11 +83,7 @@ begin
     if fpListen(FServer, 4) <> 0 then Exit;
     while not Terminated do
     begin
-      fpFD_ZERO(Ready);
-      fpFD_SET(FServer, Ready);
-      Timeout.tv_sec := 0;
-      Timeout.tv_usec := 200000;
-      if fpSelect(FServer+1, @Ready, nil, nil, @Timeout) <= 0 then Continue;
+      if not SocketReadable(FServer, 200) then Continue;
       PeerLen := SizeOf(Peer);
       Client := fpAccept(FServer, @Peer, @PeerLen);
       if Client < 0 then Continue;
@@ -77,11 +92,7 @@ begin
         Deadline := GetTickCount64 + 3000;
         while not Terminated and (GetTickCount64 < Deadline) and (Length(Line) <= 4096) do
         begin
-          fpFD_ZERO(Ready);
-          fpFD_SET(Client, Ready);
-          Timeout.tv_sec := 0;
-          Timeout.tv_usec := 100000;
-          if fpSelect(Client+1, @Ready, nil, nil, @Timeout) <= 0 then Continue;
+          if not SocketReadable(Client, 100) then Continue;
           N := fpRecv(Client, @Buf[0], SizeOf(Buf), 0);
           if N <= 0 then Break;
           for I := 0 to N-1 do

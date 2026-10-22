@@ -34,6 +34,10 @@ reenquadra. Trocar de personagem também restaura o enquadramento.
 Os dez modelos v3 usam recursos gráficos CC0 do MakeHuman, adaptados para
 personagens de tempo real: anatomia contínua, 163 juntas, quatro pesos por
 vértice, UVs, texturas de pele/cabelo/tecido e materiais com normais e oclusão.
+Cada personagem contém um corpo completo sob a roupa, inclusive braços, tronco,
+pernas e pés. Vestuário/calçados são malhas separadas; não substituem o corpo.
+Assim, mangas curtas deixam os braços visíveis e trocar/ocultar a roupa não
+remove partes da anatomia. Os perfis são distribuídos vestidos.
 Cada modelo tem 28 clipes, incluindo combinações de fala, sorriso e mão direita
 levantada, e morph targets de boca, pálpebras e sorriso. Os movimentos são
 criados e amostrados a 60 Hz, com transições suaves no renderer.
