@@ -31,3 +31,5 @@ build/
 .deps/
 *.exe
 !bin/*.exe
+*.a
+tests/*.txt

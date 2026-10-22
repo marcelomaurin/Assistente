@@ -46,7 +46,7 @@ begin
 
   if Trim(AConfig.Model) = '' then
   begin
-    AErrorMsg := 'OpenAI Model is required (e.g. tts-1, tts-1-hd, gpt-4o-mini-tts).';
+    AErrorMsg := 'OpenAI Model is required (e.g. tts-1, tts-1-hd).';
     FLastError := AErrorMsg;
     Exit;
   end;
@@ -72,7 +72,6 @@ function TAIOpenAIVoiceBackend.Synthesize(const AConfig: TAIVoiceConfig; const A
 var
   Payload: string;
   EscapedInput: string;
-  EscapedInstructions: string;
   SpeedStr: string;
   FormatStr: string;
   TargetFile: string;
@@ -87,29 +86,24 @@ begin
   if Trim(TargetFile) = '' then
     TargetFile := AConfig.OutputFile;
   if Trim(TargetFile) = '' then
-    TargetFile := 'output' + DirectorySeparator + 'speech.mp3';
+    TargetFile := IncludeTrailingPathDelimiter(GetTempDir) + 'assistente_speech.mp3';
 
   FormatStr := LowerCase(Trim(AConfig.OutputFormat));
   if FormatStr = '' then
     FormatStr := 'mp3';
 
   EscapedInput := JSONEscape(AText);
-  EscapedInstructions := JSONEscape(BuildLanguagePrompt(AConfig.Language, AConfig.Instructions));
   SpeedStr := Format('%0.2f', [AConfig.Speed]);
   SpeedStr := StringReplace(SpeedStr, ',', '.', []);
 
-  // OpenAI Speech API payload
+  // OpenAI Speech API payload (/v1/audio/speech aceita apenas model, input, voice, response_format, speed)
   Payload := '{' +
     '"model": "' + JSONEscape(AConfig.Model) + '",' +
     '"input": "' + EscapedInput + '",' +
     '"voice": "' + JSONEscape(AConfig.RemoteVoice) + '",' +
     '"response_format": "' + JSONEscape(FormatStr) + '",' +
-    '"speed": ' + SpeedStr;
-
-  if EscapedInstructions <> '' then
-    Payload := Payload + ',"instructions": "' + EscapedInstructions + '"';
-
-  Payload := Payload + '}';
+    '"speed": ' + SpeedStr +
+    '}';
 
   Result := ExecuteHTTPRequest(
     AConfig.Endpoint,

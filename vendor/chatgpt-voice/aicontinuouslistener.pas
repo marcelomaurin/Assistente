@@ -253,7 +253,13 @@ begin
   wfx.nAvgBytesPerSec := wfx.nSamplesPerSec * wfx.nBlockAlign;
   wfx.cbSize := 0;
 
-  mmRes := waveInOpen(@FWaveIn, UINT(FOwner.DeviceIndex), @wfx, DWORD_PTR(FEvent), 0, CALLBACK_EVENT);
+  if FOwner.DeviceIndex >= 0 then
+    mmRes := waveInOpen(@FWaveIn, UINT(FOwner.DeviceIndex), @wfx, DWORD_PTR(FEvent), 0, CALLBACK_EVENT)
+  else
+    mmRes := MMSYSERR_ERROR;
+
+  if mmRes <> MMSYSERR_NOERROR then
+    mmRes := waveInOpen(@FWaveIn, WAVE_MAPPER, @wfx, DWORD_PTR(FEvent), 0, CALLBACK_EVENT);
   if mmRes <> MMSYSERR_NOERROR then
   begin
     FOwner.FLastError := Format('waveInOpen failed (error %d)', [mmRes]);

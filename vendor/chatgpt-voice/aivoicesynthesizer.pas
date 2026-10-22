@@ -346,8 +346,17 @@ begin
   Result.Provider     := GetEffectiveProvider;
   Result.APIToken     := FAPIToken;
   Result.Model        := FModel;
+  if (Result.Provider = vpOpenAI) and ((Trim(Result.Model) = '') or (Result.Model = 'gpt-4o-mini-tts')) then
+    Result.Model := 'tts-1';
   Result.Endpoint     := FEndpoint;
   Result.RemoteVoice  := FRemoteVoice;
+  if (Result.Provider = vpOpenAI) and (Trim(Result.RemoteVoice) = '') then
+  begin
+    if Trim(FVoiceName) <> '' then
+      Result.RemoteVoice := FVoiceName
+    else
+      Result.RemoteVoice := 'nova';
+  end;
   Result.Language     := FLanguage;
   Result.OutputFormat := FOutputFormat;
   Result.OutputFile   := FOutputFile;
@@ -589,9 +598,11 @@ begin
       if Trim(Cfg.OutputFile) <> '' then
         AOutputFile := Cfg.OutputFile
       else
-        AOutputFile := 'output' + DirectorySeparator + 'speech.' + FormatExt;
+        AOutputFile := IncludeTrailingPathDelimiter(GetTempDir) + 'assistente_speech.' + FormatExt;
     end;
   end;
+
+  ForceDirectories(ExtractFilePath(AOutputFile));
 
   StartTime := GetTickCount64;
   try
