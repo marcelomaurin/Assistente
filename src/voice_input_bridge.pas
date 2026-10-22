@@ -38,7 +38,96 @@ type
     property OnState: TVoiceStateEvent read FOnState write FOnState;
   end;
 
+function IsWhisperHallucination(const AText: string): Boolean;
+
 implementation
+
+function CleanTextForAnalysis(const S: string): string;
+var
+  I: Integer;
+  C: Char;
+begin
+  Result := '';
+  for I := 1 to Length(S) do
+  begin
+    C := S[I];
+    case C of
+      'a'..'z', '0'..'9', ' ':
+        Result := Result + C;
+      'A'..'Z':
+        Result := Result + LowerCase(C);
+      '_', '-', '.', ',', '!', '?', '~', '*', '#', '/', '\', ':', ';',
+      '(', ')', '[', ']', '{', '}', '"', #39, '`', '^', '+':
+        Result := Result + ' ';
+    end;
+  end;
+  while Pos('  ', Result) > 0 do
+    Result := StringReplace(Result, '  ', ' ', [rfReplaceAll]);
+  Result := Trim(Result);
+end;
+
+function IsWhisperHallucination(const AText: string): Boolean;
+var
+  Clean, Lower: string;
+  AlphaCount, I: Integer;
+begin
+  Result := False;
+  Lower := LowerCase(Trim(AText));
+  if Lower = '' then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  AlphaCount := 0;
+  for I := 1 to Length(Lower) do
+  begin
+    if Lower[I] in ['a'..'z', '0'..'9', #128..#255] then
+      Inc(AlphaCount);
+  end;
+
+  if AlphaCount < 2 then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  Clean := CleanTextForAnalysis(Lower);
+
+  if (Pos('thank you for watching', Clean) > 0) or
+     (Pos('thanks for watching', Clean) > 0) or
+     (Pos('please subscribe', Clean) > 0) or
+     (Pos('subscribe to my channel', Clean) > 0) or
+     (Pos('subscribe to our channel', Clean) > 0) or
+     (Pos('like and subscribe', Clean) > 0) or
+     (Pos('dont forget to subscribe', Clean) > 0) or
+     (Pos('see you next time', Clean) > 0) or
+     (Pos('see you in the next video', Clean) > 0) or
+     (Pos('watch next video', Clean) > 0) or
+     (Pos('subtitles by', Clean) > 0) or
+     (Pos('subtitle by', Clean) > 0) or
+     (Pos('transcribed by', Clean) > 0) or
+     (Pos('captioned by', Clean) > 0) or
+     (Pos('amara org', Clean) > 0) or
+     (Pos('obrigado por assistir', Clean) > 0) or
+     (Pos('obrigada por assistir', Clean) > 0) or
+     (Pos('inscreva se no canal', Clean) > 0) or
+     (Pos('inscreva se em nosso canal', Clean) > 0) or
+     (Pos('deixe seu like', Clean) > 0) or
+     (Pos('deixe o seu like', Clean) > 0) or
+     (Pos('curta e compartilhe', Clean) > 0) or
+     (Pos('ative o sininho', Clean) > 0) or
+     (Pos('legendado por', Clean) > 0) or
+     (Pos('legendas por', Clean) > 0) or
+     (Pos('musica', Clean) = 1) or
+     (Pos('silencio', Clean) = 1) or
+     (Pos('barulho', Clean) = 1) or
+     (Pos('ruido', Clean) = 1) then
+  begin
+    Result := True;
+    Exit;
+  end;
+end;
 
 constructor TVoiceInputBridge.Create(AOwner: TComponent);
 begin
@@ -138,6 +227,11 @@ begin
 
   if Ok and (TextResult <> '') then
   begin
+    if IsWhisperHallucination(TextResult) then
+    begin
+      SetState('Silêncio descartado');
+      Exit;
+    end;
     SetState('Fala reconhecida');
     if Assigned(FOnText) then
       FOnText(Self, TextResult);

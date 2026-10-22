@@ -394,13 +394,18 @@ begin
   { Called by TThread.Synchronize on the Lazarus main thread. }
   if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or
     FVoiceInput.Busy then Exit;
+  if IsWhisperHallucination(AText) then
+  begin
+    RetomarEscuta;
+    Exit;
+  end;
   PausarEscuta;
   ProcessarEntrada(AText);
 end;
 
 procedure Tfrmmain.VoiceText(Sender: TObject; const AText: string);
 begin
-  if not FClosing then ProcessarEntrada(AText);
+  if not FClosing and not IsWhisperHallucination(AText) then ProcessarEntrada(AText);
 end;
 
 procedure Tfrmmain.VoiceState(Sender: TObject; const AState: string);
@@ -408,7 +413,7 @@ begin
   if FClosing or FAguardandoResposta or Assigned(FSpeechJob) then Exit;
   SetEstado(AState, False);
   if FVoiceInput.Busy then FProfessor.SetActivity(psThinking)
-  else if (Pos('Falha', AState) = 1) or (Pos('Nenhuma', AState) = 1) then RetomarEscuta;
+  else if (Pos('Falha', AState) = 1) or (Pos('Nenhuma', AState) = 1) or (Pos('descartado', AState) > 0) then RetomarEscuta;
 end;
 
 procedure Tfrmmain.InicializarMemoria;
