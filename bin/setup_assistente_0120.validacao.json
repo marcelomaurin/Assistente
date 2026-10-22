@@ -1,0 +1,14 @@
+{
+  "version": "0.120",
+  "installer_sha256": "180fa0c30201184034615dba670554da31f87b597869f4e7c552de087c0ea134",
+  "result": "PASS",
+  "payload_files": 142,
+  "profiles": 10,
+  "checks": [
+    "PASS: actual installer extracted 142 files; all SHA-256 hashes match; ten avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "PASS: installed Release application opened its native main form and closed normally with isolated configuration, no voice/provider/camera activity",
+    "PASS: reinstall preserved user configuration/history and left application registration unchanged",
+    "PASS: uninstaller removed packaged files, preserved user files and did not change registration"
+  ]
+}

@@ -1,6 +1,17 @@
 # Assistente
 Assistente de IA , criado para responder perguntas da FATEC
 
+## Instalação Windows
+
+Versão atual: [setup_assistente_0120.exe](bin/setup_assistente_0120.exe).
+Inclui o Release Win32 com as correções do corpo completo, ombro e voz,
+os dez avatares e as bibliotecas SSL necessárias. A instalação padrão é por
+usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
+Veja [instalação, conteúdo e verificação](docs/INSTALACAO_0120.md).
+Hashes do pacote e dos arquivos estão no [manifesto](bin/setup_assistente_0120.manifest.json).
+O [resultado dos testes de instalação](bin/setup_assistente_0120.validacao.json) registra
+extração, abertura do aplicativo, reinstalação e desinstalação verificadas.
+
 ## Professor Virtual 3D
 
 Avatar 3D nativo no formulário Lazarus, com dez perfis selecionáveis e

@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "version": "0.120",
+  "source_commit": "536e0247f7ce528cfebdb585cfaddc82350a75a8",
+  "platform": "i386-win32",
+  "installer": {
+    "file": "setup_assistente_0120.exe",
+    "size": 112665513,
+    "sha256": "180fa0c30201184034615dba670554da31f87b597869f4e7c552de087c0ea134"
+  },
+  "files": [
+    {
+      "path": "assistente.exe",
+      "size": 12453376,
+      "sha256": "577d670c3e72fb20dbb5947bf99a44d9089993ab76783cf15503af289b469086"
+    },
+    {
+      "path": "AVATARES/bebe/avatar.json",
+      "size": 111,
+      "sha256": "52432e5733d77ade72a098766611f6f084205c53a00d18390b7dc274dd01f19f"
+    },
+    {
+      "path": "AVATARES/bebe/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/bebe/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/bebe/male_casualsuit02_ao.png",
+      "size": 238984,
+      "sha256": "540e6e911583dd81aa30f282684a8a4394eb33db9c7b0950e50bdc0a2e0b638c"
+    },
+    {
+      "path": "AVATARES/bebe/male_casualsuit02_diffuse.png",
+      "size": 902722,
+      "sha256": "0a37de0dc666a569bd95a58aac46514811c1ec1a777cc3e5cd3f84bde5b98df1"
+    },
+    {
+      "path": "AVATARES/bebe/male_casualsuit02_normal.png",
+      "size": 465209,
+      "sha256": "7486b896a7154c62b28b147695dce098d5457673aa5ea116879442061a60b52f"
+    },
+    {
+      "path": "AVATARES/bebe/modelo.gltf",
+      "size": 5669179,
+      "sha256": "217c1448c1840d0a1f82337930e2b0c0eb81f57dbcc5f5510cc5081081f671b2"
+    },
+    {
+      "path": "AVATARES/bebe/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/bebe/shoes05_diffuse.png",
+      "size": 1287060,
+      "sha256": "47fd5f34de722fb8a10e45ffb6007416d8dac3ef34d26a082dfe0c6ea184da6c"
+    },
+    {
+      "path": "AVATARES/bebe/short03_diffuse.png",
+      "size": 825734,
+      "sha256": "d742c7a66da18e31a7e4ddfb8637db57652ca1b409ae2647f3dd192b0bbc49c6"
+    },
+    {
+      "path": "AVATARES/bebe/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/bebe/young_lightskinned_male_diffuse.png",
+      "size": 3679204,
+      "sha256": "b9ac08a167fbe685f14f8727e48af9aca5c39d2f8665e86b445c91c77be5f0d1"
+    },
+    {
+      "path": "AVATARES/crianca/avatar.json",
+      "size": 117,
+      "sha256": "6501c8571fdae473843e90c0dcdb3e99ccb86ef7e26da63d566d4eddebd290a7"
+    },
+    {
+      "path": "AVATARES/crianca/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/crianca/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/crianca/male_casualsuit02_ao.png",
+      "size": 238984,
+      "sha256": "540e6e911583dd81aa30f282684a8a4394eb33db9c7b0950e50bdc0a2e0b638c"
+    },
+    {
+      "path": "AVATARES/crianca/male_casualsuit02_diffuse.png",
+      "size": 902722,
+      "sha256": "0a37de0dc666a569bd95a58aac46514811c1ec1a777cc3e5cd3f84bde5b98df1"
+    },
+    {
+      "path": "AVATARES/crianca/male_casualsuit02_normal.png",
+      "size": 465209,
+      "sha256": "7486b896a7154c62b28b147695dce098d5457673aa5ea116879442061a60b52f"
+    },
+    {
+      "path": "AVATARES/crianca/modelo.gltf",
+      "size": 5581207,
+      "sha256": "d65b69d024c23f022bd61a8cd62b3294c5490dac2d40e1ca646eb1f74716ee5b"
+    },
+    {
+      "path": "AVATARES/crianca/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/crianca/shoes05_diffuse.png",
+      "size": 1287060,
+      "sha256": "47fd5f34de722fb8a10e45ffb6007416d8dac3ef34d26a082dfe0c6ea184da6c"
+    },
+    {
+      "path": "AVATARES/crianca/short03_diffuse.png",
+      "size": 825734,
+      "sha256": "d742c7a66da18e31a7e4ddfb8637db57652ca1b409ae2647f3dd192b0bbc49c6"
+    },
+    {
+      "path": "AVATARES/crianca/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/crianca/young_lightskinned_male_diffuse.png",
+      "size": 3679204,
+      "sha256": "b9ac08a167fbe685f14f8727e48af9aca5c39d2f8665e86b445c91c77be5f0d1"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/avatar.json",
+      "size": 126,
+      "sha256": "a0972c25e804907785bbc7f151bd5715ab875c6c3db1c51d2a5ed1038766d520"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/bob01_diffuse.png",
+      "size": 976328,
+      "sha256": "8fbb01066495f1539506be332f01c60cd2cb00b5455f4140ec5d30922357ab97"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/female_casualsuit01_ao.png",
+      "size": 416418,
+      "sha256": "9a399e0038455deb6f72f0affd281825163bf7c4d49534724c161e4d404d9950"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/female_casualsuit01_diffuse.png",
+      "size": 930849,
+      "sha256": "0bc7c817d15510ea6ef348e3a3799e03d767f65db84d781166ac750595338f35"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/female_casualsuit01_normal.png",
+      "size": 434622,
+      "sha256": "f46dadfa77d7a8ff312ef769ca23c4a9ed4aff67ad372d353bcb7b93630fa8ee"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/modelo.gltf",
+      "size": 6073731,
+      "sha256": "c873c15341cf57bd306df96009aef3dd890fa42c5a207df9fc0b8b99d5b81d54"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/dona_de_casa/young_darkskinned_female_diffuse.png",
+      "size": 4411306,
+      "sha256": "0e8a090b044f2a75df9ea8df6253d877990fca8925a2372772df9c223ffbe703"
+    },
+    {
+      "path": "AVATARES/empresario/avatar.json",
+      "size": 123,
+      "sha256": "9ea62387287fecca711bdbf589c553314dc1191b4e26f7270b6ade04bd94e3c7"
+    },
+    {
+      "path": "AVATARES/empresario/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/empresario/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/empresario/male_elegantsuit01_diffuse.png",
+      "size": 616357,
+      "sha256": "cdb4c12a5c55c27b060a4b5faa87b07e0430b638edc3b0688ce1dc7cb803f56f"
+    },
+    {
+      "path": "AVATARES/empresario/modelo.gltf",
+      "size": 6328423,
+      "sha256": "fbfa834c5de6881c06ff185ae37dffff6f03e6e56e6b24bf8a1f2b357cbb59a8"
+    },
+    {
+      "path": "AVATARES/empresario/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/empresario/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/empresario/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/empresario/short02_diffuse.png",
+      "size": 975213,
+      "sha256": "9fddfdd92d429680fba087f2b9158da806d8e36b5b9ee0462153274f97e2a44d"
+    },
+    {
+      "path": "AVATARES/empresario/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/empresario/young_lightskinned_male_diffuse.png",
+      "size": 3679204,
+      "sha256": "b9ac08a167fbe685f14f8727e48af9aca5c39d2f8665e86b445c91c77be5f0d1"
+    },
+    {
+      "path": "AVATARES/engenheiro/avatar.json",
+      "size": 122,
+      "sha256": "7540e20b958e91c73cef6103d3f1af585e401b126d26ae634a6c717dd79edb67"
+    },
+    {
+      "path": "AVATARES/engenheiro/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/engenheiro/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/engenheiro/male_worksuit01_ao.png",
+      "size": 214746,
+      "sha256": "68b434a5c3607e9037688e984c1fe6461ead9ad2af0802fe65440516d90836a6"
+    },
+    {
+      "path": "AVATARES/engenheiro/male_worksuit01_diffuse.png",
+      "size": 937620,
+      "sha256": "146beef22db2eaff68ad4e5abc9dfc9d14455e93d6cbbe98e4ffb758d2251b9a"
+    },
+    {
+      "path": "AVATARES/engenheiro/male_worksuit01_normal.png",
+      "size": 822245,
+      "sha256": "e000406306bb69a793e53123b830749e8463cef293e51e3625c6c5cb4eac2688"
+    },
+    {
+      "path": "AVATARES/engenheiro/modelo.gltf",
+      "size": 5958309,
+      "sha256": "37be6fe79129b0e40371b31c255f3fe3a203ab00a8c119d52201910bcf775f6d"
+    },
+    {
+      "path": "AVATARES/engenheiro/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/engenheiro/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/engenheiro/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/engenheiro/short02_diffuse.png",
+      "size": 975213,
+      "sha256": "9fddfdd92d429680fba087f2b9158da806d8e36b5b9ee0462153274f97e2a44d"
+    },
+    {
+      "path": "AVATARES/engenheiro/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/engenheiro/young_darkskinned_male_diffuse.png",
+      "size": 2963420,
+      "sha256": "a98deeed7fd24a6f1a4373e97fa6a1f1525b3568a191d0f3327ffc17fbbca7dd"
+    },
+    {
+      "path": "AVATARES/LEIA-ME.md",
+      "size": 2584,
+      "sha256": "46031a4320aca403a3458e82798fe34fec8452d86d4fc1081520a0d1e58a03ac"
+    },
+    {
+      "path": "AVATARES/LICENSE.txt",
+      "size": 1020,
+      "sha256": "af20527919c322c6871d0b86099291f92de2abe3d49fc23b7baa48dfb04ad43f"
+    },
+    {
+      "path": "AVATARES/medico/avatar.json",
+      "size": 115,
+      "sha256": "67890bf2dd9932bfe0c27283e6c70d7e1f2bd047adc47fa1fec8106618bcab63"
+    },
+    {
+      "path": "AVATARES/medico/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/medico/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/medico/male_casualsuit03_ao.png",
+      "size": 480497,
+      "sha256": "4d8b8d195bcb1a1a2da759148caa41f60cb6b772ebac2f45f68e4850433003a7"
+    },
+    {
+      "path": "AVATARES/medico/male_casualsuit03_diffuse.png",
+      "size": 1073315,
+      "sha256": "b4317e72a19a12126956ad6561b5859abdeba3873844d619c47b3388962c7a31"
+    },
+    {
+      "path": "AVATARES/medico/male_casualsuit03_normal.png",
+      "size": 1017561,
+      "sha256": "21fef327eec53f53ec968eb4e559495a4a612ac7def1a0df3dfe5c9542309b33"
+    },
+    {
+      "path": "AVATARES/medico/modelo.gltf",
+      "size": 5833677,
+      "sha256": "b8506cc1b6dbfe76f5afcf59af99b3e9236b85ea8cad09a1164b15ad04d86362"
+    },
+    {
+      "path": "AVATARES/medico/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/medico/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/medico/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/medico/short02_diffuse.png",
+      "size": 975213,
+      "sha256": "9fddfdd92d429680fba087f2b9158da806d8e36b5b9ee0462153274f97e2a44d"
+    },
+    {
+      "path": "AVATARES/medico/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/medico/uniforme.png",
+      "size": 677840,
+      "sha256": "9174a7dd824087687dfe5b49904b120a4711a96472022fe105cb69d36d8f6bea"
+    },
+    {
+      "path": "AVATARES/medico/young_lightskinned_male_diffuse.png",
+      "size": 3679204,
+      "sha256": "b9ac08a167fbe685f14f8727e48af9aca5c39d2f8665e86b445c91c77be5f0d1"
+    },
+    {
+      "path": "AVATARES/padre/avatar.json",
+      "size": 112,
+      "sha256": "29239e7b124ce2e963e0c1cc76c68b4df2ff5941c12e43721a105774af705c7a"
+    },
+    {
+      "path": "AVATARES/padre/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/padre/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/padre/male_elegantsuit01_diffuse.png",
+      "size": 616357,
+      "sha256": "cdb4c12a5c55c27b060a4b5faa87b07e0430b638edc3b0688ce1dc7cb803f56f"
+    },
+    {
+      "path": "AVATARES/padre/modelo.gltf",
+      "size": 6374806,
+      "sha256": "1910150275a54a95c7b42eaaf361cbd885c2e48f1844d075a0101c7af3c7eaf6"
+    },
+    {
+      "path": "AVATARES/padre/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/padre/old_lightskinned_male_diffuse.png",
+      "size": 4286941,
+      "sha256": "35da94366d573d838e425a9dc29ec9ddd5da88c50f550cfab07342a11055b660"
+    },
+    {
+      "path": "AVATARES/padre/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/padre/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/padre/short02_diffuse.png",
+      "size": 975213,
+      "sha256": "9fddfdd92d429680fba087f2b9158da806d8e36b5b9ee0462153274f97e2a44d"
+    },
+    {
+      "path": "AVATARES/padre/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/padre/uniforme.png",
+      "size": 252369,
+      "sha256": "2c9893c4cb2d27eb594da19f375226d808c7c06dfda91d0aa290066c19886af2"
+    },
+    {
+      "path": "AVATARES/professor/avatar.json",
+      "size": 120,
+      "sha256": "186aebfa31bc518424a9e8490e27c6cdfeae1baab5ac43ef0b6826d2447b6aad"
+    },
+    {
+      "path": "AVATARES/professor/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/professor/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/professor/male_casualsuit03_ao.png",
+      "size": 480497,
+      "sha256": "4d8b8d195bcb1a1a2da759148caa41f60cb6b772ebac2f45f68e4850433003a7"
+    },
+    {
+      "path": "AVATARES/professor/male_casualsuit03_diffuse.png",
+      "size": 1073315,
+      "sha256": "b4317e72a19a12126956ad6561b5859abdeba3873844d619c47b3388962c7a31"
+    },
+    {
+      "path": "AVATARES/professor/male_casualsuit03_normal.png",
+      "size": 1017561,
+      "sha256": "21fef327eec53f53ec968eb4e559495a4a612ac7def1a0df3dfe5c9542309b33"
+    },
+    {
+      "path": "AVATARES/professor/modelo.gltf",
+      "size": 5906076,
+      "sha256": "42834d03bc95d00b82bf990ecb74b6dbde199f979ee3d5e336a7b012430b1a26"
+    },
+    {
+      "path": "AVATARES/professor/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/professor/roupa.png",
+      "size": 8828,
+      "sha256": "5d2973781e65032cb970f20f62bacb5cf4875e925d68adce50b4eee71ec4bee5"
+    },
+    {
+      "path": "AVATARES/professor/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/professor/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/professor/short02_diffuse.png",
+      "size": 975213,
+      "sha256": "9fddfdd92d429680fba087f2b9158da806d8e36b5b9ee0462153274f97e2a44d"
+    },
+    {
+      "path": "AVATARES/professor/short03_diffuse.png",
+      "size": 825734,
+      "sha256": "d742c7a66da18e31a7e4ddfb8637db57652ca1b409ae2647f3dd192b0bbc49c6"
+    },
+    {
+      "path": "AVATARES/professor/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/professor/uniforme.png",
+      "size": 677840,
+      "sha256": "9174a7dd824087687dfe5b49904b120a4711a96472022fe105cb69d36d8f6bea"
+    },
+    {
+      "path": "AVATARES/professor/young_lightskinned_male_diffuse.png",
+      "size": 3679204,
+      "sha256": "b9ac08a167fbe685f14f8727e48af9aca5c39d2f8665e86b445c91c77be5f0d1"
+    },
+    {
+      "path": "AVATARES/programador/afro_diffuse.png",
+      "size": 1399468,
+      "sha256": "3ee59adad45e9f36cc41c59715700a2b4b6fa6194f0b51fce3441ff373e9dd37"
+    },
+    {
+      "path": "AVATARES/programador/avatar.json",
+      "size": 124,
+      "sha256": "30cd009b07133af133d493ec015fa06364fe64528e6a922a0ce371bb04b10af4"
+    },
+    {
+      "path": "AVATARES/programador/brown_eye.png",
+      "size": 601711,
+      "sha256": "b03a8775caf1d603ff21762253f4988a8b37fa247b3dacca15683f7b92c163a8"
+    },
+    {
+      "path": "AVATARES/programador/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/programador/male_casualsuit01_ao.png",
+      "size": 204556,
+      "sha256": "86276802c32f5acd3b950df80f21ae30e2871a91c931cb979ff2516e5fdf4d5e"
+    },
+    {
+      "path": "AVATARES/programador/male_casualsuit01_diffuse.png",
+      "size": 971080,
+      "sha256": "92e292f211ec3f2b6877920cb703d7fce5699cb5180626f2216a74dc7a62c052"
+    },
+    {
+      "path": "AVATARES/programador/male_casualsuit01_normal.png",
+      "size": 573136,
+      "sha256": "2333ceef9cfd52b866f778f34dada492149b4b767cb11c1314183a8fdbd74e93"
+    },
+    {
+      "path": "AVATARES/programador/modelo.gltf",
+      "size": 6472417,
+      "sha256": "e2d022842617af95e8e2e134b9a6e4cb71d2a96577acedd4f3e2aeebe31b0010"
+    },
+    {
+      "path": "AVATARES/programador/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/programador/shoes05_diffuse.png",
+      "size": 1287060,
+      "sha256": "47fd5f34de722fb8a10e45ffb6007416d8dac3ef34d26a082dfe0c6ea184da6c"
+    },
+    {
+      "path": "AVATARES/programador/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/programador/young_darkskinned_male_diffuse.png",
+      "size": 2963420,
+      "sha256": "a98deeed7fd24a6f1a4373e97fa6a1f1525b3568a191d0f3327ffc17fbbca7dd"
+    },
+    {
+      "path": "AVATARES/robo/avatar.json",
+      "size": 111,
+      "sha256": "de249c83dced8bcf156f3ba10990d526672748bbf9a5dc7871c3569dd5cffbe3"
+    },
+    {
+      "path": "AVATARES/robo/eyebrow001.png",
+      "size": 89781,
+      "sha256": "2d4488ca29b0a8151d8c5e140c0f43168c47ca244d373f8b9f8da8913c4aaa06"
+    },
+    {
+      "path": "AVATARES/robo/male_casualsuit01_ao.png",
+      "size": 204556,
+      "sha256": "86276802c32f5acd3b950df80f21ae30e2871a91c931cb979ff2516e5fdf4d5e"
+    },
+    {
+      "path": "AVATARES/robo/male_casualsuit01_diffuse.png",
+      "size": 971080,
+      "sha256": "92e292f211ec3f2b6877920cb703d7fce5699cb5180626f2216a74dc7a62c052"
+    },
+    {
+      "path": "AVATARES/robo/male_casualsuit01_normal.png",
+      "size": 573136,
+      "sha256": "2333ceef9cfd52b866f778f34dada492149b4b767cb11c1314183a8fdbd74e93"
+    },
+    {
+      "path": "AVATARES/robo/modelo.gltf",
+      "size": 6616338,
+      "sha256": "8393f253425b475ff11e3880cf9fb5cb427165762ac56ee29f5d45b33a996355"
+    },
+    {
+      "path": "AVATARES/robo/modelo.ini",
+      "size": 104,
+      "sha256": "4a6c80cf07974af78a601586961403cf9efe07465d5e2a6550daa01716426df1"
+    },
+    {
+      "path": "AVATARES/robo/olhos_cianos.png",
+      "size": 460225,
+      "sha256": "a9001d99e68b7fb117cddef0ce2bf90fbb14e4d2e780a1571a4b85a2d60e214c"
+    },
+    {
+      "path": "AVATARES/robo/shoes01_diffuse.png",
+      "size": 1330603,
+      "sha256": "c4d9dab283377b6c9d066f62c9849912d97f9518ce50cc9823de9f43fbd62b36"
+    },
+    {
+      "path": "AVATARES/robo/shoes01_normal.png",
+      "size": 871147,
+      "sha256": "f7f4edbcb4d0464a6f3fd844bd4ef8d61f54dbb92f73ae6db7052bc33f43778a"
+    },
+    {
+      "path": "AVATARES/robo/teeth.png",
+      "size": 794042,
+      "sha256": "a954c5c1529d4c571073cf2fe221d01e43b70821bf57f116db3dc6b2b747436d"
+    },
+    {
+      "path": "AVATARES/robo/uniforme.png",
+      "size": 531359,
+      "sha256": "8e1fb2c83b773d62077b3da29ed89e50a281435b8c5095477c72430ac1bebfd2"
+    },
+    {
+      "path": "docs/avatar-comandos-ia.md",
+      "size": 7100,
+      "sha256": "ff40511c760e68ce759f7d339433f9831cadbe187871a8394bf6b15a9c8d1c24"
+    },
+    {
+      "path": "docs/INSTALACAO_0120.md",
+      "size": 2259,
+      "sha256": "e5ac8e14b9ed30cab3659832af7eb2331db0dd45e63f85f8692afa6a9c615bbc"
+    },
+    {
+      "path": "docs/professor-virtual-3d.md",
+      "size": 16182,
+      "sha256": "b0f4747675acd39e16f8b711a5692a6584e787fd25c4e480b5d2a2b085cd5e06"
+    },
+    {
+      "path": "libcrypto-1_1.dll",
+      "size": 2420312,
+      "sha256": "18b945a4b5fb3c61d722f61af6aead0bdf42557fd8871dbd478be142f1322441"
+    },
+    {
+      "path": "libssl-1_1.dll",
+      "size": 514136,
+      "sha256": "ab0ae652ccbde11ad464da771dfa6fc369eeb49fe7e62499fc273d5c72dc62b8"
+    },
+    {
+      "path": "LICENSES/Castle/COPYING.BSD-3-clause.txt",
+      "size": 1401,
+      "sha256": "562a72d79944f235675928a5bc50beed249075cbaa7c5781c0ff853b7b61f808"
+    },
+    {
+      "path": "LICENSES/Castle/COPYING.GPL2.txt",
+      "size": 18326,
+      "sha256": "9f2e250993c6206fac643824e05e5a0d7d3e0895d9e09a5ce4b12bc2610afc11"
+    },
+    {
+      "path": "LICENSES/Castle/COPYING.LGPL2.txt",
+      "size": 25765,
+      "sha256": "a8ee691d57455ac9a47cae1e186e197deec4aa6360a03328d8a51f1eec9b07fb"
+    },
+    {
+      "path": "LICENSES/Castle/README.md",
+      "size": 5026,
+      "sha256": "0dc313a674044dc46caf4c3b3e771785f8f9cad676028b6bd551c86c3af30ef8"
+    },
+    {
+      "path": "LICENSES/CHATGPT-GPL-3.0.txt",
+      "size": 35823,
+      "sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809"
+    },
+    {
+      "path": "LICENSES/OpenSSL.txt",
+      "size": 6404,
+      "sha256": "daedeb9a41efc93244423b39146512c2b62bdffa519989fbf4504b4d460c007b"
+    },
+    {
+      "path": "package-info.json",
+      "size": 502,
+      "sha256": "e36842d949e58d417b058b0cb5d70b67b26cc21c150ab4c647ce799e735e1f5d"
+    }
+  ]
+}
