@@ -93,3 +93,28 @@ Os testes adicionais verificam posição real de AVI/WAV, limites de duração, 
 Imagens, vídeos e slides aparecem na área de conversa, à direita do avatar. O painel acompanha o redimensionamento da janela, sem ocupar a área do avatar. Enquanto um recurso visual estiver aberto, o histórico e o campo de digitação ficam ocultos. O conteúdo digitado é preservado e reaparece ao fechar o visual, terminar, cancelar ou ocorrer uma falha. Áudio sozinho mantém a conversa visível; áudio de fundo com imagem mantém o painel visual.
 
 Os testes nativos verificam o avatar visível e sem sobreposição, ocultação/restauração do texto e do rascunho, redimensionamento e PowerPoint real como janela filha do painel. Os slides continuam sendo reproduzidos pelo PowerPoint, sem conversão para imagens estáticas.
+
+
+## Biblioteca de apresentações da IA — RAG
+
+Ao salvar uma apresentação no editor, o pacote também é copiado para **%LOCALAPPDATA%/Assistente/RAG/**. A cópia usa o mesmo nome do pacote salvo; salvar novamente esse nome atualiza a cópia da biblioteca. No mesmo diretório é gerado um arquivo de texto UTF-8 com a extensão **.res**: por exemplo, **energia.pva** e **energia.res**. Esse .res é texto para consulta, não um recurso binário do Windows.
+
+O .res contém o texto do roteiro, com as tags executáveis de avatar, voz, gestos, articulações, mídia e slides removidas. O pacote original continua completo. A prévia temporária do editor não publica apresentações; a publicação ocorre ao salvar. Se a cópia para a biblioteca falhar, o arquivo escolhido pelo usuário continua salvo e o editor informa a falha.
+
+Também é possível copiar pacotes .pva diretamente para a pasta RAG. Com o Assistente aberto, um monitor em segundo plano verifica a biblioteca aproximadamente a cada dois segundos, valida os pacotes e cria/atualiza os textos .res. No início de uma pergunta, a biblioteca é conferida novamente. Pacotes inválidos ou ainda incompletos não entram na consulta. Um .res sem pacote correspondente é ignorado. O .res é gerado pelo sistema e pode ser recriado se alterado manualmente.
+
+A pergunta atual e o contexto da conversa orientam a consulta. Uma busca por termos no nome e no conteúdo escolhe até seis documentos candidatos. A IA configurada no Assistente recebe seus textos ou trechos relevantes e devolve uma seleção estruturada. Em documentos longos, são usados os primeiros 6.000 caracteres e trechos próximos aos termos encontrados, com limite de aproximadamente 12.000 caracteres por candidato. Esse mecanismo não usa embeddings nem um banco vetorial.
+
+Quando a IA seleciona um documento disponível, o Assistente executa o **pacote .pva correspondente**, com suas mídias, voz, avatar e movimentos; não transforma o texto retornado pela IA em um novo roteiro. Se não houver correspondência ou o pedido dispensar apresentação, segue a resposta normal. Uma seleção inválida gera erro e não inicia reprodução. O pacote e o roteiro são revalidados antes de tocar; mudanças no roteiro durante a escolha exigem uma nova consulta. O histórico registra o anúncio da apresentação escolhida.
+
+Se **ASSISTENTE_CONFIG_DIR** estiver definido, a biblioteca será **ASSISTENTE_CONFIG_DIR/RAG/**, permitindo instalações e testes isolados. As tags de mídia continuam referenciando recursos internos do pacote.
+
+Validação adicional:
+
+```powershell
+python tests/run_presentation_rag.py build/presentations
+# Após o teste nativo criar suas apresentações de exemplo:
+python tests/run_presentation_rag.py build/presentations --model AVATARES/professor/modelo.gltf
+```
+
+O primeiro comando verifica cópia, .res, UTF-8, detecção de arquivos externos, atualização/remoção, seleções inválidas, cancelamento e retorno à conversa normal usando o agente real e um provedor HTTP local. O segundo também faz uma pergunta pela janela real do Assistente e verifica a reprodução do PVA escolhido. Passe --without-office caso os exemplos nativos tenham sido gerados sem Office.

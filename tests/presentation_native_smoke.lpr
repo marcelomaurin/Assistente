@@ -1,14 +1,14 @@
 program presentation_native_smoke;
 {$mode objfpc}{$H+}
 uses Interfaces, Controls, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType, Graphics, StdCtrls, Types,
-  main, presentation_media, presentation_tags, presentation_package, presentation_editor_ui, SynEdit,
+  main, presentation_media, presentation_tags, presentation_package, presentation_editor_ui, presentation_rag, agent_manager, SynEdit,
   CastleControl, CastleImages, CastleURIUtils, professor_view, presentation_joints, presentation_joint_tags, X3DNodes, CastleVectors;
 type
   TRunner = class(TComponent)
   public
     Timer: TTimer;
     Started, PausedAt: QWord;
-    PauseSent, ResumeSent, CancelSent: Boolean;
+    PauseSent, ResumeSent, CancelSent,WaitingRAG: Boolean;
     Images,SecondImage,Slides,ClosedMedia,SawJoint,SawAvatar,SawSound: Boolean;
     SoundStarted: QWord;
     Report: TStringList;
@@ -44,6 +44,17 @@ var Elapsed: QWord; Key: Word; Active: string; Panel: TPanel; AvatarRight: Integ
 begin
   try
     Elapsed:=GetTickCount64-Started;Check(Elapsed<40000,'main presentation stalled');
+    if WaitingRAG then begin
+      if (frmmain.AssistantManager.SelectedPresentation<>'') and frmmain.ApresentandoResposta then begin
+        Check(frmmain.ApresentandoResposta,'selected RAG package was not started');
+        Check(ExtractFileName(frmmain.AssistantManager.SelectedPresentation)='main.pva','wrong RAG package');
+        WaitingRAG:=False;Started:=GetTickCount64;
+        Report.Add('PASS: user question selected indexed text through real agent and started original PVA in main window');
+      end else begin
+        Check(not (frmmain.AssistantManager.State in [asError]),'RAG route failed: '+frmmain.lblStatus.Caption);
+        Exit;
+      end;
+    end;
     Active:=frmmain.ActivePresentationMedia;
     Panel:=TPanel(frmmain.FindComponent('PresentationMediaPanel'));
     Check(Panel<>nil,'missing embedded media panel');
@@ -102,13 +113,13 @@ begin
         Check(frmmain.ActivePresentationMedia='','cancel left media open');
         Check((frmmain.ActivePresentationSound='') and (frmmain.ActivePresentationAvatar='custom'),'cancel failed to restore avatar/close sound');
         Report.Add('PASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth');
-        Report.SaveToFile(Root+PathDelim+'main-result.txt');Timer.Enabled:=False;Application.Terminate;
+        Report.SaveToFile(Root+PathDelim+Mode+'-result.txt');Timer.Enabled:=False;Application.Terminate;
       end;
     end else if CancelSent and (GetTickCount64-PausedAt>300) then begin
       Key:=VK_ESCAPE;frmmain.OnKeyDown(frmmain,Key,[]);
     end;
   except on E: Exception do begin
-    Report.Add('FAIL: '+E.Message);Report.SaveToFile(Root+PathDelim+'main-result.txt');
+    Report.Add('FAIL: '+E.Message);Report.SaveToFile(Root+PathDelim+Mode+'-result.txt');
     ExitCode:=1;Timer.Enabled:=False;Application.Terminate;
   end;end;
 end;
@@ -175,7 +186,11 @@ begin
     end;
     After:=Edit.Text;Check(Pos('[fechar arquivo]',After)>0,'cursor media insertion failed');
     Edit.Undo;Check(Edit.Text=Original,'undo insertion failed');Edit.Redo;Check(Edit.Text=After,'redo insertion failed');
-    Editor.SavePackage(Root+PathDelim+'editor-roundtrip.pva');Edit.Text:='Descartar';
+    Editor.SavePackage(Root+PathDelim+'editor-roundtrip.pva');
+    Check(FileExists(PresentationRAGDirectory+PathDelim+'editor-roundtrip.pva'),'editor did not publish PVA');
+    Check(FileExists(PresentationRAGDirectory+PathDelim+'editor-roundtrip.res'),'editor did not generate res');
+    Check(Pos('[fechar arquivo]',ReadUTF8(PresentationRAGDirectory+PathDelim+'editor-roundtrip.res'))=0,'res contains media tag');
+    Edit.Text:='Descartar';
     Editor.LoadPackage(Root+PathDelim+'editor-roundtrip.pva');Check(Edit.Text=After,'editor save/open roundtrip');
     with Editor.GetFormImage do try SaveToFile(Root+PathDelim+'editor.bmp');finally Free;end;
     Edit.Modified:=False;
@@ -202,7 +217,15 @@ begin
       for I:=0 to frmmain.ComponentCount-1 do if frmmain.Components[I] is TProfessorView then Runner.View:=TProfessorView(frmmain.Components[I]);
       Runner.Report:=Report;Runner.Started:=GetTickCount64;
       frmmain.edPergunta.Text:='Rascunho preservado';
-      frmmain.StartPresentation(Root+PathDelim+'main.pva');
+      if Mode='rag' then begin
+        PublishPresentation(Root+PathDelim+'main.pva');
+        frmmain.AssistantManager.ChatGPT.TOKEN:='local-test';
+        frmmain.AssistantManager.ChatGPT.CustomModel:='local-test';
+        frmmain.AssistantManager.ChatGPT.URL:=UTF8Decode(ParamStr(5));
+        frmmain.AssistantManager.ChatGPT.Timeout:=5000;
+        Runner.WaitingRAG:=True;frmmain.edPergunta.Text:='Mostre a apresentação principal com imagens e slides';
+        frmmain.btEnviarClick(nil);frmmain.edPergunta.Text:='Rascunho preservado';
+      end else frmmain.StartPresentation(Root+PathDelim+'main.pva');
       Runner.Timer:=TTimer.Create(Runner);Runner.Timer.Interval:=50;Runner.Timer.OnTimer:=@Runner.Tick;
       Application.Run;frmmain.Free;
     end;

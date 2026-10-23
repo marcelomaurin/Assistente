@@ -34,12 +34,20 @@
     "embedded visual panel inside main conversation area; avatar visible without overlap",
     "native PowerPoint screenClass parented to media panel with real slide navigation and resize bounds",
     "text composer hidden only while visual active; typed draft preserved and restored",
-    "integrated window resize during paused presentation; native avatar and layout capture"
+    "integrated window resize during paused presentation; native avatar and layout capture",
+    "editor save publishes original PVA and plain UTF-8 res to isolated AppData RAG",
+    "background monitor detects copied packages and repairs generated res",
+    "RAG excludes invalid packages and orphan res; replacement/removal and stale script validation",
+    "real agent selects indexed package without synthesizing a replacement script",
+    "RAG no-match follows normal assistant answer; selection cleared on next request",
+    "invalid selection and cancellation cannot start a package",
+    "real main window question routes through local mock AI and plays original PVA with avatar/media/PowerPoint"
   ],
   "native_reports": {
     "media": "PASS: real PNG single-media replacement\nPASS: real AVI/WAV offsets, independent image+sound, sound close, duration bounds, pause/resume\nPASS: real PowerPoint slideshow embedded as child of media panel\nPASS: single-media close and real slide navigation/bounds; Office mode=with-office\n",
     "editor": "PASS: native editor opened, cursor insertion, undo/redo, PVA save/open roundtrip; screenshot saved\n",
-    "main": "PASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n"
+    "main": "PASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n",
+    "rag": "PASS: user question selected indexed text through real agent and started original PVA in main window\nPASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n"
   },
   "limits": [
     "Win64/Linux not validated",
@@ -51,12 +59,12 @@
   "package_version": 1,
   "binaries": {
     "presentation_editor.exe": {
-      "size": 32632614,
-      "sha256": "9f0a1d318c34cf0db39b1c6119bdd310e1a0b7c611c27378e6274e644761bb1f"
+      "size": 32697056,
+      "sha256": "0af192ede9739fca98d05f744b41ff72453fe15b639a035ebd21ae66b13ee344"
     },
     "assistente.exe": {
-      "size": 59392428,
-      "sha256": "4e8cc91db56a4509d3450dc9e0fa89dae3cc52b4db757e4757bd4aaf10ae9f25"
+      "size": 59477560,
+      "sha256": "2a7b372c397d86ceb5d4f16b55d03ecd9667a6feec7464e2200a062b8690fa1c"
     },
     "pva_tool.exe": {
       "size": 802221,
@@ -74,5 +82,18 @@
     ]
   },
   "extension_base": "a58bd246b0656d740f67d6e40cedc46741af7f1f",
-  "embedded_panel_base": "867d73fdf29fca75099ed93a5c9c387d1cdb41f8"
+  "embedded_panel_base": "867d73fdf29fca75099ed93a5c9c387d1cdb41f8",
+  "rag_base": "c1bbcc4313701b59259ebcfb20da98aa872acaf1",
+  "rag_validation": {
+    "passed": [
+      "PASS: RAG publish/plain UTF8 res, external copy monitor, invalid/orphan packages, strict selection, replacement/removal and stale content guard\r\n",
+      "PASS: real agent RAG selected\r\n",
+      "PASS: real agent RAG none\r\n",
+      "PASS: real agent RAG invalid\r\n",
+      "PASS: real agent RAG cancel\r\n",
+      "PASS: user question selected indexed text through real agent and started original PVA in main window\nPASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n"
+    ],
+    "provider": "local HTTP mock",
+    "native_playback": true
+  }
 }

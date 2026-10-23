@@ -65,6 +65,7 @@ type
     FLock: TCriticalSection;
     FCancelRequested: Boolean;
     FActiveProject: string;
+    FSelectedPresentation,FSelectedPresentationDigest: string;
     FOnStateChange: TOnStateChangeEvent;
     FOnStepUpdate: TOnStepEvent;
     FOnToolLog: TOnToolLogEvent;
@@ -80,8 +81,10 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure ProcessUserRequestAsync(const AUserPrompt: string);
+    procedure ProcessUserRequestAsync(const AUserPrompt: string; const ASelectionRequest: string = '');
     procedure CancelExecution;
+    property SelectedPresentation: string read FSelectedPresentation;
+    property SelectedPresentationDigest: string read FSelectedPresentationDigest;
     property State: TAgentState read FState;
     property Planner: TAssistantPlanner read FPlanner;
     property ChatGPT: TCHATGPT read FChatGPT;
@@ -102,7 +105,7 @@ type
   TAgentWorkerThread = class(TThread)
   private
     FManager: TAssistantManager;
-    FPrompt, FFinalResponse, FProviderName: string;
+    FPrompt, FFinalResponse, FProviderName,FSelectionRequest: string;
     FSuccess: Boolean;
     FCurrentStepIdx: Integer;
     FCurrentStepTitle, FCurrentStepStatus: string;
@@ -113,15 +116,16 @@ type
     procedure SyncToolLog;
     procedure SyncComplete;
     function AskLLM(const APrompt: string; out AResponse: string): Boolean;
+    function SelectPresentation: Boolean;
     procedure ExpandTaskIfNeeded(const AStep: TPlanStep; const AResult: string);
   protected
     procedure Execute; override;
   public
-    constructor Create(AManager: TAssistantManager; const APrompt: string);
+    constructor Create(AManager: TAssistantManager; const APrompt,ASelectionRequest: string);
   end;
 
 implementation
-uses professor_commands;
+uses professor_commands, presentation_rag;
 
 constructor TAssistantPlanner.Create;
 begin inherited Create; Clear; end;
@@ -206,16 +210,16 @@ procedure TAssistantManager.ToolCasaDeviceSet(Sender:TObject; ACall:TAIToolCall;
 procedure TAssistantManager.ToolCasaClimate(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var T,U,D:string; C:Boolean; begin if Assigned(FJarvisClient) and FJarvisClient.ObterClima(T,U,D,C) then begin AResult.Success:=True;AResult.Output:=Format('Temperatura: %s | Umidade: %s | %s',[T,U,D]);end else begin AResult.Success:=False;AResult.ErrorText:='Falha ao obter clima';end;end;
 procedure TAssistantManager.ToolFileRead(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var P:string;SL:TStringList; begin P:='';if ACall.Arguments<>nil then P:=ACall.Arguments.Get('path',''); if (P<>'') and FileExists(P) then begin SL:=TStringList.Create;try SL.LoadFromFile(P);AResult.Success:=True;AResult.Output:=SL.Text;finally SL.Free;end;end else begin AResult.Success:=False;AResult.ErrorText:='Arquivo invalido';end;end;
 procedure TAssistantManager.ToolSystemInfo(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); begin AResult.Success:=True;AResult.Output:='Projeto: '+FActiveProject+' | '+DateTimeToStr(Now);end;
-procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt:string);
+procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt,ASelectionRequest:string);
 begin
   if Assigned(FWorker) then
   begin
     if not FWorker.Finished then raise Exception.Create('Agente ainda ocupado');
     FreeAndNil(FWorker);
   end;
-  FCancelRequested := False;
+  FCancelRequested := False;FSelectedPresentation:='';FSelectedPresentationDigest:='';
   FState := asPlanning;
-  FWorker := TAgentWorkerThread.Create(Self, AUserPrompt);
+  FWorker := TAgentWorkerThread.Create(Self, AUserPrompt,ASelectionRequest);
   FWorker.Start;
 end;
 procedure TAssistantManager.CancelExecution;
@@ -225,13 +229,29 @@ begin
   if Assigned(FChatGPT) then FChatGPT.Cancel;
 end;
 
-constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt:string); begin inherited Create(True);FreeOnTerminate:=False;FManager:=AManager;FPrompt:=APrompt;FProviderName:='CHATGPT Suite';end;
+constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt,ASelectionRequest:string); begin inherited Create(True);FreeOnTerminate:=False;FManager:=AManager;FPrompt:=APrompt;FSelectionRequest:=ASelectionRequest;if FSelectionRequest='' then FSelectionRequest:=APrompt;FProviderName:='CHATGPT Suite';end;
 procedure TAgentWorkerThread.SyncStateChange; begin if Assigned(FManager.FOnStateChange) then FManager.FOnStateChange(FManager,FManager.FState,'Executando');end;
 procedure TAgentWorkerThread.SyncStepUpdate; begin if Assigned(FManager.FOnStepUpdate) then FManager.FOnStepUpdate(FManager,FCurrentStepIdx,FManager.Planner.StepCount,FCurrentStepTitle,FCurrentStepStatus);end;
 procedure TAgentWorkerThread.SyncToolLog; begin if Assigned(FManager.FOnToolLog) then FManager.FOnToolLog(FManager,FToolNameLog,FToolArgsLog,FToolResultLog,FToolSuccessLog);end;
 procedure TAgentWorkerThread.SyncComplete; begin if Assigned(FManager.FOnComplete) then FManager.FOnComplete(FManager,FFinalResponse,FProviderName,FSuccess);end;
 function TAgentWorkerThread.AskLLM(const APrompt:string;out AResponse:string):Boolean;
-begin Result:=Assigned(FManager.FChatGPT) and FManager.FChatGPT.SendQuestion(APrompt); if Result then AResponse:=FManager.FChatGPT.Response else AResponse:='';end;
+begin Result:=Assigned(FManager.FChatGPT) and FManager.FChatGPT.SendQuestion(UTF8Decode(APrompt)); if Result then AResponse:=UTF8Encode(FManager.FChatGPT.Response) else AResponse:='';end;
+function TAgentWorkerThread.SelectPresentation: Boolean;
+var Index: TPresentationRAG; Prompt,Response,FileName,Digest: string;
+begin
+  Result:=False;Index:=TPresentationRAG.Create(PresentationRAGDirectory);
+  try
+    Index.Refresh;Prompt:=Index.SelectionPrompt(FSelectionRequest,FPrompt);
+    if (Prompt='') or FManager.CancelRequested then Exit;
+    if not AskLLM(Prompt,Response) then raise Exception.Create('Falha ao consultar a biblioteca de apresentacoes');
+    if FManager.CancelRequested then Exit;
+    if Index.Resolve(Response,FileName,Digest) then begin
+      FManager.FSelectedPresentation:=FileName;FManager.FSelectedPresentationDigest:=Digest;
+      FFinalResponse:='Vou apresentar: '+ChangeFileExt(ExtractFileName(FileName),'');
+      FSuccess:=True;Result:=True;
+    end;
+  finally Index.Free;end;
+end;
 procedure TAgentWorkerThread.ExpandTaskIfNeeded(const AStep:TPlanStep;const AResult:string);
 var R:string;J:TJSONData;A:TJSONArray;I:Integer;O:TJSONObject;
 begin
@@ -244,6 +264,9 @@ var Step:TPlanStep;Tool:TAITool;CallObj:TAIToolCall;ResultObj:TAIToolResult;Ctx,
 begin
   try
   FManager.FState := asPlanning; Synchronize(@SyncStateChange);
+  if SelectPresentation then begin
+    FManager.FState:=asFinished;Synchronize(@SyncComplete);Exit;
+  end;
   HasJarvis:=Assigned(FManager.FJarvisClient) and (FManager.FJarvisClient.BaseURL<>'');
   FManager.FLock.Acquire;try FManager.Planner.CreatePlan(FPrompt,HasJarvis,FManager.FActiveProject);FManager.SyncProjectTasks;finally FManager.FLock.Release;end;
   Ctx:='';

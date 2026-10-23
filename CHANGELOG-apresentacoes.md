@@ -27,3 +27,12 @@
 - Avatar visível ao lado dos recursos; histórico e digitação temporariamente ocultos, com rascunho preservado.
 - Restauração da conversa ao fechar, terminar, cancelar ou falhar; áudio isolado mantém o texto visível.
 - Testes nativos de layout, redimensionamento, restauração e slides reais incorporados.
+
+
+### Biblioteca RAG de apresentações
+
+- Salvamento no editor copia o pacote para AppData local/Assistente/RAG e gera .res UTF-8 com o texto do roteiro sem tags executáveis.
+- Monitor em segundo plano detecta pacotes externos e atualizações; arquivos incompletos, inválidos e .res sem pacote não entram na seleção.
+- Recuperação de candidatos por termos e escolha pela IA configurada, com seleção restrita aos documentos oferecidos.
+- A seleção executa o PVA original com voz, avatar e mídias; ausência de correspondência mantém a conversa normal.
+- Revalidação antes da reprodução e testes de publicação, monitor, UTF-8, alteração/remoção, cancelamento e roteamento real da janela.

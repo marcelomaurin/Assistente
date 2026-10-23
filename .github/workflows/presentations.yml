@@ -36,3 +36,11 @@ jobs:
           if ('${{ inputs.office }}' -ne 'true') { $arguments += '--without-office' }
           python @arguments
           exit $LASTEXITCODE
+
+      - name: RAG publication, selection and native playback
+        shell: pwsh
+        run: |
+          $arguments = @('tests/run_presentation_rag.py','build/presentations','--model','AVATARES/professor/modelo.gltf')
+          if ('${{ inputs.office }}' -ne 'true') { $arguments += '--without-office' }
+          python @arguments
+          exit $LASTEXITCODE

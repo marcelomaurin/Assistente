@@ -51,3 +51,10 @@ Implementados áudio WAV/MP3/WMA, início opcional hh:mm:ss de vídeo/som, tags 
 ## Complemento — visualização no painel de texto
 
 Implementado painel visual dentro da área de conversa do Assistente para imagens, vídeos e slides. A área do avatar permanece visível e separada. O histórico e a digitação ficam ocultos somente durante a exibição visual, com o rascunho preservado e restaurado ao fechar, terminar ou cancelar. Som isolado não oculta o texto. O painel e a janela nativa incorporada do PowerPoint acompanham o redimensionamento. Testes nativos verificam ausência de sobreposição, restauração do texto/rascunho, navegação real dos slides e limpeza.
+
+
+## Complemento — biblioteca RAG e execução selecionada pela IA
+
+O salvamento no editor publica o PVA em %LOCALAPPDATA%/Assistente/RAG e gera um .res UTF-8 do mesmo nome com os textos sem tags de controle. Um monitor também detecta pacotes copiados diretamente para a biblioteca enquanto o Assistente estiver aberto. A consulta usa candidatos recuperados por termos e seleção estruturada pela IA configurada. Ao escolher um documento, o Assistente executa o pacote original; na ausência de correspondência, segue a conversa comum. Identificadores são limitados aos candidatos da consulta, o pacote é validado e mudanças do roteiro durante a seleção impedem execução desatualizada. O manual detalha os limites de recuperação e trechos.
+
+Validados na sessão do usuário: publicação pelo editor, geração do .res, detecção externa em segundo plano, atualização/remoção, seleção pelo agente real usando IA HTTP local, ausência de correspondência, seleção inválida, cancelamento e pergunta pela janela real iniciando o PVA original com PowerPoint e avatar visível. O relatório registra essa execução.

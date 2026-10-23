@@ -3,7 +3,7 @@ unit presentation_editor_ui;
 interface
 uses Windows, Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Dialogs, SynEdit,
   Process, FileUtil, LazFileUtils, presentation_package, presentation_document,
-  presentation_paths, presentation_tags, presentation_ai, professor_catalog;
+  presentation_paths, presentation_tags, presentation_ai, professor_catalog, presentation_rag;
 type
   TPresentationEditor = class(TForm)
   private
@@ -147,7 +147,10 @@ procedure TPresentationEditor.SavePackage(const FileName: string);
 begin
   if FJob<>nil then raise Exception.Create('Aguarde a geracao');
   ExportTo(FileName);FFile:=FileName;FDirty:=False;
-  Caption:='Editor de Apresentacoes - '+ExtractFileName(FFile);FStatus.Caption:='Pacote salvo e validado.';
+  Caption:='Editor de Apresentacoes - '+ExtractFileName(FFile);
+  FStatus.Caption:='Pacote salvo. Disponibilizando para a IA...';
+  PublishPresentation(FileName);
+  FStatus.Caption:='Salvo e incluido na biblioteca da IA: '+PresentationRAGDirectory;
 end;
 procedure TPresentationEditor.LoadPackage(const FileName: string);
 var P: TPVAPackage;NewRoot: string;Succeeded: Boolean;

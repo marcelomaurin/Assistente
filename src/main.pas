@@ -8,7 +8,7 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
   professor_ui, professor_commands, fpjson, assistant_integration_protocol,
   assistant_integration_server, assistant_integration_jobs, presentation_package,
-  presentation_media, presentation_tags, presentation_joints;
+  presentation_media, presentation_tags, presentation_joints, presentation_rag;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -28,6 +28,7 @@ type
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
     FPresentationMedia: TPresentationMedia;
+    FRAGMonitor: TPresentationRAGMonitor;
     FPresentationRoot: string;
     FPresentationMode,FPresentationAvatarChanged: Boolean;
     procedure SelectPresentationAvatar(const AvatarID: string);
@@ -118,6 +119,7 @@ begin
   FAssistantManager.JarvisClient := FJarvisClient;
   FAssistantManager.OnStateChange := @OnAgentStateChange;
   FAssistantManager.OnComplete := @OnAgentComplete;
+  FRAGMonitor:=TPresentationRAGMonitor.Create(PresentationRAGDirectory);
   FMemoryMap := TAIAgentMemoryMap.Create(Self);
   InicializarMemoria;
   FIntegrationJobs:=TIntegrationJobs.Create;
@@ -303,6 +305,7 @@ end;
 procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
   FClosing := True;
+  FreeAndNil(FRAGMonitor);
   if Assigned(FTimer) then FTimer.Enabled := False;
   FreeAndNil(FIntegration);
   if Assigned(FContinuousListener) then FContinuousListener.Stop;
@@ -565,7 +568,7 @@ begin
   edPergunta.Clear;
   FProfessor.SetActivity(psThinking);
   SetEstado('Pensando...', True);
-  try FAssistantManager.ProcessUserRequestAsync(C);
+  try FAssistantManager.ProcessUserRequestAsync(C,P);
   except on E: Exception do
     begin
       if Assigned(FMemoryItem) then
@@ -806,10 +809,21 @@ begin
 end;
 
 procedure Tfrmmain.OnAgentComplete(Sender: TObject; const AResponseText, AProvider: string; ASuccess: Boolean);
-var T, Annotated: string; Script: TAvatarScript;
+var T, Annotated,Selected: string; Script: TAvatarScript;
 begin
   if FClosing then Exit;
+  Selected:='';
+  if ASuccess then Selected:=FAssistantManager.SelectedPresentation;
   Annotated:=Trim(AResponseText);
+  if Selected<>'' then begin
+    SetEstado('Preparando apresentacao...',False);
+    try
+      ValidateRAGPlayback(Selected,FAssistantManager.SelectedPresentationDigest);
+      StartPresentation(Selected);
+    except on E: Exception do begin
+      ASuccess:=False;Annotated:='Nao foi possivel iniciar a apresentacao: '+E.Message;
+    end;end;
+  end;
   Script:=ParseAvatarScript(Annotated);
   T := Trim(Script.PlainText);
   if T = '' then
@@ -827,7 +841,10 @@ begin
   FAIConnected := ASuccess;
   memResposta.Lines.Add('');
   SetEstado('Pronto para conversar', False);
-  if ASuccess then FalarResposta(Annotated) else RetomarEscuta;
+  if ASuccess then begin
+    if Selected='' then FalarResposta(Annotated)
+    else SetEstado('Apresentando: '+ChangeFileExt(ExtractFileName(Selected),''),False);
+  end else RetomarEscuta;
   if FIntegrationJobID<>'' then begin
     FIntegrationJobs.Complete(FIntegrationJobID,T,AProvider,ASuccess,FIntegrationCancelled);
     FIntegrationJobID:='';FIntegrationCancelled:=False;
