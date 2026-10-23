@@ -33,3 +33,6 @@ build/
 !bin/*.exe
 *.a
 tests/*.txt
+
+# Local conversation data
+conversation-history.json
