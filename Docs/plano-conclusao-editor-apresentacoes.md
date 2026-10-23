@@ -46,3 +46,8 @@ Documento Google Docs original: https://docs.google.com/document/d/1x2jXgRQilURs
 ## Complemento — recursos temporais e identidade
 
 Implementados áudio WAV/MP3/WMA, início opcional hh:mm:ss de vídeo/som, tags de escolha de avatar e voz e respectivos controles no editor. Som e mídia visual têm canais independentes. O avatar original é restaurado ao encerrar; a voz fica restrita ao worker da apresentação. A IA preserva essas escolhas. Testes adicionais verificam seek real, duração, som com imagem, troca/restauração de avatar e a voz enviada ao TTS.
+
+
+## Complemento — visualização no painel de texto
+
+Implementado painel visual dentro da área de conversa do Assistente para imagens, vídeos e slides. A área do avatar permanece visível e separada. O histórico e a digitação ficam ocultos somente durante a exibição visual, com o rascunho preservado e restaurado ao fechar, terminar ou cancelar. Som isolado não oculta o texto. O painel e a janela nativa incorporada do PowerPoint acompanham o redimensionamento. Testes nativos verificam ausência de sobreposição, restauração do texto/rascunho, navegação real dos slides e limpeza.

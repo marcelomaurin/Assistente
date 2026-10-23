@@ -19,3 +19,11 @@
 - Tags avatar/voz, seleção no editor e restauração das escolhas originais.
 - Voz selecionada antes da síntese, validação SAPI explícita e preservação pela IA.
 - Término do roteiro aguarda vídeo/som; pausa e cancelamento continuam ativos.
+
+
+### Visualização junto ao avatar
+
+- Painel de imagens, vídeos e PowerPoint incorporado à área de conversa, acompanhando o tamanho da janela.
+- Avatar visível ao lado dos recursos; histórico e digitação temporariamente ocultos, com rascunho preservado.
+- Restauração da conversa ao fechar, terminar, cancelar ou falhar; áudio isolado mantém o texto visível.
+- Testes nativos de layout, redimensionamento, restauração e slides reais incorporados.

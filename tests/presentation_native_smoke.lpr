@@ -1,8 +1,8 @@
 program presentation_native_smoke;
 {$mode objfpc}{$H+}
-uses Interfaces, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType, Graphics, StdCtrls, Types,
+uses Interfaces, Controls, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType, Graphics, StdCtrls, Types,
   main, presentation_media, presentation_tags, presentation_package, presentation_editor_ui, SynEdit,
-  professor_view, presentation_joints, presentation_joint_tags, X3DNodes, CastleVectors;
+  CastleControl, CastleImages, CastleURIUtils, professor_view, presentation_joints, presentation_joint_tags, X3DNodes, CastleVectors;
 type
   TRunner = class(TComponent)
   public
@@ -14,18 +14,50 @@ type
     Report: TStringList;
     View: TProfessorView;
     procedure Tick(Sender: TObject);
+    procedure CaptureLayout;
   end;
 var Root,Mode,ConfigDir: string; Media: TPresentationMedia; Tag: TPresentationTag;
   Config,Report: TStringList; Runner: TRunner; Editor: TPresentationEditor;
   I: Integer; Edit: TSynEdit; B: TButton; Bone: TX3DNode;
 procedure Check(OK: Boolean; const Error: string);
 begin if not OK then raise Exception.Create(Error);end;
+procedure TRunner.CaptureLayout;
+var C: TCastleControl; I: Integer; Shot: TRGBImage; Image: TBitmap;
+  Avatar: TPicture; Origin: TPoint;
+begin
+  C:=nil;
+  for I:=0 to View.ComponentCount-1 do
+    if View.Components[I] is TCastleControl then C:=TCastleControl(View.Components[I]);
+  Check(C<>nil,'avatar renderer missing');
+  Shot:=C.Container.SaveScreen;
+  try SaveImage(Shot,FilenameToURISafe(Root+PathDelim+'embedded-avatar.png'));finally Shot.Free;end;
+  Image:=frmmain.GetFormImage;Avatar:=TPicture.Create;
+  try
+    Avatar.LoadFromFile(Root+PathDelim+'embedded-avatar.png');
+    Origin:=frmmain.ScreenToClient(C.ClientToScreen(Point(0,0)));
+    Image.Canvas.Draw(Origin.X,Origin.Y,Avatar.Graphic);
+    Image.SaveToFile(Root+PathDelim+'embedded-layout.bmp');
+  finally Avatar.Free;Image.Free;end;
+end;
 procedure TRunner.Tick(Sender: TObject);
-var Elapsed: QWord; Key: Word; Active: string;
+var Elapsed: QWord; Key: Word; Active: string; Panel: TPanel; AvatarRight: Integer;
 begin
   try
     Elapsed:=GetTickCount64-Started;Check(Elapsed<40000,'main presentation stalled');
     Active:=frmmain.ActivePresentationMedia;
+    Panel:=TPanel(frmmain.FindComponent('PresentationMediaPanel'));
+    Check(Panel<>nil,'missing embedded media panel');
+    if Active<>'' then begin
+      Check(Panel.Visible and Panel.IsVisible,'visual panel hidden');
+      Check(frmmain.pnlAvatar.IsVisible,'media hides avatar');
+      Check(not frmmain.edPergunta.IsVisible,'typed text remains over visual');
+      AvatarRight:=frmmain.pnlAvatar.ClientToScreen(Point(frmmain.pnlAvatar.Width,0)).X;
+      Check(Panel.ClientToScreen(Point(0,0)).X>=AvatarRight,'media overlaps avatar');
+    end else begin
+      Check(not Panel.Visible,'closed media panel remains visible');
+      Check(frmmain.edPergunta.IsVisible,'text panel not restored');
+      Check(frmmain.edPergunta.Text='Rascunho preservado','typed draft was changed');
+    end;
     SawAvatar:=SawAvatar or (frmmain.ActivePresentationAvatar='engenheiro');
     if frmmain.ActivePresentationSound<>'' then begin
       SawSound:=True;if SoundStarted=0 then SoundStarted:=GetTickCount64;
@@ -43,12 +75,14 @@ begin
     if not PauseSent and Images then begin
       Key:=Ord('P');frmmain.OnKeyDown(frmmain,Key,[]);Check(Key=0,'pause key not consumed');
       PausedAt:=GetTickCount64;PauseSent:=True;
+      frmmain.Width:=frmmain.Width+110;frmmain.Height:=frmmain.Height+60;
+      Report.Add('PASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked');
     end;
     if PauseSent and not ResumeSent then begin
       Check(frmmain.ApresentandoResposta,'paused job finished');
       Check(frmmain.ActivePresentationMedia='assets/one.png','media advanced during pause');
       if GetTickCount64-PausedAt>650 then begin
-        Key:=Ord('P');frmmain.OnKeyDown(frmmain,Key,[]);ResumeSent:=True;
+        CaptureLayout;Key:=Ord('P');frmmain.OnKeyDown(frmmain,Key,[]);ResumeSent:=True;
       end;
     end;
     if not frmmain.ApresentandoResposta then begin
@@ -79,9 +113,12 @@ begin
   end;end;
 end;
 procedure MediaTest;
-var Position: Integer;
+var Position: Integer; HostForm: TForm; Host: TPanel; SlideWindow: HWND; Bounds: TRect;
 begin
-  Media:=TPresentationMedia.Create(Root);
+  HostForm:=TForm.CreateNew(nil);HostForm.SetBounds(50,50,800,600);
+  Host:=TPanel.Create(HostForm);Host.Parent:=HostForm;Host.Align:=alClient;
+  HostForm.Show;Application.ProcessMessages;
+  Media:=TPresentationMedia.Create(Root,Host);
   try
     TryParsePresentationTag('[abrir arquivo=assets/one.png]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/one.png','image not open');
@@ -104,6 +141,13 @@ begin
     if ParamStr(4)<>'without-office' then begin
     TryParsePresentationTag('[abrir arquivo=assets/slides.pptx]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/slides.pptx','PowerPoint replacement failed');Check(Media.CurrentSlide=1,'initial slide');
+    SlideWindow:=FindWindowEx(Host.Handle,0,'screenClass',nil);
+    Check(SlideWindow<>0,'PowerPoint is not embedded in media panel');
+    HostForm.SetBounds(50,50,650,450);Application.ProcessMessages;
+    Check(Windows.GetParent(SlideWindow)=Host.Handle,'slide lost embedded parent after resize');
+    Windows.GetClientRect(SlideWindow,Bounds);
+    Check((Bounds.Right=Host.ClientWidth) and (Bounds.Bottom=Host.ClientHeight),'slides not resized to host');
+    Report.Add('PASS: real PowerPoint slideshow embedded as child of media panel');
     TryParsePresentationTag('[proximo slide]',Tag);Media.Execute(Tag);Check(Media.CurrentSlide=2,'next slide');
     TryParsePresentationTag('[slide anterior]',Tag);Media.Execute(Tag);Check(Media.CurrentSlide=1,'previous slide');
     TryParsePresentationTag('[ir para slide=3]',Tag);Media.Execute(Tag);Check(Media.CurrentSlide=3,'specific slide');
@@ -115,7 +159,7 @@ begin
     TryParsePresentationTag('[fechar arquivo]',Tag);Media.Execute(Tag);Check(Media.Active='','close failed');
     Media.Execute(Tag);
     Report.Add('PASS: single-media close and real slide navigation/bounds; Office mode='+ParamStr(4));
-  finally Media.Free;end;
+  finally Media.Free;HostForm.Free;end;
 end;
 procedure EditorTest;
 var Original,After: string;
@@ -157,6 +201,7 @@ begin
       Runner:=TRunner.Create(frmmain);
       for I:=0 to frmmain.ComponentCount-1 do if frmmain.Components[I] is TProfessorView then Runner.View:=TProfessorView(frmmain.Components[I]);
       Runner.Report:=Report;Runner.Started:=GetTickCount64;
+      frmmain.edPergunta.Text:='Rascunho preservado';
       frmmain.StartPresentation(Root+PathDelim+'main.pva');
       Runner.Timer:=TTimer.Create(Runner);Runner.Timer.Interval:=50;Runner.Timer.OnTimer:=@Runner.Tick;
       Application.Run;frmmain.Free;

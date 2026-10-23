@@ -47,9 +47,9 @@ O movimento de mandíbula acompanha somente o estado de áudio efetivamente em r
 
 ## Mídias e dependências
 
-- PNG, JPEG e BMP: janela nativa Lazarus.
-- AVI, WMV e MP4: MCI do Windows, dentro da mesma janela. O codec do arquivo precisa estar disponível no Windows; uma extensão aceita não garante codec instalado. Falhas são exibidas e interrompem a apresentação.
-- PPTX: Microsoft PowerPoint instalado, ativado e disponível na sessão interativa do usuário. A automação abre o arquivo em leitura e com macros desabilitadas, inicia no slide 1 e usa avanço manual comandado pelo roteiro. Imagens e vídeos usam a janela Lazarus; slides usam a janela nativa de apresentação do PowerPoint, controlada pelo Assistente. Não há conversão por LibreOffice nem renderer parcial de PPTX embutido.
+- PNG, JPEG e BMP: painel visual Lazarus dentro da área de conversa.
+- AVI, WMV e MP4: MCI do Windows, dentro do mesmo painel visual. O codec do arquivo precisa estar disponível no Windows; uma extensão aceita não garante codec instalado. Falhas são exibidas e interrompem a apresentação.
+- PPTX: Microsoft PowerPoint instalado, ativado e disponível na sessão interativa do usuário. A automação abre o arquivo em leitura e com macros desabilitadas, inicia no slide 1 e usa avanço manual comandado pelo roteiro. A janela nativa dos slides é incorporada como filha do painel visual do Assistente, mantendo a navegação pelo roteiro e a reprodução nativa do PowerPoint. A incorporação aceita somente uma nova janela de slides criada pela operação; se não for possível identificá-la e incorporá-la, encerra o recurso e informa o erro. Não há conversão por LibreOffice nem renderer parcial de PPTX embutido.
 
 Abrir outra mídia visual substitui e encerra a anterior. O som tem canal próprio, descrito abaixo. **Fechar mídia** encerra o visual e o som, é idempotente e não exige nome. Comandos de slides sem apresentação ativa ou fora dos limites causam erro explícito. O pacote não aceita executáveis, URLs, PPT/PPTM nem links simbólicos.
 
@@ -86,3 +86,10 @@ Use **Escolher avatar** para inserir a seleção pelo catálogo do Assistente es
 O canal de som pode acompanhar uma mídia visual. Se vídeo ou som ainda estiverem tocando depois da última fala, a apresentação aguarda seu término. P pausa/retoma e Esc encerra também esse período final. As tags e as regras de validação estão no [catálogo](tags-apresentacoes.md).
 
 Os testes adicionais verificam posição real de AVI/WAV, limites de duração, som junto de imagem, encerramento independente, troca de avatar/restauração, conclusão do som final e o campo de voz nas requisições TTS locais. Voz SAPI inexistente é recusada antes de emitir áudio.
+
+
+## Painel visual junto ao avatar
+
+Imagens, vídeos e slides aparecem na área de conversa, à direita do avatar. O painel acompanha o redimensionamento da janela, sem ocupar a área do avatar. Enquanto um recurso visual estiver aberto, o histórico e o campo de digitação ficam ocultos. O conteúdo digitado é preservado e reaparece ao fechar o visual, terminar, cancelar ou ocorrer uma falha. Áudio sozinho mantém a conversa visível; áudio de fundo com imagem mantém o painel visual.
+
+Os testes nativos verificam o avatar visível e sem sobreposição, ocultação/restauração do texto e do rascunho, redimensionamento e PowerPoint real como janela filha do painel. Os slides continuam sendo reproduzidos pelo PowerPoint, sem conversão para imagens estáticas.

@@ -32,6 +32,7 @@ type
     FPresentationMode,FPresentationAvatarChanged: Boolean;
     procedure SelectPresentationAvatar(const AvatarID: string);
     procedure FinishPresentation;
+    procedure PresentationVisualChange(Sender: TObject);
   private
     FVoiceInput: TVoiceInputBridge;
     FIntegration: TAssistantIntegrationServer;
@@ -52,7 +53,7 @@ type
     FProfileCombo: TComboBox;
     FCatalog: TAvatarCatalog;
     FReloadButton: TSpeedButton;
-    FChatPanel, FProfilePanel: TPanel;
+    FChatPanel, FProfilePanel, FPresentationPanel: TPanel;
     FAvatarCard, FInputCard: TRoundedCard;
     FChat: TConversationView;
     FSendButton: TSpeedButton;
@@ -177,6 +178,12 @@ begin
   FChatPanel.Parent := pnlConteudo;
   FChatPanel.BevelOuter := bvNone;
   FChatPanel.Color := clWhite;
+  FPresentationPanel := TPanel.Create(Self);
+  FPresentationPanel.Name := 'PresentationMediaPanel';
+  FPresentationPanel.Parent := FChatPanel;
+  FPresentationPanel.BevelOuter := bvNone;
+  FPresentationPanel.Color := clBlack;
+  FPresentationPanel.Visible := False;
   lblAssistente.Parent := FChatPanel;
   lblAssistente.Caption := 'Conversa';
   lblAssistente.AutoSize := False;
@@ -277,6 +284,7 @@ begin
   FChatPanel.SetBounds(LeftWidth, 0, W-LeftWidth, H);
   lblAssistente.SetBounds(14, 12, FChatPanel.Width-28, 22);
   FChat.SetBounds(14, 40, FChatPanel.Width-28, Max(60,H-130));
+  FPresentationPanel.SetBounds(14,40,Max(1,FChatPanel.Width-28),Max(1,H-54));
   ComposerWidth := FChat.ContentWidth;
   FInputCard.SetBounds(14, H-80, ComposerWidth, 36);
   edPergunta.SetBounds(10, 9, ComposerWidth-20, 22);
@@ -646,13 +654,27 @@ begin
     if FSetMain.AutoSpeak and (FSetMain.SynthEngine=2) then raise Exception.Create('Apresentacoes com pausa requerem SAPI ou voz remota no Windows');
     CreateGUID(G);
     FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
-    P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot);
+    P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot,FPresentationPanel);
+    FPresentationMedia.OnVisualChange:=@PresentationVisualChange;
     FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
     FalarResposta(P.Script);
     if FSpeechJob=nil then FinishPresentation;
     except FinishPresentation;raise;end;
   finally P.Free;end;
 end;
+procedure Tfrmmain.PresentationVisualChange(Sender: TObject);
+var HasVisual: Boolean;
+begin
+  HasVisual:=(FPresentationMedia<>nil) and (FPresentationMedia.Active<>'');
+  FPresentationPanel.Visible:=HasVisual;
+  FChat.Visible:=not HasVisual;FInputCard.Visible:=not HasVisual;
+  FSendButton.Visible:=not HasVisual;btConfig.Visible:=not HasVisual;
+  if HasVisual then begin
+    lblAssistente.Caption:='Apresentação';
+    FPresentationPanel.BringToFront;
+  end else lblAssistente.Caption:='Conversa';
+end;
+
 procedure Tfrmmain.FinishPresentation;
 begin
   FreeAndNil(FPresentationMedia);FPresentationMode:=False;
