@@ -4,7 +4,8 @@ interface
 uses SysUtils;
 type
   TAvatarCommand = (acNone, acSmile, acNeutral, acApplause, acRaiseRightHand,
-    acLowerRightHand, acWave, acWalk);
+    acLowerRightHand, acWave, acWalk,
+    acBlink, acNod, acShakeHead, acThink, acExplain, acPointRight, acPointLeft, acRaiseLeftHand, acLowerLeftHand, acRaiseBothHands, acLowerBothHands, acLookLeft, acLookRight, acLookFront, acSurprise, acSad, acSerious, acLaugh, acCelebrate, acBow, acThumbsUp, acThumbsDown, acOpenArms, acCloseArms, acCrossArms, acUncrossArms, acSit, acStand, acStepBack, acStepForward, acDance, acStopGesture, acRelax);
   TAvatarScriptStep = record
     Text: string;
     Command: TAvatarCommand;
@@ -45,7 +46,40 @@ begin
   else if (S='levantar mao direita') or (S='levante a mao direita') then Result:=acRaiseRightHand
   else if (S='abaixar mao direita') or (S='abaixe mao direita') or (S='abaixe a mao direita') then Result:=acLowerRightHand
   else if (S='aceno') or (S='acenar') then Result:=acWave
-  else if (S='caminhar') or (S='caminhada') then Result:=acWalk;
+  else if (S='caminhar') or (S='caminhada') then Result:=acWalk
+  else if (S='piscar') then Result:=acBlink
+  else if (S='concordar') then Result:=acNod
+  else if (S='negar') then Result:=acShakeHead
+  else if (S='pensar') then Result:=acThink
+  else if (S='explicar') then Result:=acExplain
+  else if (S='apontar direita') then Result:=acPointRight
+  else if (S='apontar esquerda') then Result:=acPointLeft
+  else if (S='levantar mao esquerda') then Result:=acRaiseLeftHand
+  else if (S='abaixar mao esquerda') then Result:=acLowerLeftHand
+  else if (S='levantar ambas maos') then Result:=acRaiseBothHands
+  else if (S='abaixar ambas maos') then Result:=acLowerBothHands
+  else if (S='olhar esquerda') then Result:=acLookLeft
+  else if (S='olhar direita') then Result:=acLookRight
+  else if (S='olhar frente') then Result:=acLookFront
+  else if (S='surpresa') then Result:=acSurprise
+  else if (S='triste') then Result:=acSad
+  else if (S='serio') then Result:=acSerious
+  else if (S='rir') then Result:=acLaugh
+  else if (S='comemorar') then Result:=acCelebrate
+  else if (S='cumprimentar') then Result:=acBow
+  else if (S='positivo') then Result:=acThumbsUp
+  else if (S='negativo') then Result:=acThumbsDown
+  else if (S='abrir bracos') then Result:=acOpenArms
+  else if (S='fechar bracos') then Result:=acCloseArms
+  else if (S='cruzar bracos') then Result:=acCrossArms
+  else if (S='descruzar bracos') then Result:=acUncrossArms
+  else if (S='sentar') then Result:=acSit
+  else if (S='levantar') then Result:=acStand
+  else if (S='passo atras') then Result:=acStepBack
+  else if (S='passo frente') then Result:=acStepForward
+  else if (S='dancar') then Result:=acDance
+  else if (S='parar gesto') then Result:=acStopGesture
+  else if (S='relaxar') then Result:=acRelax;
 end;
 
 function ParseAvatarScript(const Source: string): TAvatarScript;
@@ -97,18 +131,20 @@ end;
 
 function AvatarCommandName(Command: TAvatarCommand): string;
 const Names: array[TAvatarCommand] of string = ('','sorriso','neutro','aplausos',
-  'levantar mao direita','abaixar mao direita','aceno','caminhar');
+  'levantar mao direita','abaixar mao direita','aceno','caminhar',
+  'piscar', 'concordar', 'negar', 'pensar', 'explicar', 'apontar direita', 'apontar esquerda', 'levantar mao esquerda', 'abaixar mao esquerda', 'levantar ambas maos', 'abaixar ambas maos', 'olhar esquerda', 'olhar direita', 'olhar frente', 'surpresa', 'triste', 'serio', 'rir', 'comemorar', 'cumprimentar', 'positivo', 'negativo', 'abrir bracos', 'fechar bracos', 'cruzar bracos', 'descruzar bracos', 'sentar', 'levantar', 'passo atras', 'passo frente', 'dancar', 'parar gesto', 'relaxar');
 begin Result:=Names[Command];end;
 
 function AvatarInstructionText: string;
 begin
   Result:='Você controla o avatar 3D com tags no texto final, imediatamente antes do trecho ao qual o gesto se aplica. '+
-    'Use apenas estas tags, com moderação: '+
+    'Use apenas estas tags, com moderação. A boca é controlada pela reprodução da fala, nunca por tags. '+
     '[sorriso] mantém um sorriso discreto; [neutro] remove sorriso, mão levantada e gestos; '+
     '[aplausos] bate palmas por 2,4 segundos; [aceno] acena por 2,4 segundos; '+
     '[caminhar] demonstra caminhada no lugar por 2,4 segundos; '+
     '[levantar mao direita] ergue e mantém a mão DIREITA do próprio personagem, à esquerda de quem o vê; '+
     '[abaixar mao direita] baixa essa mão. Sempre encerre a mão levantada com a tag de abaixar. '+
+    'Outras tags disponíveis: [piscar] [concordar] [negar] [pensar] [explicar] [apontar direita] [apontar esquerda] [levantar mao esquerda] [abaixar mao esquerda] [levantar ambas maos] [abaixar ambas maos] [olhar esquerda] [olhar direita] [olhar frente] [surpresa] [triste] [serio] [rir] [comemorar] [cumprimentar] [positivo] [negativo] [abrir bracos] [fechar bracos] [cruzar bracos] [descruzar bracos] [sentar] [levantar] [passo atras] [passo frente] [dancar] [parar gesto] [relaxar]. '+
     'As tags são executadas e removidas da voz e do chat. Não escreva tags dentro de código e não invente comandos. '+
     'Exemplo: [sorriso] Olá! [aplausos] Obrigado por estar aqui. '+
     '[levantar mao direita] Se tiver uma dúvida, este é o gesto de levantar a mão direita. '+
