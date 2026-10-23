@@ -7,6 +7,8 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
 | [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
+| [Instalador 0.200](INSTALACAO_0200.md) | Assistente e editor, instalação e validação do pacote atual |
+| [Guia de comandos](guia-comandos-assistente.md) | Blocos, eventos futuros, avatar, voz, mídias e comandos de entrada |
 | [Manual do usuário](ManualUsuario/README.md) | Instalação, primeiro uso, conversa, voz, avatar, vídeo e integração |
 
 Comece pelo manual se deseja usar o programa. Para desenvolver uma integração, configure o acesso no manual, leia o protocolo e escolha o cliente socket ou DLL. Os dois caminhos exigem o aplicativo em execução e usam a mesma autorização.

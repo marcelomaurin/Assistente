@@ -6,7 +6,7 @@
   #error RepositoryDir is required.
 #endif
 #define MyAppName "Assistente"
-#define MyAppVersion "0.130"
+#define MyAppVersion "0.200"
 #define MyAppPublisher "MAURINSOFT"
 #define MyAppExeName "assistente.exe"
 
@@ -14,7 +14,7 @@
 AppId={code:SetupApplicationId}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-VersionInfoVersion=0.130.0.0
+VersionInfoVersion=0.200.0.0
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://maurinsoft.com.br
 AppSupportURL=https://github.com/marcelomaurin/Assistente
@@ -25,7 +25,7 @@ DisableProgramGroupPage=yes
 UsePreviousLanguage=no
 AllowNoIcons=yes
 OutputDir={#RepositoryDir}\bin
-OutputBaseFilename=setup_assistente_0130
+OutputBaseFilename=setup_assistente_0200
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -41,12 +41,18 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+Name: "editordesktopicon"; Description: "Criar atalho do Editor de Apresentacoes na area de trabalho"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
 [Files]
 Source: "{#PackageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Check: not VerificationMode
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon; Check: not VerificationMode
+
+Name: "{autoprograms}\Editor de Apresentacoes do Assistente"; Filename: "{app}\presentation_editor.exe"; WorkingDir: "{app}"; Check: not VerificationMode
+Name: "{autoprograms}\Assistente - Guia de comandos"; Filename: "{app}\docs\guia-comandos-assistente.md"; Check: not VerificationMode
+Name: "{autodesktop}\Editor de Apresentacoes do Assistente"; Filename: "{app}\presentation_editor.exe"; WorkingDir: "{app}"; Tasks: editordesktopicon; Check: not VerificationMode
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent; Check: not VerificationMode

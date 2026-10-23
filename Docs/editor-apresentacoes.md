@@ -2,6 +2,8 @@
 
 O editor Lazarus independente cria pacotes `.pva` para o Assistente. A implementação Windows inclui roteiro UTF-8, recursos, movimentos gerados pela IA, articulações e reprodução de imagem/vídeo e PowerPoint, com somente uma mídia visual ativa.
 
+Consulte o [Guia de comandos do Assistente e do Editor de Apresentações](guia-comandos-assistente.md) para sintaxe, exemplos e comandos digitados ou falados.
+
 ## Compilar e abrir
 
 Requisitos: Windows 10/11, FPC 3.2.2 i386, Lazarus com LCL/SynEdit i386, dependência CHATGPT do projeto e Castle Engine conforme [guia do avatar](professor-virtual-3d.md). O editor e o utilitário PVA não dependem do renderer Castle; o Assistente depende dele.

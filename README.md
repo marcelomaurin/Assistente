@@ -16,15 +16,17 @@ O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servi
 
 ## Instalação Windows
 
-Versão atual: [setup_assistente_0130.exe](bin/setup_assistente_0130.exe).
-Inclui o aplicativo Win32 Release atualizado e os 11 avatares, com o Zé Gotinha
-refeito em 3D a partir das referências: cabeça em gota, corpo arredondado,
-emblema SUS e animações de fala, piscadas, olhar e gestos.
+Versão atual: [setup_assistente_0200.exe](bin/setup_assistente_0200.exe).
+Inclui o Assistente atualizado, o Editor de Apresentações, a ferramenta PVA,
+11 avatares e os guias de comandos. O editor tem atalho próprio no menu Iniciar
+e opção de atalho na área de trabalho.
 A instalação padrão é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação e verificação da versão 0.130](Docs/INSTALACAO_0130.md).
-Os hashes estão no [manifesto](bin/setup_assistente_0130.manifest.json), e os
-resultados dos testes no [relatório](bin/setup_assistente_0130.validacao.json).
-A versão [0.120](Docs/INSTALACAO_0120.md) permanece disponível como histórico.
+Veja [instalação e verificação da versão 0.200](Docs/INSTALACAO_0200.md) e o
+[guia de comandos](Docs/guia-comandos-assistente.md).
+Os hashes estão no [manifesto](bin/setup_assistente_0200.manifest.json), e os
+resultados dos testes no [relatório](bin/setup_assistente_0200.validacao.json).
+As versões [0.130](Docs/INSTALACAO_0130.md) e [0.120](Docs/INSTALACAO_0120.md)
+permanecem disponíveis como histórico.
 
 ## Professor Virtual 3D
 

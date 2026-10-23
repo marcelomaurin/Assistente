@@ -1,4 +1,4 @@
-"""Verify the actual 0.130 installer in an isolated directory under build.
+"""Verify the actual 0.200 installer in an isolated directory under build.
 
 Does not register the test installation, create shortcuts, access providers,
 or use microphone/camera. Uses the Windows GUI only for this spawned test app.
@@ -15,8 +15,8 @@ import uuid
 import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
-SETUP=ROOT/'bin/setup_assistente_0130.exe'
-MANIFEST=ROOT/'bin/setup_assistente_0130.manifest.json'
+SETUP=ROOT/'bin/setup_assistente_0200.exe'
+MANIFEST=ROOT/'bin/setup_assistente_0200.manifest.json'
 BUILD=(ROOT/'build').resolve()
 TEST=BUILD/('installer-check-'+str(uuid.uuid4()))
 INSTALL=TEST/'app'
@@ -76,36 +76,54 @@ def main():
 
     config=TEST/'isolated-config';config.mkdir()
     (config/'Setmain.cfg').write_text('CONTINUOUS_LISTENING:0\nAUTOSPEAK:0\nVISION_SOURCE:none\nAVATAR3D_PROFILE:ze_gotinha\nAVATAR3D_AUTO_IDLE:1\n',encoding='utf-8')
-    process=subprocess.Popen([str(INSTALL/'assistente.exe')],cwd=INSTALL,
-                             env=dict(os.environ,ASSISTENTE_CONFIG_DIR=str(config)))
-    user32=ctypes.WinDLL('user32',use_last_error=True)
-    callback_type=ctypes.WINFUNCTYPE(wintypes.BOOL,wintypes.HWND,wintypes.LPARAM)
-    user32.EnumWindows.argtypes=[callback_type,wintypes.LPARAM]
-    user32.GetWindowThreadProcessId.argtypes=[wintypes.HWND,ctypes.POINTER(wintypes.DWORD)]
-    user32.GetWindowTextW.argtypes=[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int]
-    user32.IsWindowVisible.argtypes=[wintypes.HWND]
-    user32.PostMessageW.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
-    windows=[]
-    @callback_type
-    def enum_window(hwnd,_):
-        pid=wintypes.DWORD();user32.GetWindowThreadProcessId(hwnd,ctypes.byref(pid))
-        title=ctypes.create_unicode_buffer(512);user32.GetWindowTextW(hwnd,title,512)
-        if pid.value==process.pid and user32.IsWindowVisible(hwnd) and title.value.startswith('Professor Virtual'):
-            windows.append(hwnd)
-        return True
-    try:
-        deadline=time.monotonic()+25
-        while not windows and time.monotonic()<deadline and process.poll() is None:
-            user32.EnumWindows(enum_window,0);time.sleep(.2)
-        assert windows and process.poll() is None,'Installed application failed to show its main form'
-        time.sleep(2)
-        assert process.poll() is None,'Installed application closed unexpectedly'
-        assert user32.PostMessageW(windows[0],0x0010,0,0),'Unable to close owned test window'
-        assert process.wait(timeout=15)==0,'Installed application shutdown failed'
-        assert not (INSTALL/'crash.log').exists(),'Installed application produced a crash report'
-    finally:
-        if process.poll() is None:process.kill();process.wait()
-    REPORT.append('PASS: installed Release application opened its native main form and closed normally with isolated configuration, no voice/provider/camera activity')
+    for executable,title_prefix in [('assistente.exe','Professor Virtual'),('presentation_editor.exe','Editor de Apresentacoes')]:
+        process=subprocess.Popen([str(INSTALL/executable)],cwd=INSTALL,
+                                 env=dict(os.environ,ASSISTENTE_CONFIG_DIR=str(config)))
+        user32=ctypes.WinDLL('user32',use_last_error=True)
+        callback_type=ctypes.WINFUNCTYPE(wintypes.BOOL,wintypes.HWND,wintypes.LPARAM)
+        user32.EnumWindows.argtypes=[callback_type,wintypes.LPARAM]
+        user32.GetWindowThreadProcessId.argtypes=[wintypes.HWND,ctypes.POINTER(wintypes.DWORD)]
+        user32.GetWindowTextW.argtypes=[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int]
+        user32.IsWindowVisible.argtypes=[wintypes.HWND]
+        user32.PostMessageW.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
+        windows=[]
+        @callback_type
+        def enum_window(hwnd,_):
+            pid=wintypes.DWORD();user32.GetWindowThreadProcessId(hwnd,ctypes.byref(pid))
+            title=ctypes.create_unicode_buffer(512);user32.GetWindowTextW(hwnd,title,512)
+            if pid.value==process.pid and user32.IsWindowVisible(hwnd) and title.value.startswith(title_prefix):
+                windows.append(hwnd)
+            return True
+        try:
+            deadline=time.monotonic()+25
+            while not windows and time.monotonic()<deadline and process.poll() is None:
+                user32.EnumWindows(enum_window,0);time.sleep(.2)
+            assert windows and process.poll() is None,'Installed application failed to show its main form'
+            if executable == 'presentation_editor.exe':
+                child_texts=[]
+                user32.EnumChildWindows.argtypes=[wintypes.HWND,callback_type,wintypes.LPARAM]
+                @callback_type
+                def enum_child(hwnd,_):
+                    text=ctypes.create_unicode_buffer(2048)
+                    user32.GetWindowTextW(hwnd,text,2048)
+                    child_texts.append(text.value)
+                    return True
+                user32.EnumChildWindows(windows[0],enum_child,0)
+                assert str(INSTALL/'assistente.exe').lower() in [t.lower() for t in child_texts], 'Editor did not select installed Assistant'
+            time.sleep(2)
+            assert process.poll() is None,'Installed application closed unexpectedly'
+            assert user32.PostMessageW(windows[0],0x0010,0,0),'Unable to close owned test window'
+            assert process.wait(timeout=15)==0,'Installed application shutdown failed'
+            assert not (INSTALL/'crash.log').exists(),'Installed application produced a crash report'
+        finally:
+            if process.poll() is None:process.kill();process.wait()
+        REPORT.append(f'PASS: installed {executable} opened and closed normally with isolated configuration; editor selects adjacent Assistant')
+
+    run([INSTALL/'pva_tool.exe','selftest'])
+    sample=TEST/'sample.pva'
+    run([INSTALL/'pva_tool.exe','pack',ROOT/'examples/apresentacoes/blocos-eventos.txt',TEST,sample])
+    run([INSTALL/'pva_tool.exe','verify',sample])
+    REPORT.append('PASS: installed PVA tool selftest and block/event example pack/verify')
 
     # Reinstall the same actual package and ensure user-created data is kept.
     sentinels={'conversation-history.json':'{"installer-test":"preserve"}\n','Setmain.cfg':'installer-test-preserve\n'}
@@ -124,9 +142,9 @@ def main():
     for name,text in sentinels.items():assert (INSTALL/name).read_text(encoding='utf-8')==text,name
     assert registry_state()==before
     REPORT.append('PASS: uninstaller removed packaged files, preserved user files and did not change registration')
-    result={'version':'0.130','installer_sha256':manifest['installer']['sha256'],'result':'PASS',
+    result={'version':'0.200','installer_sha256':manifest['installer']['sha256'],'result':'PASS',
             'payload_files':len(manifest['files']),'profiles':11,'checks':REPORT}
-    path=ROOT/'bin/setup_assistente_0130.validacao.json'
+    path=ROOT/'bin/setup_assistente_0200.validacao.json'
     path.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print('\n'.join(REPORT));print(f'Validation report: {path}')
 

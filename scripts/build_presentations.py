@@ -10,11 +10,14 @@ def main():
     p.add_argument('--lazarus',type=Path,default=Path(r'C:\lazarus'))
     p.add_argument('--compiler',type=Path,default=Path(r'C:\FPC\3.2.2\bin\i386-Win32\fpc.exe'))
     p.add_argument('--castle',type=Path)
+    p.add_argument('--release',action='store_true',help='Strip executable debug symbols for distribution')
     p.add_argument('--target',default='all',choices=['all','editor','assistant','tool','tests'])
     a=p.parse_args();root=a.root.resolve();base=(a.base or root).resolve()
     out=(a.out or base/'build/presentations').resolve();units=out/'units';units.mkdir(parents=True,exist_ok=True)
     platform='i386-win32';laz=a.lazarus
     args=[str(a.compiler),'-MObjFPC','-Scghi','-O1','-gl','-dLCL','-dLCLwin32','-dCASTLE_ENGINE_LAZARUS_PACKAGE','-FU'+str(units),'-FE'+str(out)]
+    if a.release:
+        args.remove('-gl');args.append('-Xs')
     paths=[root/'src',root/'vendor/chatgpt-voice',base/'src',base/'vendor/chatgpt-voice',base/'build/professor/units'/platform]
     for rel in [f'lcl/units/{platform}/win32',f'lcl/units/{platform}',f'components/lazutils/lib/{platform}',
                 f'packager/units/{platform}',f'components/synedit/units/{platform}/win32',f'components/lazcontrols/lib/{platform}/win32',
