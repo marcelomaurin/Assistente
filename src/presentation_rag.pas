@@ -2,7 +2,7 @@ unit presentation_rag;
 {$mode objfpc}{$H+}
 interface
 uses Classes, SysUtils, fpjson, jsonparser, Windows, LazUTF8,
-  presentation_package, professor_commands;
+  presentation_package, professor_commands, presentation_flow;
 type
   TPresentationRAGEntry = class
     FileName,Text,Digest: string;
@@ -55,10 +55,11 @@ begin
   finally M.Free;end;
 end;
 function PlainPackage(const FileName: string; out Digest: string): string;
-var P: TPVAPackage; S: TAvatarScript;
+var P: TPVAPackage; S: TAvatarScript; Flow: TFlowProgram;
 begin
   P:=TPVAPackage.Create;
-  try P.Load(FileName);Digest:=TextDigest(P.Script);S:=ParseAvatarScript(P.Script,4096);Result:=S.PlainText;
+  try P.Load(FileName);Digest:=TextDigest(P.Script);Flow:=TFlowProgram.Create(P.Script);
+    try S:=ParseAvatarScript(Flow.WithoutFlowTags,4096);Result:=S.PlainText;finally Flow.Free;end;
   finally P.Free;end;
 end;
 function TemporarySibling(const FileName: string): string;

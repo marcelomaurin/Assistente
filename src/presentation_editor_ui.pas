@@ -3,7 +3,7 @@ unit presentation_editor_ui;
 interface
 uses Windows, Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Dialogs, SynEdit,
   Process, FileUtil, LazFileUtils, presentation_package, presentation_document,
-  presentation_paths, presentation_tags, presentation_ai, professor_catalog, presentation_rag;
+  presentation_paths, presentation_tags, presentation_ai, professor_catalog, presentation_rag, presentation_flow;
 type
   TPresentationEditor = class(TForm)
   private
@@ -23,11 +23,14 @@ type
     procedure InsertResource(const Resource: string);
     procedure ChooseAvatar;
     function CanDiscard: Boolean;
+    procedure InsertFlowAction(ID: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure LoadPackage(const FileName: string);
     procedure SavePackage(const FileName: string);
+    procedure InsertFlowDirective(Kind: TFlowAction; const ABlock: string = ''; const EventName: string = '');
+    function CompiledScript(const EntryBlock: string = ''): string;
   end;
 implementation
 function NewPrivateDirectory: string;
@@ -45,11 +48,13 @@ begin
 
   end;
   FSettings:=LoadPresentationAIConfig(Config);
-  FToolbar:=TFlowPanel.Create(Self);FToolbar.Parent:=Self;FToolbar.Align:=alTop;FToolbar.Height:=120;FToolbar.AutoWrap:=True;
+  FToolbar:=TFlowPanel.Create(Self);FToolbar.Parent:=Self;FToolbar.Align:=alTop;FToolbar.Height:=160;FToolbar.AutoWrap:=True;
   AddButton('Novo',1);AddButton('Abrir .pva',2);AddButton('Salvar',3);AddButton('Salvar como',4);
   AddButton('Inserir midia',5);AddButton('Fechar midia',6);AddButton('Slide anterior',7);
   AddButton('Proximo slide',8);AddButton('Ir ao slide',9);AddButton('Desfazer',10);AddButton('Refazer',11);
   AddButton('Validar',12);AddButton('Gerar movimentos IA',13);AddButton('Previa no Assistente',14);AddButton('Cancelar IA',15);
+  AddButton('Bloco',20);AddButton('GOTO',21);AddButton('Chamar bloco',22);
+  AddButton('Evento futuro',23);AddButton('FIM',24);AddButton('Previa do bloco',25);
   AddButton('Escolher avatar',17);AddButton('Escolher voz',18);AddButton('Fechar som',19);
   P:=TPanel.Create(Self);P.Parent:=Self;P.Align:=alTop;P.Height:=38;P.BevelOuter:=bvNone;
   L:=TLabel.Create(Self);L.Parent:=P;L.Caption:='Executavel do Assistente:';L.SetBounds(8,10,190,24);
@@ -114,6 +119,55 @@ begin
     if not InputQuery('Inicio do recurso','Opcional: hh:mm:ss. Vazio inicia no comeco.',StartTime) then Exit;
   Insert(PresentationMediaTag(Resource,StartTime));
 end;
+procedure TPresentationEditor.InsertFlowDirective(Kind: TFlowAction; const ABlock: string; const EventName: string);
+var Directive: string;
+begin
+  if FJob<>nil then raise Exception.Create('Aguarde a geracao');
+  Directive:=MakeFlowTag(Kind,ABlock,EventName);
+  if Kind=faBlock then Directive:=LineEnding+Directive+LineEnding;
+  Insert(Directive);
+end;
+function TPresentationEditor.CompiledScript(const EntryBlock: string): string;
+var Flow: TFlowProgram;
+begin
+  ValidatePresentationScript(FEdit.Text);Flow:=TFlowProgram.Create(FEdit.Text);
+  try Result:=Flow.Compile(EntryBlock);ValidateRuntimeScript(Result);finally Flow.Free;end;
+end;
+procedure TPresentationEditor.InsertFlowAction(ID: Integer);
+var BlockValue,Event: string; D: TForm; Select: TComboBox; OK,Cancel: TButton; I: Integer;
+  Proc: TProcess; PackageBlockValue: string;
+begin
+  if ID=24 then begin InsertFlowDirective(faEnd);Exit;end;
+  BlockValue:='';if not InputQuery('Bloco','Nome do bloco:',BlockValue) then Exit;
+  Event:='';
+  if ID=23 then begin
+    D:=TForm.CreateNew(Self);
+    try
+      D.Caption:='Evento futuro (sem disparo de sensores)';D.SetBounds(100,100,460,130);D.Position:=poOwnerFormCenter;
+      Select:=TComboBox.Create(D);Select.Parent:=D;Select.SetBounds(10,15,440,28);Select.Style:=csDropDownList;
+      for I:=0 to High(FlowEventNames) do Select.Items.Add(FlowEventTitles[I]);Select.ItemIndex:=0;
+      OK:=TButton.Create(D);OK.Parent:=D;OK.Caption:='Inserir';OK.ModalResult:=mrOK;OK.SetBounds(250,65,90,28);
+      Cancel:=TButton.Create(D);Cancel.Parent:=D;Cancel.Caption:='Cancelar';Cancel.ModalResult:=mrCancel;Cancel.SetBounds(350,65,90,28);
+      if D.ShowModal<>mrOK then Exit;Event:=Select.Text;
+    finally D.Free;end;
+  end;
+  case ID of
+    20: InsertFlowDirective(faBlock,BlockValue);
+    21: InsertFlowDirective(faGoto,BlockValue);
+    22: InsertFlowDirective(faCall,BlockValue);
+    23: InsertFlowDirective(faEvent,BlockValue,Event);
+    25: begin
+      CompiledScript(BlockValue);
+      if not FileExists(FAssistant.Text) then raise Exception.Create('Selecione o Assistente atualizado');
+      PackageBlockValue:=FRoot+PathDelim+'previa-bloco.pva';ExportTo(PackageBlockValue);
+      Proc:=TProcess.Create(nil);
+      try
+        Proc.Executable:=FAssistant.Text;Proc.Parameters.Add('--presentation-block');Proc.Parameters.Add(BlockValue);Proc.Parameters.Add(PackageBlockValue);
+        Proc.Options:=[poNoConsole];Proc.Execute;FStatus.Caption:='Previa do bloco iniciada.';
+      finally Proc.Free;end;
+    end;
+  end;
+end;
 procedure TPresentationEditor.ChooseAvatar;
 var Catalog: TAvatarCatalog; D: TForm; List: TListBox; OK,Cancel: TButton; I: Integer;
 begin
@@ -177,6 +231,7 @@ begin
   if FJob<>nil then begin if ID=15 then FJob.Cancel;Exit;end;
   try
     case ID of
+      20..25: InsertFlowAction(ID);
       1: if CanDiscard then begin FEdit.Clear;FEdit.ClearUndo;FFile:='';FDirty:=False;Caption:='Editor de Apresentacoes';end;
       2: if CanDiscard then begin
         D:=TOpenDialog.Create(Self);

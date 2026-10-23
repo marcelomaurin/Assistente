@@ -118,3 +118,12 @@ python tests/run_presentation_rag.py build/presentations --model AVATARES/profes
 ```
 
 O primeiro comando verifica cópia, .res, UTF-8, detecção de arquivos externos, atualização/remoção, seleções inválidas, cancelamento e retorno à conversa normal usando o agente real e um provedor HTTP local. O segundo também faz uma pergunta pela janela real do Assistente e verifica a reprodução do PVA escolhido. Passe --without-office caso os exemplos nativos tenham sido gerados sem Office.
+
+
+## Blocos, chamadas e carregamento explícito
+
+O editor inclui controles para BLOCO, GOTO, chamada com retorno, EVENT futuro, FIM e prévia direta de um bloco. O Assistente aceita **carregar arquivo nome** e **chamar bloco nome** pela digitação e pelo texto transcrito. O carregamento distingue PVA/roteiros de documentos tradicionais de texto para consulta. A consulta automática de apresentações continua ignorando .res sem PVA; o carregamento explícito pode usar esse .res como documento tradicional.
+
+O [manual completo de blocos, eventos e comandos](blocos-eventos-comandos.md) contém a semântica definida, exemplos, identificação por nome semelhante, formatos aceitos, limites e situação dos quatro eventos. Os eventos estão preparados apenas como metadados validados e não se conectam aos sensores.
+
+Os novos comandos foram implementados e testados no editor antes da validação de execução na janela do Assistente. Para reproduzir essa ordem, execute tests/run_presentation_flow.py após compilar os testes. O reconhecimento físico por microfone não faz parte da homologação: o teste usa o callback real de uma transcrição já produzida.

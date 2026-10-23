@@ -81,7 +81,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure ProcessUserRequestAsync(const AUserPrompt: string; const ASelectionRequest: string = '');
+    procedure ProcessUserRequestAsync(const AUserPrompt: string; const ASelectionRequest: string = ''; ASelectPresentation: Boolean = True);
     procedure CancelExecution;
     property SelectedPresentation: string read FSelectedPresentation;
     property SelectedPresentationDigest: string read FSelectedPresentationDigest;
@@ -106,6 +106,7 @@ type
   private
     FManager: TAssistantManager;
     FPrompt, FFinalResponse, FProviderName,FSelectionRequest: string;
+    FSelectPresentation: Boolean;
     FSuccess: Boolean;
     FCurrentStepIdx: Integer;
     FCurrentStepTitle, FCurrentStepStatus: string;
@@ -121,7 +122,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(AManager: TAssistantManager; const APrompt,ASelectionRequest: string);
+    constructor Create(AManager: TAssistantManager; const APrompt,ASelectionRequest: string; ASelectPresentation: Boolean);
   end;
 
 implementation
@@ -210,7 +211,7 @@ procedure TAssistantManager.ToolCasaDeviceSet(Sender:TObject; ACall:TAIToolCall;
 procedure TAssistantManager.ToolCasaClimate(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var T,U,D:string; C:Boolean; begin if Assigned(FJarvisClient) and FJarvisClient.ObterClima(T,U,D,C) then begin AResult.Success:=True;AResult.Output:=Format('Temperatura: %s | Umidade: %s | %s',[T,U,D]);end else begin AResult.Success:=False;AResult.ErrorText:='Falha ao obter clima';end;end;
 procedure TAssistantManager.ToolFileRead(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); var P:string;SL:TStringList; begin P:='';if ACall.Arguments<>nil then P:=ACall.Arguments.Get('path',''); if (P<>'') and FileExists(P) then begin SL:=TStringList.Create;try SL.LoadFromFile(P);AResult.Success:=True;AResult.Output:=SL.Text;finally SL.Free;end;end else begin AResult.Success:=False;AResult.ErrorText:='Arquivo invalido';end;end;
 procedure TAssistantManager.ToolSystemInfo(Sender:TObject; ACall:TAIToolCall; AResult:TAIToolResult); begin AResult.Success:=True;AResult.Output:='Projeto: '+FActiveProject+' | '+DateTimeToStr(Now);end;
-procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt,ASelectionRequest:string);
+procedure TAssistantManager.ProcessUserRequestAsync(const AUserPrompt,ASelectionRequest:string; ASelectPresentation: Boolean);
 begin
   if Assigned(FWorker) then
   begin
@@ -219,7 +220,7 @@ begin
   end;
   FCancelRequested := False;FSelectedPresentation:='';FSelectedPresentationDigest:='';
   FState := asPlanning;
-  FWorker := TAgentWorkerThread.Create(Self, AUserPrompt,ASelectionRequest);
+  FWorker := TAgentWorkerThread.Create(Self, AUserPrompt,ASelectionRequest,ASelectPresentation);
   FWorker.Start;
 end;
 procedure TAssistantManager.CancelExecution;
@@ -229,7 +230,7 @@ begin
   if Assigned(FChatGPT) then FChatGPT.Cancel;
 end;
 
-constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt,ASelectionRequest:string); begin inherited Create(True);FreeOnTerminate:=False;FManager:=AManager;FPrompt:=APrompt;FSelectionRequest:=ASelectionRequest;if FSelectionRequest='' then FSelectionRequest:=APrompt;FProviderName:='CHATGPT Suite';end;
+constructor TAgentWorkerThread.Create(AManager:TAssistantManager;const APrompt,ASelectionRequest:string; ASelectPresentation:Boolean); begin inherited Create(True);FreeOnTerminate:=False;FManager:=AManager;FPrompt:=APrompt;FSelectPresentation:=ASelectPresentation;FSelectionRequest:=ASelectionRequest;if FSelectionRequest='' then FSelectionRequest:=APrompt;FProviderName:='CHATGPT Suite';end;
 procedure TAgentWorkerThread.SyncStateChange; begin if Assigned(FManager.FOnStateChange) then FManager.FOnStateChange(FManager,FManager.FState,'Executando');end;
 procedure TAgentWorkerThread.SyncStepUpdate; begin if Assigned(FManager.FOnStepUpdate) then FManager.FOnStepUpdate(FManager,FCurrentStepIdx,FManager.Planner.StepCount,FCurrentStepTitle,FCurrentStepStatus);end;
 procedure TAgentWorkerThread.SyncToolLog; begin if Assigned(FManager.FOnToolLog) then FManager.FOnToolLog(FManager,FToolNameLog,FToolArgsLog,FToolResultLog,FToolSuccessLog);end;
@@ -264,7 +265,7 @@ var Step:TPlanStep;Tool:TAITool;CallObj:TAIToolCall;ResultObj:TAIToolResult;Ctx,
 begin
   try
   FManager.FState := asPlanning; Synchronize(@SyncStateChange);
-  if SelectPresentation then begin
+  if FSelectPresentation and SelectPresentation then begin
     FManager.FState:=asFinished;Synchronize(@SyncComplete);Exit;
   end;
   HasJarvis:=Assigned(FManager.FJarvisClient) and (FManager.FJarvisClient.BaseURL<>'');

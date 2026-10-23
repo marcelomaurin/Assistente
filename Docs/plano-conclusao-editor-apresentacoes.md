@@ -58,3 +58,10 @@ Implementado painel visual dentro da área de conversa do Assistente para imagen
 O salvamento no editor publica o PVA em %LOCALAPPDATA%/Assistente/RAG e gera um .res UTF-8 do mesmo nome com os textos sem tags de controle. Um monitor também detecta pacotes copiados diretamente para a biblioteca enquanto o Assistente estiver aberto. A consulta usa candidatos recuperados por termos e seleção estruturada pela IA configurada. Ao escolher um documento, o Assistente executa o pacote original; na ausência de correspondência, segue a conversa comum. Identificadores são limitados aos candidatos da consulta, o pacote é validado e mudanças do roteiro durante a seleção impedem execução desatualizada. O manual detalha os limites de recuperação e trechos.
 
 Validados na sessão do usuário: publicação pelo editor, geração do .res, detecção externa em segundo plano, atualização/remoção, seleção pelo agente real usando IA HTTP local, ausência de correspondência, seleção inválida, cancelamento e pergunta pela janela real iniciando o PVA original com PowerPoint e avatar visível. O relatório registra essa execução.
+
+
+## Complemento — blocos, eventos preparados e comandos de documentos
+
+Implementados primeiro os controles do editor e sua validação nativa; depois, o Assistente foi validado com GOTO, chamadas com retorno, entrada direta em bloco, FIM e retenção do arquivo carregado. Eventos de voz, rosto, mão levantada e reconhecimento de pessoa são metadados preparados, sem disparadores de sensores. Os comandos digitados/transcritos carregam arquivos pelo nome e chamam blocos, distinguindo roteiros de documentos tradicionais de consulta. A busca privilegia nomes exatos e recusa aproximações ambíguas.
+
+O teste na janela real confirmou reutilização do arquivo após término, FIM encerrando áudio/mídia, não execução dos eventos, troca de arquivo e RAG tradicional fornecendo conhecimento à IA. A transcrição é simulada no callback real; não houve teste físico de ASR. Sintaxe, decisões e limitações estão em [blocos-eventos-comandos.md](blocos-eventos-comandos.md).

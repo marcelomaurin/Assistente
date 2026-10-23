@@ -36,3 +36,14 @@
 - Recuperação de candidatos por termos e escolha pela IA configurada, com seleção restrita aos documentos oferecidos.
 - A seleção executa o PVA original com voz, avatar e mídias; ausência de correspondência mantém a conversa normal.
 - Revalidação antes da reprodução e testes de publicação, monitor, UTF-8, alteração/remoção, cancelamento e roteamento real da janela.
+
+
+### Blocos de comandos e documentos carregados
+
+- Editor: inserir BLOCO, GOTO, chamadas com retorno, EVENT e FIM; prévia de um bloco; validação de nomes, referências, ciclos e expansão.
+- Executor: principal termina na primeira declaração; chamadas curtas retornam; GOTO encerra após o destino; FIM termina toda a tarefa e fecha as mídias.
+- Eventos de voz, rosto, mão levantada e reconhecimento de pessoa declarados e validados, sem consequência ou ligação com sensores.
+- Comandos digitados/transcritos carregar arquivo e chamar bloco; busca por nome exato ou semelhante, com recusa de ambiguidade e tratamento do par PVA/RES.
+- Roteiros UTF-8 .script/TXT/MD reconhecidos; documentos tradicionais de texto ficam como conhecimento e não executam tags.
+- Arquivo carregado mantido após o término, revalidado a cada chamada; RAG tradicional substitui os blocos anteriores.
+- Testes na ordem editor → Assistente, fala sem tags, FIM, comandos e contexto da IA. Documentação em Docs/blocos-eventos-comandos.md.

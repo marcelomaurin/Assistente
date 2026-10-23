@@ -41,7 +41,7 @@ def main():
              'assistant':root/'src/assistente.lpr'}
     if a.target=='tests':
         targets={n:base/'tests'/f'{n}.lpr' for n in ['professor_commands_tests','professor_speech_commands_tests','professor_state_tests']}
-        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests']})
+        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests','presentation_flow_tests','presentation_flow_editor_tests','assistant_documents_tests','presentation_flow_native_tests','presentation_flow_speech_tests']})
     elif a.target!='all':targets={a.target:targets[a.target]}
     for name,source in targets.items():
         cmd=args+(['-WG'] if name in ['editor','assistant'] else [])+[str(source)]

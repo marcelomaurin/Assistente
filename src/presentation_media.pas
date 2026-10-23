@@ -161,7 +161,7 @@ procedure TPresentationMedia.Execute(const Tag: TPresentationTag);
 var P,E,Stage,Device: string; Settings: OleVariant; N,PreviousSecurity: Integer; Before: TList;
 begin
   case Tag.Action of
-    paCloseFile: Close;
+    paCloseFile,paEndTask: Close;
     paCloseSound: CloseSound;
     paOpenFile: begin
       P:=FRoot+StringReplace(Tag.Argument,'/',PathDelim,[rfReplaceAll]);

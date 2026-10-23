@@ -8,7 +8,7 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
   professor_ui, professor_commands, fpjson, assistant_integration_protocol,
   assistant_integration_server, assistant_integration_jobs, presentation_package,
-  presentation_media, presentation_tags, presentation_joints, presentation_rag;
+  presentation_media, presentation_tags, presentation_joints, presentation_rag, presentation_flow, assistant_documents, presentation_document;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -29,8 +29,12 @@ type
     FSpeechJob: TReceptionJob;
     FPresentationMedia: TPresentationMedia;
     FRAGMonitor: TPresentationRAGMonitor;
+    FLoadedFile,FLoadedKnowledge: string;
+    FLoadedKind: TAssistantDocumentKind;
+    FLoadedFlow: TFlowProgram;
     FPresentationRoot: string;
     FPresentationMode,FPresentationAvatarChanged: Boolean;
+    function ExecuteDocumentCommand(const AInput: string): Boolean;
     procedure SelectPresentationAvatar(const AvatarID: string);
     procedure FinishPresentation;
     procedure PresentationVisualChange(Sender: TObject);
@@ -92,7 +96,11 @@ type
     procedure PararVideo;
     procedure ProfileChange(Sender: TObject);
   public
-    procedure StartPresentation(const FileName: string);
+    procedure StartPresentation(const FileName: string; const EntryBlock: string = '');
+    procedure LoadDocument(const FileName: string);
+    procedure CallLoadedBlock(const BlockName: string);
+    property LoadedDocument: string read FLoadedFile;
+    property LoadedFlow: TFlowProgram read FLoadedFlow;
     procedure FalarResposta(const ATexto: string);
     function ApresentandoResposta: Boolean;
     function ActivePresentationMedia: string;
@@ -306,6 +314,7 @@ procedure Tfrmmain.FormDestroy(Sender: TObject);
 begin
   FClosing := True;
   FreeAndNil(FRAGMonitor);
+  FreeAndNil(FLoadedFlow);
   if Assigned(FTimer) then FTimer.Enabled := False;
   FreeAndNil(FIntegration);
   if Assigned(FContinuousListener) then FContinuousListener.Stop;
@@ -334,7 +343,10 @@ begin
     IniciarVideo;
     FProfessor.Gesture(psWave);
     try
-      if (ParamStrUTF8(1)='--presentation') or (ParamStrUTF8(1)='--presentation-silent') then begin
+      if ParamStrUTF8(1)='--presentation-block' then begin
+        if ParamCount<>3 then raise Exception.Create('Use --presentation-block nome arquivo.pva');
+        StartPresentation(ParamStrUTF8(3),ParamStrUTF8(2));
+      end else if (ParamStrUTF8(1)='--presentation') or (ParamStrUTF8(1)='--presentation-silent') then begin
         if ParamCount<>2 then raise Exception.Create('Informe um arquivo .pva');
         StartPresentation(ParamStrUTF8(2));
       end else if SameText(ExtractFileExt(ParamStrUTF8(1)),'.pva') then StartPresentation(ParamStrUTF8(1));
@@ -553,6 +565,7 @@ begin
   if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
   P := Trim(ATexto);
   if P = '' then begin RetomarEscuta; Exit; end;
+  if ExecuteDocumentCommand(P) then Exit;
   PausarEscuta;
   FProfessor.ResetCommands;
   FCurrentUserText := P;
@@ -561,6 +574,8 @@ begin
     sLineBreak + 'Nova fala do usuario:' + sLineBreak + P + sLineBreak +
     'Analise a nova fala considerando o historico e responda mantendo o contexto.'
   else C := P;
+  if (FLoadedFile<>'') and (FLoadedKind=adRAG) then
+    C:=C+LineEnding+DocumentContext(FLoadedFile,FLoadedKnowledge,P);
   FMemoryItem := FMemoryMap.BeginAgentStep('Assistente', tamOrquestrador, P, H);
   memResposta.Lines.Add('Você: ' + P);
   FChat.AddMessage(P, True);
@@ -568,7 +583,7 @@ begin
   edPergunta.Clear;
   FProfessor.SetActivity(psThinking);
   SetEstado('Pensando...', True);
-  try FAssistantManager.ProcessUserRequestAsync(C,P);
+  try FAssistantManager.ProcessUserRequestAsync(C,P,(FLoadedFile='') or (FLoadedKind<>adRAG));
   except on E: Exception do
     begin
       if Assigned(FMemoryItem) then
@@ -640,16 +655,53 @@ begin
   if (FProfileCombo.ItemIndex>=0) and (FProfileCombo.ItemIndex<FCatalog.Count) then
     Result:=FCatalog[FProfileCombo.ItemIndex].ID else Result:='custom';
 end;
-procedure Tfrmmain.StartPresentation(const FileName: string);
-var P: TPVAPackage; G: TGUID; Script: TAvatarScript; I: Integer;
+procedure Tfrmmain.LoadDocument(const FileName: string);
+var Kind: TAssistantDocumentKind; TextValue,SourcePath: string;
 begin
   if Assigned(FSpeechJob) or FAguardandoResposta then raise Exception.Create('Assistente ocupado');
+  SourcePath:=ExpandFileName(FileName);Kind:=AssistantDocumentKind(SourcePath);
+  if Kind<>adRAG then begin StartPresentation(SourcePath);Exit;end;
+  TextValue:=ReadAssistantKnowledge(SourcePath);
+  FreeAndNil(FLoadedFlow);FLoadedFile:=SourcePath;FLoadedKind:=adRAG;FLoadedKnowledge:=TextValue;
+  SetEstado('Documento de consulta carregado: '+ExtractFileName(SourcePath),False);
+end;
+procedure Tfrmmain.CallLoadedBlock(const BlockName: string);
+begin
+  if (FLoadedFile='') or (FLoadedKind=adRAG) then raise Exception.Create('Carregue primeiro um script com blocos');
+  StartPresentation(FLoadedFile,BlockName);
+end;
+function Tfrmmain.ExecuteDocumentCommand(const AInput: string): Boolean;
+var Command: TLocalDocumentCommand; Argument,FileName,MessageText: string; Item: TAIAgentMemoryMapItem;
+begin
+  Result:=False;Item:=nil;
+  try
+    Command:=ParseDocumentCommand(AInput,Argument);if Command=dcNone then Exit;
+    Result:=True;PausarEscuta;FChat.AddMessage(AInput,True);edPergunta.Clear;
+    if Command=dcLoadFile then begin
+      FileName:=FindAssistantDocument(PresentationRAGDirectory,Argument);LoadDocument(FileName);
+      if FLoadedKind=adRAG then MessageText:='Documento carregado para consulta: '+ExtractFileName(FileName)
+      else MessageText:='Script carregado: '+ExtractFileName(FileName);
+    end else begin CallLoadedBlock(Argument);MessageText:='Executando bloco: '+Argument;end;
+    FChat.AddMessage(MessageText,False);memResposta.Lines.Add(MessageText);
+    Item:=FMemoryMap.BeginAgentStep('Assistente',tamOrquestrador,AInput,'');
+    FMemoryMap.EndAgentStep(Item,'Comando local',MessageText,'documento',MessageText,MessageText);SalvarMemoria;
+    if not Assigned(FSpeechJob) then RetomarEscuta;
+  except on E: Exception do begin
+    Result:=True;MessageText:=E.Message;FChat.AddMessage(MessageText,False);
+    SetEstado(MessageText,False);RetomarEscuta;
+  end;end;
+end;
+procedure Tfrmmain.StartPresentation(const FileName,EntryBlock: string);
+var P: TPVAPackage; G: TGUID; Script: TAvatarScript; I: Integer; Flow: TFlowProgram; Compiled,SourcePath: string; Kind: TAssistantDocumentKind;
+begin
+  if Assigned(FSpeechJob) or FAguardandoResposta then raise Exception.Create('Assistente ocupado');
+  SourcePath:=ExpandFileName(FileName);Kind:=AssistantDocumentKind(SourcePath);
   FinishPresentation;
-  P:=TPVAPackage.Create;
+  P:=OpenAssistantPackage(SourcePath);Flow:=nil;
   try
     try
-    P.Load(FileName);
-    Script:=ParseAvatarScript(P.Script,4096);
+    Flow:=TFlowProgram.Create(P.Script);Compiled:=Flow.Compile(EntryBlock);ValidateRuntimeScript(Compiled);
+    Script:=ParseAvatarScript(Compiled,4096);
     for I:=0 to High(Script.Steps) do
       if (Script.Steps[I].Presentation.Action=paSelectAvatar) and
         (FCatalog.IndexOfID(Script.Steps[I].Presentation.Argument)<0) then
@@ -659,11 +711,13 @@ begin
     FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
     P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot,FPresentationPanel);
     FPresentationMedia.OnVisualChange:=@PresentationVisualChange;
+    FreeAndNil(FLoadedFlow);FLoadedFlow:=Flow;Flow:=nil;
+    FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
     FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
-    FalarResposta(P.Script);
+    FalarResposta(Compiled);
     if FSpeechJob=nil then FinishPresentation;
     except FinishPresentation;raise;end;
-  finally P.Free;end;
+  finally Flow.Free;P.Free;end;
 end;
 procedure Tfrmmain.PresentationVisualChange(Sender: TObject);
 var HasVisual: Boolean;

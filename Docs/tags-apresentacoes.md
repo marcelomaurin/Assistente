@@ -92,3 +92,18 @@ Exemplo:
 ```
 
 O exemplo com nova pressupõe que essa voz existe no provedor configurado. Todos os recursos precisam estar dentro do PVA.
+
+
+## Controle de fluxo
+
+| Tag | Uso |
+| --- | --- |
+| [BLOCO:{NOME}] | Declara bloco, disponível somente por chamada; termina no próximo BLOCO ou no fim do texto. |
+| [{NOME}] | Executa bloco e retorna após a chamada. [NOME] também chama quando há bloco com esse nome. |
+| [GOTO:{NOME}] | Desvia para o bloco e encerra ao final dele, sem retorno. |
+| [FIM] | Encerra a tarefa inteira e fecha as mídias. |
+| [EVENT={EVENTO}:{BLOCO_NOME}] | Declara vínculo futuro, sem disparar sensores ou executar o bloco. |
+
+Eventos preparados: DETECCAO_VOZ, DETECCAO_ROSTO, MAO_LEVANTADA e RECONHECIMENTO_PESSOA. Nomes descritivos com acentos também são aceitos. O fluxo principal termina antes da primeira declaração BLOCO; blocos não são percorridos automaticamente.
+
+O [manual de blocos, eventos e comandos](blocos-eventos-comandos.md) documenta retorno, GOTO, FIM, nomes, limites, exemplos, prévia no editor e os comandos falados/digitados **carregar arquivo nome** e **chamar bloco nome**.

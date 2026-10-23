@@ -44,3 +44,9 @@ jobs:
           if ('${{ inputs.office }}' -ne 'true') { $arguments += '--without-office' }
           python @arguments
           exit $LASTEXITCODE
+
+      - name: Flow authoring first, then native script and document commands
+        shell: pwsh
+        run: |
+          python tests/run_presentation_flow.py build/presentations --model AVATARES/professor/modelo.gltf
+          exit $LASTEXITCODE

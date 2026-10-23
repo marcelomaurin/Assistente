@@ -4,7 +4,7 @@ interface
 uses SysUtils, presentation_paths;
 type
   TPresentationAction = (paNone, paOpenFile, paCloseFile, paNextSlide,
-    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound);
+    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound, paEndTask);
   TPresentationTag = record
     Action: TPresentationAction;
     Argument: string;
@@ -54,6 +54,7 @@ begin
     if not SafePresentationPath(Path) or not SupportedPresentationMedia(Path) then Exit;
     Parsed.Action:=paOpenFile;Parsed.Argument:=Path;
   end else if (Key='fechar arquivo') and (P=0) then Parsed.Action:=paCloseFile
+  else if (Key='fim') and (P=0) then Parsed.Action:=paEndTask
   else if (Key='fechar som') and (P=0) then Parsed.Action:=paCloseSound
   else if (Key='proximo slide') and (P=0) then Parsed.Action:=paNextSlide
   else if (Key='slide anterior') and (P=0) then Parsed.Action:=paPreviousSlide

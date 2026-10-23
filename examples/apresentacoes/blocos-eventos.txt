@@ -1,0 +1,21 @@
+[EVENT={DETECCAO_VOZ}:{AoOuvir}]
+[EVENT={DETECCAO_ROSTO}:{AoVerRosto}]
+[EVENT={MAO_LEVANTADA}:{AoLevantarMao}]
+[EVENT={RECONHECIMENTO_PESSOA}:{AoReconhecer}]
+Olá. [{Saudacao}] Voltei ao principal.
+[GOTO:{Encerramento}]
+
+[BLOCO:{Saudacao}]
+[sorriso] Bem-vindo à apresentação.
+
+[BLOCO:{Encerramento}]
+Obrigado pela atenção.[FIM]
+
+[BLOCO:{AoOuvir}]
+Evento de voz preparado para o futuro.
+[BLOCO:{AoVerRosto}]
+Evento de rosto preparado para o futuro.
+[BLOCO:{AoLevantarMao}]
+Evento de mão levantada preparado para o futuro.
+[BLOCO:{AoReconhecer}]
+Evento de reconhecimento preparado para o futuro.

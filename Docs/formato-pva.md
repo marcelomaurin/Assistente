@@ -47,3 +47,10 @@ A versão 1 não referencia arquivos externos, URLs ou executáveis. Vídeos e P
 
 
 A versão 1 também permite recursos de som WAV/MP3/WMA em assets/. A opção de início temporal e as escolhas de avatar/voz ficam no roteiro; o inventário aponta somente para os arquivos reais, sem incluir o sufixo |inicio=. Avatar e voz são referências às opções instaladas/configuradas na máquina executora, não arquivos embutidos. Pacotes com essas tags precisam do executor atualizado.
+
+
+## Linguagem de blocos
+
+O contêiner permanece na versão 1. O roteiro UTF-8 pode conter BLOCO, GOTO, chamadas curtas, EVENT e FIM; sua reprodução exige o Assistente atualizado. O roteiro original e todas as mídias referenciadas, inclusive em blocos não chamados, são preservados no pacote. A validação verifica as referências, os nomes dos blocos e os vínculos de eventos. O executor expande somente o fluxo solicitado, preserva as tags de mídia/voz/gestos e entrega FIM na fronteira da fila de reprodução.
+
+O texto .res de consulta remove as tags de controle de todo o roteiro e conserva os textos dos blocos, sem reproduzir ou expandir chamadas. Consulte [blocos, eventos e comandos](blocos-eventos-comandos.md) para sintaxe e limites. Os eventos são declarativos, sem ativação de sensores.

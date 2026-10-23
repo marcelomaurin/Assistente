@@ -41,34 +41,49 @@
     "real agent selects indexed package without synthesizing a replacement script",
     "RAG no-match follows normal assistant answer; selection cleared on next request",
     "invalid selection and cancellation cannot start a package",
-    "real main window question routes through local mock AI and plays original PVA with avatar/media/PowerPoint"
+    "real main window question routes through local mock AI and plays original PVA with avatar/media/PowerPoint",
+    "editor flow controls validated before native Assistente execution",
+    "BLOCO, GOTO, returning short calls, global FIM and named block preview",
+    "four dormant event kinds, valid binding metadata and no sensor dispatch",
+    "missing/duplicate/reserved names, cycles, expanded event limits and literal code/link handling",
+    "flow directives excluded from TTS; FIM delivered after preceding speech",
+    "typed/transcribed commands resolve exact/similar filenames, reject ambiguity/traversal and map PVA/res pairs",
+    "loaded script retained and reopened for subsequent typed/transcribed block calls",
+    "FIM closes real WAV and visual media without waiting for trailing sound",
+    "raw UTF-8 script execution and traditional text RAG as knowledge without executing tags",
+    "traditional document loading clears prior blocks and suppresses automatic presentation selection",
+    "complete previous parser/package/media/avatar/PowerPoint/RAG regressions repeated successfully"
   ],
   "native_reports": {
     "media": "PASS: real PNG single-media replacement\nPASS: real AVI/WAV offsets, independent image+sound, sound close, duration bounds, pause/resume\nPASS: real PowerPoint slideshow embedded as child of media panel\nPASS: single-media close and real slide navigation/bounds; Office mode=with-office\n",
     "editor": "PASS: native editor opened, cursor insertion, undo/redo, PVA save/open roundtrip; screenshot saved\n",
     "main": "PASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n",
-    "rag": "PASS: user question selected indexed text through real agent and started original PVA in main window\nPASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n"
+    "rag": "PASS: user question selected indexed text through real agent and started original PVA in main window\nPASS: embedded visual beside visible avatar; text hidden; resize and text restoration checked\nPASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n",
+    "flow": "PASS: typed fuzzy load; GOTO, returning calls, block boundaries, four dormant events; source retained\nPASS: transcribed voice command calls loaded block; FIM stops audio/media and ignores remaining block text\nPASS: typed direct call; traditional RAG stays data, clears old blocks; raw .script executes\nPASS: loaded traditional RAG supplies knowledge to real agent, without running control tags or selecting a script\n"
   },
   "limits": [
     "Win64/Linux not validated",
     "external paid AI/TTS credentials not used; mock TTS WAV is silent",
     "PowerPoint requires interactive user session; isolated account activation failed",
     "workflow committed but not executed on remote runner",
-    "video codecs depend on Windows"
+    "video codecs depend on Windows",
+    "flow EVENT declarations have no sensor integration or dispatch by design",
+    "spoken command routing tested with simulated transcription callback, not physical microphone ASR",
+    "explicit traditional document loading accepts UTF-8 TXT/MD/RES/RAG/JSON/CSV up to 1 MiB, not binary document extraction"
   ],
   "package_version": 1,
   "binaries": {
     "presentation_editor.exe": {
-      "size": 32697056,
-      "sha256": "0af192ede9739fca98d05f744b41ff72453fe15b639a035ebd21ae66b13ee344"
+      "size": 32760985,
+      "sha256": "3c1e631d575a9be78d0a027843fd366d5aa590c3346eb712ca3b12d3c122baa1"
     },
     "assistente.exe": {
-      "size": 59477560,
-      "sha256": "2a7b372c397d86ceb5d4f16b55d03ecd9667a6feec7464e2200a062b8690fa1c"
+      "size": 59605631,
+      "sha256": "de575e98c5b5af534df9db3591dfce8eddb59105778b0d98be5d71a156bf4496"
     },
     "pva_tool.exe": {
-      "size": 802221,
-      "sha256": "a8fdd92b6dcae0791fada41dc834a0327b09c1cd370543d1142a32ccac0aef6e"
+      "size": 1294908,
+      "sha256": "41c2b48372fd711791ae89fea0133548c350ec699feb908a322501888054833a"
     }
   },
   "runtime": {
@@ -95,5 +110,26 @@
     ],
     "provider": "local HTTP mock",
     "native_playback": true
+  },
+  "flow_base": "4506fc3fc0c6738306d3248fe9259fd6e2f1e8b2",
+  "flow_validation": {
+    "passed": [
+      "PASS: blocks, GOTO, nested returning calls, global FIM, literal syntax, reserved names, dormant events, cycles and AI preservation\r\n",
+      "PASS: editor first; six flow controls, insert/undo/redo, compile main/block, save and flow-free res\r\n",
+      "PASS: typed/transcribed command syntax, punctuation, exact/similar filenames, ambiguity/traversal, PVA/res pairing, RAG/script classification and raw script loading\r\n",
+      "PASS: compiled flow speaks only executable text; FIM dispatched after speech without reading tags or dormant events\r\n",
+      "PASS: typed fuzzy load; GOTO, returning calls, block boundaries, four dormant events; source retained\nPASS: transcribed voice command calls loaded block; FIM stops audio/media and ignores remaining block text\nPASS: typed direct call; traditional RAG stays data, clears old blocks; raw .script executes\nPASS: loaded traditional RAG supplies knowledge to real agent, without running control tags or selecting a script\n"
+    ],
+    "native": true,
+    "event_dispatch": "not implemented; declarations only",
+    "microphone": "transcribed callback simulated; physical ASR not exercised"
+  },
+  "flow_regressions": {
+    "avatar_commands": 0,
+    "speech_commands": 0,
+    "avatar_state": 0,
+    "flow": 0,
+    "native": 0,
+    "rag": 0
   }
 }
