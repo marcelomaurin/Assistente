@@ -6,7 +6,7 @@ interface
 
 uses Classes, SysUtils, Controls, ExtCtrls, StdCtrls, IniFiles,
   CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
-  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints;
+  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints, movement_catalog, X3DNodes;
 
 type
   TProfessorZoomEvent = procedure(Steps: Single) of object;
@@ -36,6 +36,7 @@ type
     FDirectiveGesture: string;
     FDirectiveUntil: QWord;
     FExtraPose: string;
+    FMovementJoints, FDirectiveMouth: Boolean;
     procedure TimerTick(Sender: TObject);
     procedure ApplyAnimation;
     function DefaultModel: string;
@@ -51,6 +52,7 @@ type
     procedure Gesture(AState: TProfessorState);
     procedure ZoomBy(Steps: Single);
     function ExecuteCommand(Command: TAvatarCommand): Boolean;
+    function ExecuteMovement(const ID: string): Boolean;
     procedure ResetCommands;
     procedure SetRenderingActive(Active: Boolean);
     property Zoom: Single read FZoom;
@@ -136,6 +138,7 @@ begin
   FDirectiveGesture := '';
   FDirectiveUntil := 0;
   FExtraPose := '';
+  FDirectiveMouth:=False;FMovementJoints:=False;
   FAutoIdle := AAutoIdle;
   Requested := Trim(AFileName);
   if Requested = '' then Requested := DefaultModel
@@ -213,7 +216,7 @@ begin
       FNotice.Visible:=True;
     end;
   end;
-  if (FMachine.State = psIdle) and not FAutoIdle and not FSmile and not FRightHandUp and (FDirectiveGesture='') then Clip := '';
+  if (FMachine.State = psIdle) and not FAutoIdle and not FSmile and not FRightHandUp and (FDirectiveGesture='') and (FExtraPose='') then Clip := '';
   if (Clip <> '') and (FScene.AnimationsList.IndexOf(Clip) < 0) then
     Clip := FAnimations[psIdle];
   if Clip = FLastAnimation then Exit;
@@ -224,48 +227,56 @@ begin
 end;
 
 function TProfessorView.ExecuteCommand(Command: TAvatarCommand): Boolean;
-var Expected: string;
 begin
-  Expected:='';
-  case Command of
-    acNone: Exit(True);
-    acSmile: begin FSmile:=True;Expected:=FAnimations[psIdle]+'_smile';end;
-    acNeutral: begin ResetCommands;Exit(True);end;
-    acRaiseRightHand: begin FRightHandUp:=True;FDirectiveGesture:='';Expected:=FAnimations[psIdle]+'_right_hand_up';end;
-    acLowerRightHand: begin FRightHandUp:=False;FDirectiveGesture:='';end;
-    acStopGesture: begin FDirectiveGesture:='';FDirectiveUntil:=0;end;
-    acRelax: begin FExtraPose:='';end;
-    acRaiseLeftHand,acRaiseBothHands,acLookLeft,acLookRight,acSurprise,
-    acSad,acSerious,acCrossArms,acSit:
-      begin FExtraPose:=StringReplace(AvatarCommandName(Command),' ','_',[rfReplaceAll]);Expected:=FExtraPose;end;
-    acLowerLeftHand,acLowerBothHands,acLookFront,acCloseArms,acUncrossArms,acStand:
-      begin FExtraPose:='';end;
-    acApplause,acWave,acWalk:
-      begin
-        case Command of
-          acApplause: begin FDirectiveGesture:='applause';if FMachine.State=psSpeaking then FDirectiveGesture:='applause_talking';end;
-          acWave: FDirectiveGesture:=FAnimations[psWave];
-          acWalk: FDirectiveGesture:=FAnimations[psWalk];
-        end;
-        Expected:=FDirectiveGesture;
-        FDirectiveUntil:=GetTickCount64+2400;
-      end;
-    else begin
-      FDirectiveGesture:=StringReplace(AvatarCommandName(Command),' ','_',[rfReplaceAll]);
-      Expected:=FDirectiveGesture;
-      FDirectiveUntil:=GetTickCount64+2400;
-    end;
+  if Command=acNone then Exit(True);
+  Result:=ExecuteMovement(AvatarCommandName(Command));
+end;
+
+function TProfessorView.ExecuteMovement(const ID: string): Boolean;
+var M: TMovementDefinition; Clip,Expected: string; I: Integer;
+begin
+  Result:=False;
+  if not FindMovement(ID,M) then Exit;
+  Clip:=M.Clip;
+  if (FMachine.State=psSpeaking) and (M.TalkingClip<>'') and
+    (FScene.AnimationsList.IndexOf(M.TalkingClip)>=0) then Clip:=M.TalkingClip;
+  if (Clip<>'') and (FScene.AnimationsList.IndexOf(Clip)<0) then begin
+    FNotice.Caption:='Modelo sem movimento: '+M.Title+' ('+Clip+')';FNotice.Visible:=True;Exit;
   end;
-  if Command in [acRaiseRightHand,acLowerRightHand] then FScene.DefaultAnimationTransition:=0.6;
-  ApplyAnimation;
-  FScene.DefaultAnimationTransition:=0.32;
+  for I:=0 to High(M.Joints) do
+    if (FScene.RootNode=nil) or (FScene.RootNode.FindNodeByName(TTransformNode,M.Joints[I].Bone,False)=nil) then begin
+      FNotice.Caption:='Modelo sem osso: '+M.Joints[I].Bone;FNotice.Visible:=True;Exit;
+    end;
+  if M.Mode='reset' then begin ResetCommands;Exit(True);end;
+  if FMovementJoints and (M.Mode<>'smile') then begin TPresentationScene(FScene).ResetJoints;FMovementJoints:=False;end;
+  Expected:='';
+  if M.Mode='smile' then begin FSmile:=True;Expected:=FAnimations[psIdle]+'_smile';end
+  else if M.Mode='raise_right' then begin
+    FRightHandUp:=True;FExtraPose:='';FDirectiveGesture:='';FDirectiveUntil:=0;
+    Expected:=FAnimations[psIdle]+'_right_hand_up';
+  end
+  else if M.Mode='lower_right' then begin FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;end
+  else if M.Mode='stop' then begin FDirectiveGesture:='';FDirectiveUntil:=0;end
+  else if (M.Mode='clear_pose') or (M.Mode='lower_both') then begin
+    FExtraPose:='';FDirectiveGesture:='';FDirectiveUntil:=0;
+    if M.Mode='lower_both' then FRightHandUp:=False;
+  end
+  else if M.Mode='pose' then begin FExtraPose:=Clip;FDirectiveGesture:='';FDirectiveUntil:=0;Expected:=Clip;end
+  else begin FDirectiveGesture:=Clip;FDirectiveUntil:=GetTickCount64+QWord(M.Duration);Expected:=Clip;end;
+  if M.Mode<>'smile' then FDirectiveMouth:=M.SpeechMouth and (M.Mode='gesture');
+  TPresentationScene(FScene).GestureMouth:=FDirectiveMouth;
+  FLastAnimation:='#movement';FScene.DefaultAnimationTransition:=M.Transition/1000;
+  ApplyAnimation;FScene.DefaultAnimationTransition:=0.32;
+  for I:=0 to High(M.Joints) do TPresentationScene(FScene).ExecuteJoint(M.Joints[I]);
+  if M.Mode<>'smile' then FMovementJoints:=Length(M.Joints)>0;
   Result:=(Expected='') or (FScene.AnimationsList.IndexOf(Expected)>=0);
-  if not Result then
-  begin FNotice.Caption:='Modelo sem comando: '+AvatarCommandName(Command);FNotice.Visible:=True;end;
+  if not Result then begin FNotice.Caption:='Modelo sem movimento: '+M.Title;FNotice.Visible:=True;end;
 end;
 
 procedure TProfessorView.ResetCommands;
 begin
+  FDirectiveMouth:=False;FMovementJoints:=False;
+  TPresentationScene(FScene).GestureMouth:=False;
   TPresentationScene(FScene).ResetJoints;
   FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;FExtraPose:='';
   ApplyAnimation;
@@ -303,8 +314,12 @@ end;
 procedure TProfessorView.TimerTick(Sender: TObject);
 begin
   if (FDirectiveUntil<>0) and (GetTickCount64>=FDirectiveUntil) then
-  begin FDirectiveUntil:=0;FDirectiveGesture:='';end;
+  begin
+    FDirectiveUntil:=0;FDirectiveGesture:='';FDirectiveMouth:=False;
+    if FMovementJoints then begin TPresentationScene(FScene).ResetJoints;FMovementJoints:=False;end;
+  end;
   FMachine.Tick(GetTickCount64);
+  TPresentationScene(FScene).GestureMouth:=FDirectiveMouth;
   ApplyAnimation;
 end;
 

@@ -27,3 +27,16 @@ alterar a biblioteca CHATGPT compartilhada.
 ## Controle de apresentação PVA
 
 O adaptador local acrescenta TAIAudioPlayer.SetPaused e TAIVoiceSynthesizer.SetPaused/LocalSpeaking. O worker consulta a reprodução real e aplica pausa/retomada no próprio thread de áudio. A fila continua com confirmação da interface; as tags de mídia/articulação são habilitadas somente para PVA validado. SAPI é iniciado de forma assíncrona para permitir cancelamento e acompanhamento do término. Testes específicos: presentation_speech_tests.lpr e run_presentation_native.py.
+
+## WAV retornado pela OpenAI
+
+O player finaliza os tamanhos RIFF e data quando uma resposta WAV completa
+ainda contém marcadores de streaming (`0xFFFFFFFF` ou cabeçalho zerado).
+Esses marcadores faziam o MCI rejeitar o áudio com erro 296, embora a API
+retornasse HTTP 200. Somente os campos de tamanho são corrigidos; o PCM e
+os metadados são preservados. WAVs normais, inclusive somente leitura, não
+são regravados. Arquivos truncados ou inválidos são rejeitados.
+
+Regressões: `tests/run_wave_finalize_checks.py` e
+`tests/run_remote_speech_checks.py`, incluindo reprodução de fixture silenciosa,
+sincronização dos gestos, cancelamento e limpeza dos arquivos temporários.

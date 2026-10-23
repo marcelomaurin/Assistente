@@ -25,6 +25,9 @@ for profile in profiles:
     assert asset['asset']['version'] == '2.0'
     expected={base+smile+raised for base in clips for smile in ('','_smile') for raised in ('','_right_hand_up')}
     expected|={base+smile for base in ('applause','applause_talking') for smile in ('','_smile')}
+    expected |= {'nao_com_o_dedo', 'abrir_olhos', 'olhar_para_tras_esquerda', 'olhar_para_tras_direita', 'gesticular_ok', 'piscar', 'concordar', 'fechar_mao_direita', 'bocejar', 'levantar_ambas_maos', 'levantar_mao_esquerda', 'negar', 'abrir_mao_esquerda', 'fechar_mao_esquerda', 'levantar_pe_direito', 'coracao_com_as_maos', 'abrir_mao_direita', 'positivo', 'fechar_olhos'}
+    catalog=json.loads((root/'AVATARES/movimentos.json').read_text(encoding='utf-8'))
+    expected|={m['clip'] for m in catalog['movements'] if m.get('clip')}
     assert {a['name'] for a in asset['animations']} == expected
     binary = base64.b64decode(asset['buffers'][0]['uri'].split(',')[1])
     assert len(binary) == asset['buffers'][0]['byteLength']
@@ -72,4 +75,4 @@ for profile in profiles:
             view = asset['bufferViews'][inp['bufferView']]
             times = struct.unpack_from('<' + 'f'*inp['count'], binary, view['byteOffset'])
             assert times[0] == 0 and all(a < b for a, b in zip(times, times[1:]))
-    print('PASS:', profile, 'geometry, 163-joint skin, normalized weights,', face_targets, 'reference facial morphs, 28 clips')
+    print('PASS:', profile, 'geometry, 163-joint skin, normalized weights,', face_targets, f"reference facial morphs, {len(asset['animations'])} clips")

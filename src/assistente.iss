@@ -6,7 +6,12 @@
   #error RepositoryDir is required.
 #endif
 #define MyAppName "Assistente"
-#define MyAppVersion "0.200"
+#ifndef MyAppVersion
+  #define MyAppVersion "0.210"
+#endif
+#ifndef SetupCode
+  #define SetupCode "0210"
+#endif
 #define MyAppPublisher "MAURINSOFT"
 #define MyAppExeName "assistente.exe"
 
@@ -14,7 +19,7 @@
 AppId={code:SetupApplicationId}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-VersionInfoVersion=0.200.0.0
+VersionInfoVersion={#MyAppVersion}.0.0
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://maurinsoft.com.br
 AppSupportURL=https://github.com/marcelomaurin/Assistente
@@ -25,7 +30,7 @@ DisableProgramGroupPage=yes
 UsePreviousLanguage=no
 AllowNoIcons=yes
 OutputDir={#RepositoryDir}\bin
-OutputBaseFilename=setup_assistente_0200
+OutputBaseFilename=setup_assistente_{#SetupCode}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -44,7 +49,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "editordesktopicon"; Description: "Criar atalho do Editor de Apresentacoes na area de trabalho"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#PackageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PackageDir}\*"; DestDir: "{app}"; Excludes: "AVATARES\movimentos.json"; Flags: ignoreversion recursesubdirs createallsubdirs
+; The shared catalog is editable user configuration: preserve custom movements.
+Source: "{#PackageDir}\AVATARES\movimentos.json"; DestDir: "{app}\AVATARES"; Flags: ignoreversion uninsneveruninstall; Check: UpdateMovementCatalog
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Check: not VerificationMode
@@ -58,6 +65,16 @@ Name: "{autodesktop}\Editor de Apresentacoes do Assistente"; Filename: "{app}\pr
 Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent; Check: not VerificationMode
 
 [Code]
+function UpdateMovementCatalog: Boolean;
+var CatalogPath: String;
+begin
+  CatalogPath := ExpandConstant('{app}\AVATARES\movimentos.json');
+  Result := not FileExists(CatalogPath);
+  { Upgrade the unchanged original 0.210 catalog, preserving edited catalogs. }
+  if not Result then
+    Result := CompareText(GetSHA256OfFile(CatalogPath), '477ab2a3e080459f98ce1debd4a79f5538a2c1eb7a69d123179fb00869252460') = 0;
+end;
+
 function VerificationMode: Boolean;
 begin
   { Test the actual installer in an isolated directory, without registering

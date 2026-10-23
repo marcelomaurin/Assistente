@@ -1,16 +1,20 @@
 program pva_tool;
 {$mode objfpc}{$H+}
 uses presentation_cli, SysUtils, Classes, presentation_package, presentation_document, presentation_paths,
-  professor_commands, presentation_tags, presentation_joint_tags;
+  professor_commands, presentation_tags, presentation_joint_tags, movement_catalog;
 var P: TPVAPackage;
 procedure Check(B: Boolean; const S: string);
 begin if not B then raise Exception.Create(S);end;
 procedure SelfTest;
-var S: TAvatarScript; T: TPresentationTag; J: TJointTag; M: TMemoryStream; X: string; Cmd: TAvatarCommand; MS: Integer;
+var S: TAvatarScript; T: TPresentationTag; J: TJointTag; M: TMemoryStream; X: string; Definition:TMovementDefinition; I,K,MS: Integer;
 begin
-  for Cmd:=Succ(Low(TAvatarCommand)) to High(TAvatarCommand) do begin
-    S:=ParseAvatarScript('['+AvatarCommandName(Cmd)+']');
-    Check((S.CommandCount=1) and (S.Steps[0].Command=Cmd),'existing command lost');
+  for I:=0 to MovementCount-1 do begin
+    Definition:=MovementAt(I);S:=ParseAvatarScript('['+Definition.Tag+']');
+    Check((S.CommandCount=1) and (S.Steps[0].MovementID=Definition.ID),'catalog command lost: '+Definition.Tag);
+    for K:=0 to High(Definition.Aliases) do begin
+      S:=ParseAvatarScript('['+Definition.Aliases[K]+']');
+      Check((S.CommandCount=1) and (S.Steps[0].MovementID=Definition.ID),'catalog alias lost: '+Definition.Aliases[K]);
+    end;
   end;
   Check(not SafePresentationPath('../escape.png'),'traversal');
   Check(not SafePresentationPath('assets/CON.png'),'device name');

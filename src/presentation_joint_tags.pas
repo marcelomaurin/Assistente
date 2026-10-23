@@ -16,6 +16,11 @@ begin
   if (Bone='upperarm01.L') or (Bone='upperarm01.R') then Exit(90);
   if (Bone='lowerarm01.L') or (Bone='lowerarm01.R') then Exit(90);
   if (Bone='wrist.L') or (Bone='wrist.R') then Exit(35);
+  if (Length(Bone)=11) and (Copy(Bone,1,6)='finger') and (Bone[7] in ['1'..'5']) and (Bone[8]='-') and (Bone[9] in ['1'..'3']) and (Bone[10]='.') and (Bone[11] in ['L','R']) then Exit(100);
+  if (Bone='clavicle.L') or (Bone='clavicle.R') or (Bone='shoulder01.L') or (Bone='shoulder01.R') then Exit(35);
+  if (Bone='upperleg01.L') or (Bone='upperleg01.R') then Exit(60);
+  if (Bone='lowerleg01.L') or (Bone='lowerleg01.R') then Exit(100);
+  if (Bone='foot.L') or (Bone='foot.R') then Exit(45);
   Result:=0;
 end;
 function TryParseJointTag(const Text: string; out Tag: TJointTag): Boolean;

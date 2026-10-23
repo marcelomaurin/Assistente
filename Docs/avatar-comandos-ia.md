@@ -74,8 +74,8 @@ da voz, mas não são executadas. Não há um interpretador de instruções livr
 
 ## Movimento e modelos personalizados
 
-Os modelos v3 têm seis estados básicos e 22 variantes/composições, totalizando
-28 clipes: sorriso, mão levantada e combinações, além de aplausos com/sem fala.
+Os modelos incluídos têm seis estados básicos, 22 variantes/composições e
+37 movimentos do catálogo, totalizando 65 clipes: sorriso, mão levantada e combinações, além de aplausos com/sem fala.
 O parser controla a intenção; `TProfessorView` escolhe a composição adequada.
 O corpo usa skinning com até quatro pesos normalizados por vértice, e o rosto
 usa os morph targets `jawOpen`, `blink` e `smile`.
@@ -116,3 +116,48 @@ existentes do Assistente. As instruções da IA explicam essa distinção.
 Os testes de parser, sequência entre trechos, cancelamento e apresentação LCL
 isolada não usam serviços externos. Testes com TTS/IA remotos e hardware físico
 exigem a configuração da instalação. Veja também `professor-virtual-3d.md`.
+
+
+## Novos movimentos
+
+As direções são sempre as do personagem. Os modelos incluídos agora contêm
+animações reais para as tags abaixo, com dedos articulados e trajetórias suaves.
+
+| Tag | Movimento |
+| --- | --- |
+| `[gesticular ok]` ou `[ok]` | Sinal de OK com a mão direita. |
+| `[joia]` ou `[positivo]` | Polegar direito para cima. |
+| `[concordar]` ou `[cabeca sim]` | Balança a cabeça dizendo SIM. |
+| `[negar]` ou `[cabeca nao]` | Balança a cabeça dizendo NÃO. |
+| `[coracao com as maos]` | Une as mãos diante do peito em coração. |
+| `[levantar mao esquerda]` | Mantém a mão esquerda levantada. |
+| `[abaixar mao esquerda]` | Retorna à postura habitual. |
+| `[olhar para tras direita]` | Gira a cintura, o tronco e a cabeça pela direita. |
+| `[olhar para tras esquerda]` | Gira pela esquerda. |
+| `[dar tchau]` ou `[aceno]` | Acena com a mão direita. |
+| `[nao com o dedo]` | Balança o indicador direito com os outros dedos recolhidos. |
+| `[levantar pe direito]` | Flexiona a perna e mantém o pé direito erguido. |
+| `[fechar mao esquerda]` / `[abrir mao esquerda]` | Demonstra fechar/abrir a mão esquerda. |
+| `[fechar mao direita]` / `[abrir mao direita]` | Demonstra fechar/abrir a mão direita. |
+| `[bocejar]` (também `[bocechar]`) | Abre a boca e semicerra os olhos por 4 s. |
+| `[fechar olhos]` / `[abrir olhos]` | Mantém as pálpebras fechadas/abertas. |
+
+Tags aceitam acentos, maiúsculas e sublinhados. Gestos transitórios duram 2,4 s,
+exceto o bocejo (4 s). Olhos, mãos, pé, mão esquerda erguida e olhar para trás
+são poses persistentes; uma nova pose persistente substitui a anterior.
+`[neutro]` limpa todas as poses. A animação de bocejo controla a mandíbula
+durante seu intervalo, inclusive durante a fala. Modelos externos precisam
+conter os clipes correspondentes para executar esses movimentos.
+
+Para atualizar somente as animações dos modelos existentes:
+`python tools/game_avatar.py --update-gestures`.
+
+## Catálogo externo compartilhado
+
+As definições de movimentos agora ficam em `AVATARES/movimentos.json`.
+O Assistente, a biblioteca do editor, o parser e as instruções da IA usam
+o mesmo catálogo. Consulte [Configurar movimentos por JSON](movimentos-json.md)
+para cadastrar clipes ou poses por articulações sem recompilar.
+
+As formas `[cruzar os braços]` e `[cruzar bracos]` executam a mesma pose.
+Todos os clipes citados pelo catálogo são validados nos onze modelos distribuídos.

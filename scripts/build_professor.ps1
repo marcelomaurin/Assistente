@@ -62,6 +62,12 @@ try {
     & $Compiler @argsList (Join-Path $root $Target) 2>&1 | Tee-Object -FilePath $buildLog
     if ($LASTEXITCODE -ne 0) { throw "Compilação falhou ($LASTEXITCODE). Consulte $buildLog" }
     Copy-Item -LiteralPath (Join-Path $root 'AVATARES') -Destination $out -Recurse -Force
+    # Remote TTS/HTTPS must work from this output directory as in the installer.
+    $speechTlsArchitecture = if ($Platform -eq 'i386-win32') { 'x86' } else { 'x64' }
+    $speechTlsSource = Join-Path $root ('runtime\OpenSSL\1.1.1.10\' + $speechTlsArchitecture)
+    foreach ($speechTlsLibrary in Get-ChildItem -LiteralPath $speechTlsSource -Filter '*.dll' -File) {
+        Copy-Item -LiteralPath $speechTlsLibrary.FullName -Destination $out -Force
+    }
     $exe = Join-Path $out ([IO.Path]::GetFileNameWithoutExtension($Target) + '.exe')
     if ($Run) {
         & $exe @RunArguments

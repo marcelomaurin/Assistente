@@ -44,6 +44,12 @@ begin
     finally Job.Free;end;
   end;
   WriteLn('PASS: repeated remote WAV, actual completion, metadata chunks, commands before playback');
+  StartJob('[sorriso] streaming-wav');
+  try
+    while not Job.Done do Poll;
+    Check(Job.Success,Job.ErrorText);Check(SawPlayback and (Count=1),'Streaming WAV was not finalized before playback');
+  finally Job.Free;end;
+  WriteLn('PASS: OpenAI streaming WAV header finalized and played with gesture synchronization');
   StartJob('[sorriso] cancel');
   try
     while not Job.PlaybackActive and not Job.Done do Poll;

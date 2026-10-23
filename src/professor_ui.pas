@@ -61,13 +61,13 @@ begin
   inherited Destroy;
 end;
 function TConversationView.ContentWidth: Integer;
-begin Result := Min(450, Max(220, ClientWidth div 2)); end;
+begin Result := Min(760, Max(220, Width-24)); end;
 procedure TConversationView.AddMessage(const AText: string; AUser: Boolean);
 var Card: TRoundedCard; TextLabel: TLabel;
 begin
   Card := TRoundedCard.Create(Self);
   Card.Parent := Self;
-  if AUser then Card.Fill := clWhite
+  if AUser then begin Card.Fill:=$00FFF0E7;Card.Border:=$00F5DECB;Card.Tag:=1;end
   else begin Card.Fill := $00F6F6F6; Card.Border := $00F6F6F6; end;
   TextLabel := TLabel.Create(Card);
   TextLabel.Parent := Card;
@@ -99,7 +99,7 @@ begin
     DrawText(Card.Canvas.Handle, PChar(L.Caption), Length(L.Caption), R,
       DT_CALCRECT or DT_WORDBREAK or DT_NOPREFIX);
     H := Max(34, R.Bottom + 20);
-    Card.SetBounds(0, Y, W, H);
+    if Card.Tag=1 then Card.SetBounds(Max(0,Width-W-24),Y,W,H) else Card.SetBounds(0,Y,W,H);
     L.SetBounds(12, 10, W-24, H-20);
     Inc(Y, H + 8);
   end;

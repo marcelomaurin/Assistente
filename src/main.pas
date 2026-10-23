@@ -8,7 +8,7 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
   professor_ui, professor_commands, fpjson, assistant_integration_protocol,
   assistant_integration_server, assistant_integration_jobs, presentation_package,
-  presentation_media, presentation_tags, presentation_joints, presentation_rag, presentation_flow, assistant_documents, presentation_document;
+  presentation_media, presentation_tags, presentation_joints, presentation_rag, presentation_flow, assistant_documents, presentation_document, movement_catalog;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -66,6 +66,11 @@ type
     FAIConnected: Boolean;
     FMicButton, FWaveButton, FWalkButton: TSpeedButton;
     FDeviceStatus: TLabel;
+    FMovementPanel:TPanel;FMovementCombo:TComboBox;FMovementRun, FMovementReload:TButton;
+    FMovementIDs:TStringList;
+    procedure RefreshMovements(Sender:TObject);
+    procedure RunMovement(Sender:TObject);
+  private
     FVideoPanel: TPanel;
     FVideoPreview: TImage;
     FCamera: TWebcamVision;
@@ -149,14 +154,19 @@ end;
 
 procedure Tfrmmain.CriarControles;
 begin
-  Caption := 'Professor Virtual — Lazarus';
+  Caption := 'Assistente | Maurinsoft';
+  Font.Name:='Segoe UI';Font.Size:=10;DoubleBuffered:=True;
+  FMovementIDs:=TStringList.Create;
+  Width:=1180;Height:=780;
   Constraints.MinWidth := 740;
   Constraints.MinHeight := 450;
-  pnlRoot.Color := $00F6F6F6;
-  pnlConteudo.Color := $00F6F6F6;
+  pnlRoot.Color := $00F8F5F3;
+  pnlConteudo.Color := $00F8F5F3;
   pnlEntrada.Height := 40;
-  pnlEntrada.Color := $00F6F6F6;
-  pnlHeader.Visible := False;
+  pnlEntrada.Color := $00F8F5F3;
+  pnlHeader.Visible:=True;pnlHeader.Height:=72;pnlHeader.Color:=clWhite;
+  lblTitulo.Caption:='Assistente';lblTitulo.Font.Size:=20;lblTitulo.Font.Color:=$0035251D;
+  lblTitulo.SetBounds(24,10,280,32);lblStatus.SetBounds(26,46,600,20);lblStatus.Font.Color:=$00746558;
   memResposta.Visible := False;
   btEnviar.Visible := False;
   FAvatarCard := TRoundedCard.Create(Self);
@@ -169,13 +179,14 @@ begin
   FProfilePanel := TPanel.Create(Self);
   FProfilePanel.Parent := pnlAvatar;
   FProfilePanel.Align := alTop;
-  FProfilePanel.Height := 28;
+  FProfilePanel.Height := 44;
   FProfilePanel.BevelOuter := bvNone;
   FProfilePanel.Color := clWhite;
   FProfileCombo := TComboBox.Create(Self);
+  FProfileCombo.Name:='AvatarProfileSelector';
   FProfileCombo.Parent := FProfilePanel;
   FProfileCombo.Style := csDropDownList;
-  FProfileCombo.Font.Size := 8;
+  FProfileCombo.Font.Size := 10;
   ReloadAvatars(nil);
   FReloadButton := TSpeedButton.Create(Self);
   FReloadButton.Parent := FProfilePanel;
@@ -206,10 +217,10 @@ begin
   FChat.AddMessage('Olá! Como posso ajudar?', False);
   FInputCard := TRoundedCard.Create(Self);
   FInputCard.Parent := FChatPanel;
-  FInputCard.Color := clWhite;
+  FInputCard.Color := clWhite;FInputCard.Fill:=$00FAF7F5;FInputCard.Border:=$00E8E0D8;
   edPergunta.Parent := FInputCard;
   edPergunta.BorderStyle := bsNone;
-  edPergunta.Color := clWhite;
+  edPergunta.Color := $00FAF7F5;
   edPergunta.Font.Height := -13;
   edPergunta.TextHint := 'Digite sua pergunta...';
   edPergunta.Anchors := [akLeft,akTop,akRight];
@@ -219,8 +230,8 @@ begin
   FSendButton.Hint := 'Enviar pergunta';
   FSendButton.ShowHint := True;
   FSendButton.OnClick := @btEnviarClick;
-  SetLineIcon(FSendButton, 'send', $00707070);
-  btConfig.Parent := FChatPanel;
+  SetLineIcon(FSendButton, 'send', $00F67842);
+  btConfig.Parent := pnlHeader;
   btConfig.Caption := '';
   btConfig.Hint := 'Configurações';
   btConfig.ShowHint := True;
@@ -278,34 +289,65 @@ begin
   FVideoPreview.Align := alClient;
   FVideoPreview.Proportional := True;
   FVideoPreview.Center := True;
+  FMovementPanel:=TPanel.Create(Self);FMovementPanel.Parent:=pnlAvatar;FMovementPanel.Align:=alBottom;
+  FMovementPanel.Height:=86;FMovementPanel.BevelOuter:=bvNone;FMovementPanel.Color:=clWhite;
+  FMovementCombo:=TComboBox.Create(Self);FMovementCombo.Name:='MovementSelector';FMovementCombo.Parent:=FMovementPanel;
+  FMovementCombo.Style:=csDropDownList;
+  FMovementRun:=TButton.Create(Self);FMovementRun.Parent:=FMovementPanel;FMovementRun.Caption:='Executar gesto';FMovementRun.OnClick:=@RunMovement;
+  FMovementReload:=TButton.Create(Self);FMovementReload.Parent:=FMovementPanel;FMovementReload.Caption:='Recarregar';FMovementReload.OnClick:=@RefreshMovements;
+  RefreshMovements(nil);
   OnResize := @LayoutProfessor;
+  pnlConteudo.OnResize:=@LayoutProfessor;
   LayoutProfessor(nil);
 end;
 
+procedure Tfrmmain.RefreshMovements(Sender:TObject);
+var I:Integer;M:TMovementDefinition;
+begin
+  try
+    ReloadMovementCatalog;FMovementCombo.Clear;FMovementIDs.Clear;
+    for I:=0 to MovementCount-1 do begin M:=MovementAt(I);FMovementCombo.Items.Add(M.Title);FMovementIDs.Add(M.ID);end;
+    if FMovementCombo.Items.Count>0 then FMovementCombo.ItemIndex:=0;
+    FMovementCombo.Hint:=MovementCatalogFile;FMovementCombo.ShowHint:=True;
+  except on E:Exception do lblStatus.Caption:=E.Message;end;
+end;
+procedure Tfrmmain.RunMovement(Sender:TObject);
+begin
+  if (FProfessor=nil) or (FMovementCombo.ItemIndex<0) then Exit;
+  try
+    if not FProfessor.ExecuteMovement(FMovementIDs[FMovementCombo.ItemIndex]) then
+      lblStatus.Caption:='O avatar selecionado não contém este movimento.';
+  except on E:Exception do lblStatus.Caption:=E.Message;end;
+end;
+
 procedure Tfrmmain.LayoutProfessor(Sender: TObject);
-var W, H, LeftWidth, ComposerWidth, CardWidth: Integer;
+var W, H, LeftWidth, ComposerWidth, CardWidth, ChatWidth,ChatHeight: Integer;
 begin
   if FClosing or not Assigned(FRenderStatus) then Exit;
   W := ClientWidth;
   H := pnlConteudo.ClientHeight;
   LeftWidth := W div 3;
-  FAvatarCard.SetBounds(14, 8, LeftWidth-22, H-46);
-  FMicButton.SetBounds(14, H-34, LeftWidth-22, 28);
-  FChatPanel.SetBounds(LeftWidth, 0, W-LeftWidth, H);
-  lblAssistente.SetBounds(14, 12, FChatPanel.Width-28, 22);
-  FChat.SetBounds(14, 40, FChatPanel.Width-28, Max(60,H-130));
-  FPresentationPanel.SetBounds(14,40,Max(1,FChatPanel.Width-28),Max(1,H-54));
-  ComposerWidth := FChat.ContentWidth;
-  FInputCard.SetBounds(14, H-80, ComposerWidth, 36);
-  edPergunta.SetBounds(10, 9, ComposerWidth-20, 22);
-  FSendButton.SetBounds(14+ComposerWidth-52, H-40, 24, 26);
-  btConfig.SetBounds(14+ComposerWidth-26, H-40, 24, 26);
+  FAvatarCard.SetBounds(16, 16, LeftWidth-28, H-64);
+  FMicButton.SetBounds(16, H-40, LeftWidth-28, 32);
+  ChatWidth:=W-LeftWidth-20;ChatHeight:=H-32;
+  FChatPanel.SetBounds(LeftWidth+4,16,ChatWidth,ChatHeight);
+  lblAssistente.SetBounds(14, 12, ChatWidth-28, 22);
+  FChat.SetBounds(18, 48, ChatWidth-36, Max(60,ChatHeight-146));
+  FPresentationPanel.SetBounds(14,40,Max(1,ChatWidth-28),Max(1,H-54));
+  ComposerWidth:=ChatWidth-36;
+  FInputCard.SetBounds(18, ChatHeight-82, ComposerWidth, 54);
+  edPergunta.SetBounds(14, 15, ComposerWidth-64, 26);
+  FSendButton.Parent:=FInputCard;FSendButton.SetBounds(ComposerWidth-40,12,30,30);
+  btConfig.SetBounds(W-60,20,32,32);
   CardWidth := FAvatarCard.Width-8;
-  FProfileCombo.SetBounds(6, 2, Max(100,CardWidth-102), 24);
-  FReloadButton.SetBounds(CardWidth-92, 1, 28, 25);
-  FWaveButton.SetBounds(CardWidth-62, 1, 28, 25);
-  FWalkButton.SetBounds(CardWidth-32, 1, 28, 25);
-  FAvatarStatus.SetBounds(12, 13, LeftWidth-20, 16);
+  FProfileCombo.SetBounds(10, 9, Max(100,CardWidth-112), 28);
+  FReloadButton.SetBounds(CardWidth-92, 9, 28, 25);
+  FWaveButton.SetBounds(CardWidth-62, 9, 28, 25);
+  FWalkButton.SetBounds(CardWidth-32, 9, 28, 25);
+  FMovementCombo.SetBounds(10,5,Max(120,CardWidth-20),28);
+  FMovementRun.SetBounds(10,40,Max(100,CardWidth-126),32);
+  FMovementReload.SetBounds(CardWidth-108,40,98,32);
+  FAvatarStatus.SetBounds(18, 13, LeftWidth-20, 16);
   FAIStatus.SetBounds(W div 3, 13, W div 3, 16);
   FRenderStatus.SetBounds(W-180, 13, 168, 16);
 end;
@@ -331,6 +373,7 @@ begin
   SalvarMemoria;
   FreeAndNil(FProfessor);
   FreeAndNil(FCatalog);
+  FreeAndNil(FMovementIDs);
   FreeAndNil(FIntegrationJobs);
 end;
 
@@ -560,12 +603,21 @@ procedure Tfrmmain.EnviarPergunta;
 begin ProcessarEntrada(edPergunta.Text); end;
 
 procedure Tfrmmain.ProcessarEntrada(const ATexto: string);
-var P, H, C: string;
+var P, H, C: string; Script: TAvatarScript;
 begin
   if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
   P := Trim(ATexto);
   if P = '' then begin RetomarEscuta; Exit; end;
   if ExecuteDocumentCommand(P) then Exit;
+  Script:=ParseAvatarScript(P);
+  if (Script.CommandCount>0) and (Trim(Script.PlainText)='') and
+    (Script.PresentationCount=0) and (Script.JointCount=0) then begin
+    edPergunta.Clear;
+    memResposta.Lines.Add('Comando: '+P);
+    FChat.AddMessage(P,True);
+    FalarResposta(P);
+    Exit;
+  end;
   PausarEscuta;
   FProfessor.ResetCommands;
   FCurrentUserText := P;
@@ -796,6 +848,10 @@ begin
         begin { voice is selected by the speech worker before synthesis } end
       else if FPresentationMode and (Command.Presentation.Action<>paNone) then FPresentationMedia.Execute(Command.Presentation)
       else if FPresentationMode and (Command.Joint.Bone<>'') then TPresentationScene(FProfessor.Scene).ExecuteJoint(Command.Joint)
+      else if Command.MovementID<>'' then begin
+        if not FProfessor.ExecuteMovement(Command.MovementID) then
+          raise Exception.Create('Nao foi possivel executar a tag ['+Command.MovementID+']. Verifique os movimentos do avatar selecionado.');
+      end
       else FProfessor.ExecuteCommand(Command.Command);
     except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
     FSpeechJob.ConfirmAvatarCommand;
@@ -959,7 +1015,7 @@ end;
 
 procedure Tfrmmain.IntegrationRequest(Sender:TObject;Request:TJSONObject;out Response:TJSONObject);
 const Commands:array[0..7] of string=('','smile','neutral','applause','raise_right_hand','lower_right_hand','wave','walk');
-var RequestAction,RequestText,ID:string;Data:TJSONData;Items:TJSONArray;O:TJSONObject;I:Integer;Command:TAvatarCommand;
+var RequestAction,RequestText,ID:string;Data:TJSONData;Items:TJSONArray;O:TJSONObject;I:Integer;Command:TAvatarCommand;Movement:TMovementDefinition;
 begin
   RequestAction:=IntegrationString(Request,'action');Response:=nil;
   if RequestAction='status' then begin
@@ -1010,6 +1066,10 @@ begin
     Exit;
   end;
   ID:=IntegrationString(Request,'command');
+  if FindMovement(ID,Movement) then begin
+    if FProfessor.ExecuteMovement(Movement.ID) then Response:=IntegrationOK(TJSONObject.Create(['accepted',True]))
+    else Response:=IntegrationError('unsupported_gesture');Exit;
+  end;
   for Command:=Succ(Low(TAvatarCommand)) to High(TAvatarCommand) do
     if (ID=AvatarCommandName(Command)) or ((Ord(Command)<=High(Commands)) and (ID=Commands[Ord(Command)])) then begin
       if FProfessor.ExecuteCommand(Command) then Response:=IntegrationOK(TJSONObject.Create(['accepted',True]))

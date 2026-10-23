@@ -49,9 +49,75 @@ type
     property OnPlaybackStop: TNotifyEvent read FOnPlaybackStop write FOnPlaybackStop;
   end;
 
+function FinalizeStreamingWaveFile(const FileName:string;out Error:string):Boolean;
 procedure Register;
 
 implementation
+
+{ A completed streaming WAV can still declare RIFF/data sizes as $FFFFFFFF.
+  MCI waveaudio rejects that header although the PCM payload is complete.
+  Inspect without write access first: ordinary/read-only WAVs stay untouched. }
+function FinalizeStreamingWaveFile(const FileName: string; out Error: string): Boolean;
+var Stream:TFileStream; Header:array[0..11] of AnsiChar; Chunk:array[0..3] of AnsiChar;
+  RiffSize,ChunkSize,DataSize:Cardinal; Position,DataOffset,Available,FileSize:Int64;
+  FoundFormat,FoundData,PatchRiff,PatchData:Boolean;
+  function IsChunk(const Name:AnsiString):Boolean;
+  begin Result:=(Chunk[0]=Name[1]) and (Chunk[1]=Name[2]) and (Chunk[2]=Name[3]) and (Chunk[3]=Name[4]);end;
+  function ReadSize:Cardinal;
+  var B:array[0..3] of Byte;
+  begin
+    Stream.ReadBuffer(B,4);
+    Result:=Cardinal(B[0]) or (Cardinal(B[1]) shl 8) or (Cardinal(B[2]) shl 16) or (Cardinal(B[3]) shl 24);
+  end;
+  procedure WriteSize(Offset:Int64;Value:Cardinal);
+  var B:array[0..3] of Byte;
+  begin
+    B[0]:=Byte(Value);B[1]:=Byte(Value shr 8);B[2]:=Byte(Value shr 16);B[3]:=Byte(Value shr 24);
+    Stream.Position:=Offset;Stream.WriteBuffer(B,4);
+  end;
+begin
+  Result:=False;Error:='';Stream:=nil;
+  FoundFormat:=False;FoundData:=False;PatchData:=False;DataOffset:=0;DataSize:=0;
+  try
+    try
+      Stream:=TFileStream.Create(FileName,fmOpenRead or fmShareDenyNone);FileSize:=Stream.Size;
+      if (FileSize<44) or (FileSize-8>High(Cardinal)) then raise Exception.Create('Tamanho WAV invalido');
+      Stream.ReadBuffer(Header,12);
+      if (Header[0]<>'R') or (Header[1]<>'I') or (Header[2]<>'F') or (Header[3]<>'F') or
+         (Header[8]<>'W') or (Header[9]<>'A') or (Header[10]<>'V') or (Header[11]<>'E') then
+        raise Exception.Create('Arquivo recebido nao e um WAV RIFF');
+      Stream.Position:=4;RiffSize:=ReadSize;
+      PatchRiff:=(RiffSize=High(Cardinal)) or (RiffSize=0);
+      if not PatchRiff and (Int64(RiffSize)>FileSize-8) then raise Exception.Create('Arquivo WAV truncado');
+      Position:=12;
+      while Position+8<=FileSize do begin
+        Stream.Position:=Position;Stream.ReadBuffer(Chunk,4);ChunkSize:=ReadSize;
+        Available:=FileSize-Position-8;
+        if IsChunk('data') then begin
+          FoundData:=True;DataOffset:=Position+4;
+          PatchData:=(ChunkSize=High(Cardinal)) or ((ChunkSize=0) and PatchRiff);
+          if PatchData then DataSize:=Cardinal(Available) else DataSize:=ChunkSize;
+          if (DataSize=0) or (Int64(DataSize)>Available) then raise Exception.Create('Dados WAV vazios ou truncados');
+          Break;
+        end;
+        if Int64(ChunkSize)>Available then raise Exception.Create('Chunk WAV truncado');
+        if IsChunk('fmt ') then begin
+          if ChunkSize<16 then raise Exception.Create('Formato WAV invalido');FoundFormat:=True;
+        end;
+        Position:=Position+8+Int64(ChunkSize)+(ChunkSize and 1);
+      end;
+      if not FoundFormat or not FoundData then raise Exception.Create('WAV sem formato ou dados de audio');
+      if PatchRiff or PatchData then begin
+        FreeAndNil(Stream);Stream:=TFileStream.Create(FileName,fmOpenReadWrite or fmShareDenyWrite);
+        if Stream.Size<>FileSize then raise Exception.Create('Arquivo WAV mudou durante a validacao');
+        if PatchRiff then WriteSize(4,Cardinal(FileSize-8));
+        if PatchData then WriteSize(DataOffset,DataSize);
+      end;
+      Result:=True;
+    except on E:Exception do Error:='Falha ao preparar audio WAV: '+E.Message;end;
+  finally Stream.Free;end;
+end;
+
 
 procedure Register;
 begin
@@ -120,6 +186,7 @@ begin
   end;
 
   Ext := LowerCase(ExtractFileExt(AFileName));
+  if (Ext='.wav') and not FinalizeStreamingWaveFile(AFileName,FLastError) then Exit;
 
   {$IFDEF MSWINDOWS}
   { Each player owns its device. No shared alias or process-wide

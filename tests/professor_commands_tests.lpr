@@ -23,5 +23,13 @@ begin
   S:=ParseAvatarScript(Input);Check((S.CommandCount=64) and (S.PlainText=''),'Bounded directives');
   Check(Pos('[aplausos]',AvatarInstructionText)>0,'AI missing directive vocabulary');
   Check(SilentSegmentDuration('Oi')>=250,'Silent clock');
+  for I:=Ord(Low(TAvatarCommand))+1 to Ord(acCloseEyes) do begin
+    S:=ParseAvatarScript('['+AvatarCommandName(TAvatarCommand(I))+']');
+    Check((S.CommandCount=1) and (S.Steps[0].Command=TAvatarCommand(I)), 'Canonical command round trip');
+  end;
+  S:=ParseAvatarScript('[Gesticular OK][jóia][Balançar a cabeça dizendo SIM][cabeça não][Fazendo coração com as mãos][Dar tchau][dizer não com os dedos][bocechar][abrir os olhos][fechar os olhos]');
+  Check((S.CommandCount=10) and (S.PlainText=''), 'Requested natural aliases');
+  S:=ParseAvatarScript('[cruzar os braços][descruzar os braços][abrir os braços][fechar os braços]');
+  Check((S.CommandCount=4) and (S.Steps[0].Command=acCrossArms), 'Arm tags with articles');
   WriteLn('PASS: user example, command order, clean speech, accents, code/link literals, limits and AI instructions');
 end.

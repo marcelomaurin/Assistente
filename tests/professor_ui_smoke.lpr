@@ -39,7 +39,7 @@ begin
   for I := 0 to frmmain.ComponentCount-1 do
   begin
     if frmmain.Components[I] is TProfessorView then FView := TProfessorView(frmmain.Components[I]);
-    if frmmain.Components[I] is TComboBox then FSelector := TComboBox(frmmain.Components[I]);
+    if (frmmain.Components[I] is TComboBox) and (frmmain.Components[I].Name='AvatarProfileSelector') then FSelector := TComboBox(frmmain.Components[I]);
     if frmmain.Components[I] is TConversationView then
     begin
       TConversationView(frmmain.Components[I]).AddMessage('Gostaria de conhecer os projetos da FATEC.', True);

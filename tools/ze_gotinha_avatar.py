@@ -284,7 +284,7 @@ class ZeGotinha(game.Avatar):
             animation['channels']=[c for c in animation['channels'] if c['target']['path']!='weights']
             # The mascot's arms rest beside its belly. Keep the established
             # gesture poses for waving, thinking, applause and overhead reach.
-            if not any(s in animation['name'] for s in ('wave','thinking','applause','right_hand_up')):
+            if animation['name'] not in game.GESTURE_CLIPS and not any(s in animation['name'] for s in ('wave','thinking','applause','right_hand_up')):
                 for c in animation['channels']:
                     node=c['target']['node']
                     for side,angle in [('L',-30),('R',30)]:
@@ -300,6 +300,10 @@ class ZeGotinha(game.Avatar):
             duration=self.doc['accessors'][sampler['input']]['max'][0]
             times=np.linspace(0,duration,max(3,int(duration*60)+1))
             blink=np.exp(-((times/duration-.72)/(.065/duration))**2)
+            if name=='fechar_olhos':blink[:]=1
+            elif name=='abrir_olhos':blink[:]=0
+            elif name=='piscar':blink=np.exp(-((times-.8)/.10)**2)
+            elif name=='bocejar':blink=np.array([.86*game.ease(t/.9)*(1-game.ease((t-2.8)/1.2)) for t in times])
             scales=np.column_stack([np.ones(len(times)),1-.94*blink,np.ones(len(times))])
             inp=self.acc(times,'SCALAR');out=self.acc(scales,'VEC3')
             for node in self.eye_nodes:

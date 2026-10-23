@@ -12,6 +12,7 @@ type
   private
     FMotions: array of TJointMotion;
     FJaw: TTransformNode;FJawRest: TVector4;FVoicePhase: Double;FSpeaking: Boolean;
+    FGestureMouth: Boolean;
     FPaused: Boolean; FPausedAt: QWord;
   public
     procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
@@ -19,12 +20,13 @@ type
     procedure ResetJoints;
     procedure PrepareSpeechMouth;
     procedure ForgetRig;
+    property GestureMouth: Boolean read FGestureMouth write FGestureMouth;
     property Speaking: Boolean read FSpeaking write FSpeaking;
     procedure PauseJoints(Value: Boolean);
   end;
 implementation
 procedure TPresentationScene.ForgetRig;
-begin ResetJoints;FJaw:=nil;FSpeaking:=False;end;
+begin ResetJoints;FJaw:=nil;FSpeaking:=False;FGestureMouth:=False;end;
 function SpeechJawRotation(const Base: TVector4; Angle: Double): TVector4;
 var X,Y,Z,W,S,C,B,N: Double;
 begin
@@ -79,7 +81,7 @@ var I: Integer; T,A,H,S,C,BH,BS,BC,Norm: Double; Q: array[0..3] of Double;
   V: TVector4; NowTick: QWord;
 begin
   inherited Update(SecondsPassed,RemoveMe);
-  if FJaw<>nil then begin
+  if (FJaw<>nil) and not FGestureMouth then begin
     if FSpeaking and not FPaused then FVoicePhase:=FVoicePhase+SecondsPassed;
     if FSpeaking then FJaw.Rotation:=SpeechJawRotation(FJawRest,0.09*(1+Sin(FVoicePhase*18)))
     else FJaw.Rotation:=FJawRest;

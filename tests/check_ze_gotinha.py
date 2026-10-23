@@ -58,7 +58,7 @@ def validate(path):
     assert .43<size[0]<.50 and .58<size[1]<.65 and size[1]>size[0]
     assert hp[np.argmax(hp[:,1]),0]>.08,'Missing curved drop apex'
     clips={a['name'] for a in doc['animations']}
-    assert len(clips)==28 and {'idle','wave','walk','talking','applause'}<=clips
+    assert len(clips)==65 and {'idle','wave','walk','talking','applause'}<=clips
     def skinned(clip,t):
         world=pose(clip,t);m=np.array([world[i] for i in skin['joints']])@inverse
         js=read(attrs['JOINTS_0']).astype(int);ws=read(attrs['WEIGHTS_0']);p=np.column_stack([points,np.ones(len(points))])
@@ -93,7 +93,7 @@ def validate(path):
         first,last=pose(clip,0),pose(clip,float(end))
         assert max(np.max(np.abs(first[i]-last[i])) for i in skin['joints'])<.015,'Loop seam: '+clip
     for image in doc['images']:assert (path.parent/image['uri']).is_file()
-    print('PASS: ze_gotinha closed connected mascot body, drop proportions, bind skin, wave, fingers, blink, mouth, 28 clips and loop seams')
+    print('PASS: ze_gotinha closed connected mascot body, drop proportions, bind skin, wave, fingers, blink, mouth, 65 clips and loop seams')
 
 
 if __name__=='__main__':

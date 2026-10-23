@@ -1,0 +1,20 @@
+{
+  "version": "0.210",
+  "installer_sha256": "ba2ab5137f6dda4750b1e7fc885b7488508a3bcd3cb33b9f9f3e5499997c4e81",
+  "result": "PASS",
+  "payload_files": 185,
+  "profiles": 11,
+  "checks": [
+    "PASS: upgrade replaces the unchanged original catalog with corrected arm aliases",
+    "PASS: all eleven installed avatars are current (Zé Gotinha v5, others v4) and match the validated source models byte for byte",
+    "PASS: actual installer extracted 185 files; all SHA-256 hashes match; eleven avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "SKIP: interactive application-window checks disabled (--no-ui); packaged files and console tools are still verified",
+    "PASS: mixed parser, traversal, joints, AI preservation, SHA256",
+    "PASS: exported",
+    "PASS: valid PVA, 2 files",
+    "PASS: installed PVA tool selftest and block/event example pack/verify",
+    "PASS: reinstall preserved user configuration/history, custom shared JSON movements and application registration",
+    "PASS: uninstaller removed application binaries, preserved user files and JSON movements, and did not change registration"
+  ]
+}

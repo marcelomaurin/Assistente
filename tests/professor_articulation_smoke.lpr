@@ -1,7 +1,7 @@
 program professor_articulation_smoke;
 {$mode objfpc}{$H+}
 uses Interfaces, Forms, Classes, SysUtils, ExtCtrls, CastleImages, CastleURIUtils,
-  CastleControl, CastleViewport, CastleVectors, CastleSceneCore, professor_view, professor_state;
+  CastleControl, CastleViewport, CastleVectors, CastleSceneCore, professor_view, professor_state, professor_commands;
 type TRunner=class(TComponent)
 public
   View:TProfessorView; Control:TCastleControl; Viewport:TCastleViewport;
@@ -18,6 +18,7 @@ begin
   ForceDirectories(OutputDir);Clip:=ParamStr(2);
   View:=TProfessorView.Create(Self,Window);
   if not View.LoadModel(ExpandFileName(ParamStr(1)),True) then raise Exception.Create(View.Diagnostic);
+  if Clip='bocejar' then View.ExecuteCommand(acYawn);
   for I:=0 to View.ComponentCount-1 do begin
     if View.Components[I] is TCastleControl then Control:=TCastleControl(View.Components[I]);
     if View.Components[I] is TCastleViewport then Viewport:=TCastleViewport(View.Components[I]);

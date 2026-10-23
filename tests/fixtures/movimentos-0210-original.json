@@ -1,0 +1,690 @@
+{
+  "version": 1,
+  "movements": [
+    {
+      "id": "sorriso",
+      "tag": "sorriso",
+      "title": "Sorriso",
+      "category": "Expressões",
+      "description": "Mantém um sorriso discreto",
+      "aliases": [
+        "sorrir"
+      ],
+      "mode": "smile",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "neutro",
+      "tag": "neutro",
+      "title": "Neutro",
+      "category": "Corpo",
+      "description": "Limpa os gestos e retorna à pose padrão",
+      "aliases": [
+        "parar movimentos"
+      ],
+      "mode": "reset",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "aplausos",
+      "tag": "aplausos",
+      "title": "Aplausos",
+      "category": "Mãos",
+      "description": "Aplausos",
+      "aliases": [
+        "aplaudir"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "applause",
+      "talking_clip": "applause_talking"
+    },
+    {
+      "id": "levantar_mao_direita",
+      "tag": "levantar mao direita",
+      "title": "Levantar mão direita",
+      "category": "Mãos",
+      "description": "Levantar mão direita",
+      "aliases": [
+        "levante a mao direita"
+      ],
+      "mode": "raise_right",
+      "duration_ms": 2400,
+      "transition_ms": 600
+    },
+    {
+      "id": "abaixar_mao_direita",
+      "tag": "abaixar mao direita",
+      "title": "Abaixar mão direita",
+      "category": "Mãos",
+      "description": "Abaixar mão direita",
+      "aliases": [
+        "abaixe mao direita",
+        "abaixe a mao direita"
+      ],
+      "mode": "lower_right",
+      "duration_ms": 2400,
+      "transition_ms": 600
+    },
+    {
+      "id": "aceno",
+      "tag": "aceno",
+      "title": "Dar tchau",
+      "category": "Mãos",
+      "description": "Dar tchau",
+      "aliases": [
+        "acenar",
+        "dar tchau",
+        "tchau"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "wave"
+    },
+    {
+      "id": "caminhar",
+      "tag": "caminhar",
+      "title": "Caminhar",
+      "category": "Corpo",
+      "description": "Caminhar",
+      "aliases": [
+        "caminhada"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "walk"
+    },
+    {
+      "id": "piscar",
+      "tag": "piscar",
+      "title": "Piscar",
+      "category": "Expressões",
+      "description": "Piscar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "piscar"
+    },
+    {
+      "id": "concordar",
+      "tag": "concordar",
+      "title": "Cabeça: sim",
+      "category": "Cabeça e olhar",
+      "description": "Balança a cabeça dizendo sim",
+      "aliases": [
+        "sim",
+        "cabeca sim",
+        "balancar a cabeca dizendo sim"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "concordar"
+    },
+    {
+      "id": "negar",
+      "tag": "negar",
+      "title": "Cabeça: não",
+      "category": "Cabeça e olhar",
+      "description": "Balança a cabeça dizendo não",
+      "aliases": [
+        "cabeca nao",
+        "balancar a cabeca dizendo nao"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "negar"
+    },
+    {
+      "id": "pensar",
+      "tag": "pensar",
+      "title": "Pensar",
+      "category": "Corpo",
+      "description": "Pensar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "thinking"
+    },
+    {
+      "id": "explicar",
+      "tag": "explicar",
+      "title": "Explicar",
+      "category": "Corpo",
+      "description": "Explicar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "explicar"
+    },
+    {
+      "id": "apontar_direita",
+      "tag": "apontar direita",
+      "title": "Apontar direita",
+      "category": "Corpo",
+      "description": "Apontar direita",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "apontar_direita"
+    },
+    {
+      "id": "apontar_esquerda",
+      "tag": "apontar esquerda",
+      "title": "Apontar esquerda",
+      "category": "Corpo",
+      "description": "Apontar esquerda",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "apontar_esquerda"
+    },
+    {
+      "id": "levantar_mao_esquerda",
+      "tag": "levantar mao esquerda",
+      "title": "Levantar mão esquerda",
+      "category": "Mãos",
+      "description": "Levantar mão esquerda",
+      "aliases": [
+        "levantar a mao esquerda"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 600,
+      "clip": "levantar_mao_esquerda"
+    },
+    {
+      "id": "abaixar_mao_esquerda",
+      "tag": "abaixar mao esquerda",
+      "title": "Abaixar mão esquerda",
+      "category": "Mãos",
+      "description": "Abaixar mão esquerda",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 600
+    },
+    {
+      "id": "levantar_ambas_maos",
+      "tag": "levantar ambas maos",
+      "title": "Levantar ambas mãos",
+      "category": "Mãos",
+      "description": "Levantar ambas mãos",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "levantar_ambas_maos"
+    },
+    {
+      "id": "abaixar_ambas_maos",
+      "tag": "abaixar ambas maos",
+      "title": "Abaixar ambas mãos",
+      "category": "Mãos",
+      "description": "Abaixar ambas mãos",
+      "aliases": [],
+      "mode": "lower_both",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "olhar_esquerda",
+      "tag": "olhar esquerda",
+      "title": "Olhar esquerda",
+      "category": "Cabeça e olhar",
+      "description": "Olhar esquerda",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "olhar_esquerda"
+    },
+    {
+      "id": "olhar_direita",
+      "tag": "olhar direita",
+      "title": "Olhar direita",
+      "category": "Cabeça e olhar",
+      "description": "Olhar direita",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "olhar_direita"
+    },
+    {
+      "id": "olhar_frente",
+      "tag": "olhar frente",
+      "title": "Olhar frente",
+      "category": "Cabeça e olhar",
+      "description": "Olhar frente",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "surpresa",
+      "tag": "surpresa",
+      "title": "Surpresa",
+      "category": "Expressões",
+      "description": "Surpresa",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "surpresa"
+    },
+    {
+      "id": "triste",
+      "tag": "triste",
+      "title": "Triste",
+      "category": "Expressões",
+      "description": "Triste",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "triste"
+    },
+    {
+      "id": "serio",
+      "tag": "serio",
+      "title": "sério",
+      "category": "Expressões",
+      "description": "sério",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "serio"
+    },
+    {
+      "id": "rir",
+      "tag": "rir",
+      "title": "Rir",
+      "category": "Expressões",
+      "description": "Rir",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "rir"
+    },
+    {
+      "id": "comemorar",
+      "tag": "comemorar",
+      "title": "Comemorar",
+      "category": "Corpo",
+      "description": "Comemorar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "comemorar"
+    },
+    {
+      "id": "cumprimentar",
+      "tag": "cumprimentar",
+      "title": "Cumprimentar",
+      "category": "Corpo",
+      "description": "Cumprimentar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "cumprimentar"
+    },
+    {
+      "id": "positivo",
+      "tag": "positivo",
+      "title": "Joia / positivo",
+      "category": "Mãos",
+      "description": "Ergue o polegar direito, com os demais dedos recolhidos",
+      "aliases": [
+        "joia",
+        "joinha"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "positivo"
+    },
+    {
+      "id": "negativo",
+      "tag": "negativo",
+      "title": "Negativo",
+      "category": "Mãos",
+      "description": "Negativo",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "negativo"
+    },
+    {
+      "id": "abrir_bracos",
+      "tag": "abrir bracos",
+      "title": "Abrir braços",
+      "category": "Expressões",
+      "description": "Abrir braços",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "abrir_bracos"
+    },
+    {
+      "id": "fechar_bracos",
+      "tag": "fechar bracos",
+      "title": "Fechar braços",
+      "category": "Corpo",
+      "description": "Fechar braços",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "cruzar_bracos",
+      "tag": "cruzar bracos",
+      "title": "Cruzar braços",
+      "category": "Corpo",
+      "description": "Cruzar braços",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "cruzar_bracos"
+    },
+    {
+      "id": "descruzar_bracos",
+      "tag": "descruzar bracos",
+      "title": "Descruzar braços",
+      "category": "Corpo",
+      "description": "Descruzar braços",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "sentar",
+      "tag": "sentar",
+      "title": "Sentar",
+      "category": "Corpo",
+      "description": "Sentar",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "sentar"
+    },
+    {
+      "id": "levantar",
+      "tag": "levantar",
+      "title": "Levantar",
+      "category": "Corpo",
+      "description": "Levantar",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "passo_atras",
+      "tag": "passo atras",
+      "title": "Passo atras",
+      "category": "Corpo",
+      "description": "Passo atras",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "passo_atras"
+    },
+    {
+      "id": "passo_frente",
+      "tag": "passo frente",
+      "title": "Passo frente",
+      "category": "Corpo",
+      "description": "Passo frente",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "passo_frente"
+    },
+    {
+      "id": "dancar",
+      "tag": "dancar",
+      "title": "Dancar",
+      "category": "Corpo",
+      "description": "Dancar",
+      "aliases": [],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "dancar"
+    },
+    {
+      "id": "parar_gesto",
+      "tag": "parar gesto",
+      "title": "Parar gesto",
+      "category": "Corpo",
+      "description": "Interrompe o movimento transitório",
+      "aliases": [],
+      "mode": "stop",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "relaxar",
+      "tag": "relaxar",
+      "title": "Relaxar",
+      "category": "Corpo",
+      "description": "Relaxar",
+      "aliases": [],
+      "mode": "clear_pose",
+      "duration_ms": 2400,
+      "transition_ms": 320
+    },
+    {
+      "id": "gesticular_ok",
+      "tag": "gesticular ok",
+      "title": "Gesticular OK",
+      "category": "Mãos",
+      "description": "Faz o sinal de OK com a mão direita",
+      "aliases": [
+        "ok",
+        "gesto ok"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "gesticular_ok"
+    },
+    {
+      "id": "coracao_com_as_maos",
+      "tag": "coracao com as maos",
+      "title": "Coração com as mãos",
+      "category": "Mãos",
+      "description": "Forma um coração com as duas mãos diante do peito",
+      "aliases": [
+        "fazer coracao com as maos",
+        "fazendo coracao com as maos"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "coracao_com_as_maos"
+    },
+    {
+      "id": "olhar_para_tras_direita",
+      "tag": "olhar para tras direita",
+      "title": "Olhar para trás pela direita",
+      "category": "Cabeça e olhar",
+      "description": "Olhar para trás pela direita",
+      "aliases": [
+        "girar cintura direita",
+        "olhar para tras pela direita"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "olhar_para_tras_direita"
+    },
+    {
+      "id": "olhar_para_tras_esquerda",
+      "tag": "olhar para tras esquerda",
+      "title": "Olhar para trás pela esquerda",
+      "category": "Cabeça e olhar",
+      "description": "Olhar para trás pela esquerda",
+      "aliases": [
+        "girar cintura esquerda",
+        "olhar para tras pela esquerda"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "olhar_para_tras_esquerda"
+    },
+    {
+      "id": "nao_com_o_dedo",
+      "tag": "nao com o dedo",
+      "title": "Não com o indicador",
+      "category": "Mãos",
+      "description": "Balança o indicador direito dizendo não",
+      "aliases": [
+        "dizer nao com os dedos",
+        "nao com os dedos",
+        "dizer nao com o dedo"
+      ],
+      "mode": "gesture",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "nao_com_o_dedo"
+    },
+    {
+      "id": "levantar_pe_direito",
+      "tag": "levantar pe direito",
+      "title": "Levantar pé direito",
+      "category": "Corpo",
+      "description": "Levantar pé direito",
+      "aliases": [],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "levantar_pe_direito"
+    },
+    {
+      "id": "fechar_mao_esquerda",
+      "tag": "fechar mao esquerda",
+      "title": "Fechar mão esquerda",
+      "category": "Mãos",
+      "description": "Fechar mão esquerda",
+      "aliases": [
+        "fechar a mao esquerda"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "fechar_mao_esquerda"
+    },
+    {
+      "id": "abrir_mao_esquerda",
+      "tag": "abrir mao esquerda",
+      "title": "Abrir mão esquerda",
+      "category": "Mãos",
+      "description": "Abrir mão esquerda",
+      "aliases": [
+        "abrir a mao esquerda"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "abrir_mao_esquerda"
+    },
+    {
+      "id": "fechar_mao_direita",
+      "tag": "fechar mao direita",
+      "title": "Fechar mão direita",
+      "category": "Mãos",
+      "description": "Fechar mão direita",
+      "aliases": [
+        "fechar a mao direita"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "fechar_mao_direita"
+    },
+    {
+      "id": "abrir_mao_direita",
+      "tag": "abrir mao direita",
+      "title": "Abrir mão direita",
+      "category": "Mãos",
+      "description": "Abrir mão direita",
+      "aliases": [
+        "abrir a mao direita"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "abrir_mao_direita"
+    },
+    {
+      "id": "bocejar",
+      "tag": "bocejar",
+      "title": "Bocejar",
+      "category": "Expressões",
+      "description": "Abre a boca e semicerra os olhos durante quatro segundos",
+      "aliases": [
+        "bocechar"
+      ],
+      "mode": "gesture",
+      "duration_ms": 4000,
+      "transition_ms": 320,
+      "clip": "bocejar",
+      "speech_mouth": true
+    },
+    {
+      "id": "abrir_olhos",
+      "tag": "abrir olhos",
+      "title": "Abrir os olhos",
+      "category": "Expressões",
+      "description": "Abrir os olhos",
+      "aliases": [
+        "abrir os olhos"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "abrir_olhos"
+    },
+    {
+      "id": "fechar_olhos",
+      "tag": "fechar olhos",
+      "title": "Fechar os olhos",
+      "category": "Expressões",
+      "description": "Fechar os olhos",
+      "aliases": [
+        "fechar os olhos"
+      ],
+      "mode": "pose",
+      "duration_ms": 2400,
+      "transition_ms": 320,
+      "clip": "fechar_olhos"
+    }
+  ]
+}

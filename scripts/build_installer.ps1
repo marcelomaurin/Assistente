@@ -1,4 +1,6 @@
 param(
+    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.210',
+    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0210',
     [string]$Compiler = 'C:\Program Files\Inno Setup 7\ISCC.exe',
     [string]$Executable = '',
     [string]$Editor = '',
@@ -9,9 +11,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-if (-not $Executable) { $Executable = Join-Path $root 'build\presentations\assistente.exe' }
-if (-not $Editor) { $Editor = Join-Path $root 'build\presentations\presentation_editor.exe' }
-if (-not $Tool) { $Tool = Join-Path $root 'build\presentations\pva_tool.exe' }
+if (-not $Executable) { $Executable = Join-Path $root ('build\presentations-' + $BuildCode + '\assistente.exe') }
+if (-not $Editor) { $Editor = Join-Path $root ('build\presentations-' + $BuildCode + '\presentation_editor.exe') }
+if (-not $Tool) { $Tool = Join-Path $root ('build\presentations-' + $BuildCode + '\pva_tool.exe') }
 if (-not $ChatGPT) {
     $ChatGPT = Join-Path $root '.deps\chatgpt-integration-baseline'
     if (-not (Test-Path -LiteralPath $ChatGPT)) { $ChatGPT = Join-Path $root '..\CHATGPT' }
@@ -31,9 +33,9 @@ if (-not (Test-Path -LiteralPath $Compiler)) {
 }
 if (-not (Test-Path -LiteralPath $Compiler)) { throw "Inno Setup ausente: $Compiler" }
 foreach ($binary in @($Executable,$Editor,$Tool)) {
-    if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Compile primeiro: python scripts/build_presentations.py --release (ausente: $binary)" }
+    if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Compile primeiro: python scripts/build_presentations.py --release --out build/presentations-$BuildCode (ausente: $binary)" }
 }
-$work = Join-Path $root ('build\installer_0200\stage-' + [guid]::NewGuid())
+$work = Join-Path $root (('build\installer_' + $BuildCode + '\stage-') + [guid]::NewGuid())
 $payload = Join-Path $work 'payload'
 New-Item -ItemType Directory -Force -Path $payload,(Join-Path $payload 'docs'),(Join-Path $payload 'LICENSES') | Out-Null
 Copy-Item -LiteralPath $Executable -Destination (Join-Path $payload 'assistente.exe')
@@ -53,10 +55,24 @@ Copy-Item -LiteralPath (Join-Path $root 'examples\apresentacoes') -Destination (
 Copy-Item -LiteralPath (Join-Path $ChatGPT 'LICENSE') -Destination (Join-Path $payload 'LICENSES\CHATGPT-GPL-3.0.txt')
 Copy-Item -LiteralPath (Join-Path $ChatGPT 'OpenSSL License.txt') -Destination (Join-Path $payload 'LICENSES\OpenSSL.txt')
 Copy-Item -LiteralPath $CastleLicenses -Destination (Join-Path $payload 'LICENSES\Castle') -Recurse
+$movementCatalogPath = Join-Path $payload 'AVATARES\movimentos.json'
+$movementCatalog = Get-Content -LiteralPath $movementCatalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($movementCatalog.version -ne 1 -or $movementCatalog.movements.Count -eq 0) { throw 'Catalogo de movimentos invalido.' }
+foreach ($movementModel in Get-ChildItem -LiteralPath (Join-Path $payload 'AVATARES') -Filter 'modelo.gltf' -File -Recurse) {
+    $modelClips = (Get-Content -LiteralPath $movementModel.FullName -Raw -Encoding UTF8 | ConvertFrom-Json).animations.name
+    foreach ($movementDefinition in $movementCatalog.movements) {
+        foreach ($movementClip in @($movementDefinition.clip, $movementDefinition.talking_clip)) {
+            if ($movementClip -and ($modelClips -cnotcontains $movementClip)) {
+                throw ('Movimento sem animacao: ' + $movementDefinition.id + ' / ' + $movementModel.Directory.Name + ' / ' + $movementClip)
+            }
+        }
+    }
+}
+
 $revision = (& git -c ('safe.directory=' + $root.Replace('\','/')) -C $root rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Nao foi possivel identificar o commit de origem.' }
 $info = [ordered]@{
-    version = '0.200'; source_commit = $revision; platform = 'i386-win32'
+    version = $Version; source_commit = $revision; source_dirty = [bool](& git -C $root status --porcelain); platform = 'i386-win32'
     executable_sha256 = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant()
     editor_sha256 = (Get-FileHash -LiteralPath $Editor -Algorithm SHA256).Hash.ToLowerInvariant()
     tool_sha256 = (Get-FileHash -LiteralPath $Tool -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -74,13 +90,14 @@ foreach ($file in Get-ChildItem -LiteralPath $payload -File -Recurse | Sort-Obje
     }
     $records += [ordered]@{path=$relative; size=$file.Length; sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
-$log = Join-Path $root 'build\installer_0200\compile.log'
-& $Compiler ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
+$log = Join-Path $root ('build\installer_' + $BuildCode + '\compile.log')
+& $Compiler ('/DMyAppVersion=' + $Version) ('/DSetupCode=' + $BuildCode) ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0) { throw "Falha no Inno Setup. Consulte $log" }
-$setup = Join-Path $root 'bin\setup_assistente_0200.exe'
-$manifest = [ordered]@{schema=1; version='0.200'; source_commit=$revision; platform='i386-win32'
-    installer=[ordered]@{file='setup_assistente_0200.exe';size=(Get-Item -LiteralPath $setup).Length;sha256=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()}
+$setupName = 'setup_assistente_' + $BuildCode
+$setup = Join-Path $root ('bin\' + $setupName + '.exe')
+$manifest = [ordered]@{schema=1; version=$Version; source_commit=$revision; platform='i386-win32'
+    installer=[ordered]@{file=($setupName + '.exe');size=(Get-Item -LiteralPath $setup).Length;sha256=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()}
     files=$records}
-[IO.File]::WriteAllText((Join-Path $root 'bin\setup_assistente_0200.manifest.json'), ($manifest | ConvertTo-Json -Depth 8), $utf8)
+[IO.File]::WriteAllText((Join-Path $root ('bin\' + $setupName + '.manifest.json')), ($manifest | ConvertTo-Json -Depth 8), $utf8)
 Write-Output "Instalador: $setup"
 Write-Output ("Arquivos empacotados: " + $records.Count)

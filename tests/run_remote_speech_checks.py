@@ -47,6 +47,9 @@ def main():
             time.sleep(0.3)  # Observable preparation before the audible segment.
             status = 400 if text == 'fail' else 200
             payload = b'fixture failure' if status == 400 else silent_wav()
+            if text == 'streaming-wav':
+                payload=bytearray(payload);struct.pack_into('<I',payload,4,0xffffffff)
+                offset=payload.index(b'data',36);struct.pack_into('<I',payload,offset+4,0xffffffff);payload=bytes(payload)
             if text == 'invalid-audio':
                 payload = b'not a wave file'
             self.send_response(status)
@@ -73,6 +76,7 @@ def main():
                 assert (Path(appdata) / 'reception').is_dir(), 'Audio data isolation was not used'
                 leftovers = list(Path(appdata).rglob('speech-*.wav'))
                 assert not leftovers, f'Leaked temporary speech files: {leftovers}'
+        assert any(r['input']=='streaming-wav' for r in requests), 'Missing real OpenAI WAV header regression'
         assert requests, 'No synthesis request reached the mock'
         assert all('[' not in r['input'] and r['response_format'] == 'wav' for r in requests)
         assert sum(r['input'] == 'primeira' for r in requests) >= 2, 'Repeated text skipped remote synthesis'

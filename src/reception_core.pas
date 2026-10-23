@@ -6,7 +6,7 @@ interface
 
 uses Classes, SysUtils, SyncObjs, fpjson, jsonparser, chatgpt, aiagent,
   aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace,
-  professor_commands, presentation_tags;
+  professor_commands, presentation_tags, movement_catalog;
 
 type
   TReceptionConfig = record
@@ -29,7 +29,9 @@ type
     FCommandAck: TEvent;
     FPendingCommand: TAvatarScriptStep;
     FPaused: LongInt;
+    FPauseStarted, FPausedDuration: QWord;
     FCommandPending: Boolean;
+    function ActiveTick: QWord;
     procedure DeliverCommand(const Command: TAvatarScriptStep);
     procedure ExecuteSpeech;
   protected
@@ -135,7 +137,23 @@ function TReceptionJob.IsSilent: Boolean;
 begin Result:=FConfig.SilentPresentation;end;
 
 procedure TReceptionJob.SetPaused(Value: Boolean);
-begin InterlockedExchange(FPaused,Ord(Value));end;
+begin
+  FLock.Acquire;
+  try
+    if Value=Paused then Exit;
+    if Value then FPauseStarted:=GetTickCount64
+    else Inc(FPausedDuration,GetTickCount64-FPauseStarted);
+    InterlockedExchange(FPaused,Ord(Value));
+  finally FLock.Release;end;
+end;
+function TReceptionJob.ActiveTick: QWord;
+begin
+  FLock.Acquire;
+  try
+    if Paused then Result:=FPauseStarted else Result:=GetTickCount64;
+    Dec(Result,FPausedDuration);
+  finally FLock.Release;end;
+end;
 function TReceptionJob.Paused: Boolean;
 begin Result:=InterlockedCompareExchange(FPaused,0,0)<>0;end;
 function TReceptionJob.TakeScriptCommand(out Command: TAvatarScriptStep): Boolean;
@@ -178,6 +196,8 @@ var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
   Player: TAIAudioPlayer; Pending: array of TAvatarScriptStep;
   Part,SpeechFile,DefaultVoice: string;
   WasPaused: Boolean;
+  MovementUntil: QWord;
+  procedure WaitUntil(Deadline: QWord); forward;
   procedure PollPause;
   begin
     if Paused<>WasPaused then begin
@@ -211,20 +231,34 @@ var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
       end;
   end;
   procedure FlushCommands;
-  var K: Integer;
+  var K,L,Duration: Integer; M: TMovementDefinition;
   begin
-    for K:=0 to High(Pending) do begin if Terminated then Break;DeliverCommand(Pending[K]);end;
+    for K:=0 to High(Pending) do begin
+      if Terminated then Break;
+      { A following movement must not replace a gesture in the same UI frame.
+        Speech and media may run while it plays; only another movement or the
+        end of the presentation needs to wait for its visible interval. }
+      if (Pending[K].MovementID<>'') or (Pending[K].Presentation.Action=paEndTask) then
+        WaitUntil(MovementUntil);
+      WaitReady;
+      if Terminated then Break;
+      DeliverCommand(Pending[K]);
+      if (Pending[K].MovementID<>'') and FindMovement(Pending[K].MovementID,M) then begin
+        if M.Mode='gesture' then Duration:=M.Duration else Duration:=M.Transition;
+        for L:=0 to High(M.Joints) do
+          if M.Joints[L].Duration>Duration then Duration:=M.Joints[L].Duration;
+        MovementUntil:=ActiveTick+QWord(Duration);
+      end;
+    end;
     SetLength(Pending,0);
   end;
   procedure WaitUntil(Deadline: QWord);
   var Previous,Current,Remaining: QWord;
   begin
-    Previous:=GetTickCount64;if Previous>=Deadline then Exit;Remaining:=Deadline-Previous;
+    Previous:=ActiveTick;if Previous>=Deadline then Exit;Remaining:=Deadline-Previous;
     while not Terminated and (Remaining>0) do begin
-      Sleep(10);Current:=GetTickCount64;
-      if not Paused then begin
-        if Current-Previous>=Remaining then Remaining:=0 else Dec(Remaining,Current-Previous);
-      end;
+      Sleep(10);Current:=ActiveTick;
+      if Current-Previous>=Remaining then Remaining:=0 else Dec(Remaining,Current-Previous);
       Previous:=Current;
     end;
   end;
@@ -232,7 +266,7 @@ begin
   if FConfig.EnablePresentationCommands then Script:=ParseAvatarScript(FInput,4096)
   else Script:=ParseAvatarScript(FInput);
   Text:=Script.PlainText;
-  Synth:=nil;Player:=nil;SpeechFile:='';WasPaused:=False;
+  Synth:=nil;Player:=nil;SpeechFile:='';WasPaused:=False;MovementUntil:=0;
   try
     if not FConfig.SilentPresentation then
     begin
@@ -270,7 +304,7 @@ begin
       if FConfig.SilentPresentation then
       begin
         FlushCommands;
-        WaitUntil(GetTickCount64+SilentSegmentDuration(Part));
+        WaitUntil(ActiveTick+SilentSegmentDuration(Part));
       end else if Synth.Engine=seOpenAI then
       begin
         SpeechFile:=ReceptionDataDir+'speech-'+IntToStr(Started)+'-'+IntToStr(I)+'.wav';
@@ -304,7 +338,11 @@ begin
         if Synth.LastError<>'' then begin ErrorText:=Synth.LastError;Break;end;
       end;
     end;
-    if not Terminated and (ErrorText='') then FlushCommands;
+    if not Terminated and (ErrorText='') then begin
+      FlushCommands;
+      { Keep trailing tags visible before the form resets presentation poses. }
+      WaitUntil(MovementUntil);
+    end;
     Success:=not Terminated and (ErrorText='');
   finally
     if Player<>nil then begin Player.Stop;Player.Free;end;

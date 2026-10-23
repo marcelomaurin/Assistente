@@ -15,6 +15,7 @@ from PIL import Image, ImageOps
 SOURCE = Path(__file__).resolve().parent / 'avatar-source'
 ROOT = SOURCE.parents[1] / 'AVATARES'
 CLIPS = ['idle', 'listening', 'thinking', 'talking', 'wave', 'walk']
+GESTURE_CLIPS = ['piscar', 'concordar', 'negar', 'positivo', 'levantar_mao_esquerda', 'levantar_ambas_maos', 'gesticular_ok', 'coracao_com_as_maos', 'olhar_para_tras_direita', 'olhar_para_tras_esquerda', 'nao_com_o_dedo', 'levantar_pe_direito', 'fechar_mao_esquerda', 'abrir_mao_esquerda', 'fechar_mao_direita', 'abrir_mao_direita', 'bocejar', 'abrir_olhos', 'fechar_olhos', 'explicar', 'apontar_direita', 'apontar_esquerda', 'olhar_esquerda', 'olhar_direita', 'surpresa', 'triste', 'serio', 'rir', 'comemorar', 'cumprimentar', 'negativo', 'abrir_bracos', 'cruzar_bracos', 'sentar', 'passo_atras', 'passo_frente', 'dancar']
 PROFILES = {
     'professor': ('Professor', 'caucasian-male-young', 'male_casualsuit03', 'short02', 'young_caucasian_male'),
     'medico': ('Médico', 'caucasian-male-young', 'male_casualsuit03', 'short02', 'young_caucasian_male'),
@@ -641,7 +642,196 @@ class Avatar:
         self._finger_cache[key]=result
         return result
 
-    def animate(self):
+
+    def hand_facing(self, side, arm, direction, facing):
+        wrist=self.origins['wrist.'+side]
+        forward=self.origins['finger3-3.'+side]-wrist
+        thumb=self.origins['finger1-1.'+side]-wrist
+        palm=np.cross(thumb,forward) if side=='R' else np.cross(forward,thumb)
+        desired=np.asarray(direction,dtype=float);desired/=np.linalg.norm(desired)
+        q=between(forward,desired)
+        current=qrotate(q,palm);current-=desired*np.dot(current,desired);current/=np.linalg.norm(current)
+        facing=np.asarray(facing,dtype=float);facing-=desired*np.dot(facing,desired);facing/=np.linalg.norm(facing)
+        angle=math.atan2(np.dot(desired,np.cross(current,facing)),np.dot(current,facing))
+        roll=np.r_[desired*math.sin(angle/2),math.cos(angle/2)]
+        total=np.array(quat())
+        for part in ('clavicle.','shoulder01.','upperarm01.','lowerarm01.'):
+            total=qmul(total,arm[part+side])
+        return qmul(qinverse(total),qmul(roll,q))
+
+    def gesture_frame(self, base, t, duration, sc, r, overrides, jaw, blink):
+        # One-shots ease in, hold/oscillate, and ease back to their starting pose.
+        env=ease(t/.45)*(1-ease((t-duration+.5)/.5))
+        pulse=math.sin(2*math.pi*(t-.45)/.68)*env
+        chest=self.origins['spine01']
+        if self.profile=='ze_gotinha':
+            r['upperarm01.L'][2]-=30;r['upperarm01.R'][2]+=30
+        if base in ('cruzar_bracos','abrir_bracos','explicar','apontar_direita','apontar_esquerda','cumprimentar','comemorar'):
+            for side in ('L','R'):
+                sign=1 if side=='L' else -1
+                if base.startswith('apontar_') and side!=('R' if base.endswith('direita') else 'L'):continue
+                if base=='cruzar_bracos':
+                    # Opposite sides of the chest, staggered depth/height so
+                    # the forearms cross without occupying the same surface.
+                    target=chest+np.array([-sign*.12,.04 if side=='L' else 0.,.28 if side=='L' else .23])*sc
+                    direction=[-sign,0,0];facing=[0,0,-1];amount=1.
+                elif base=='abrir_bracos':
+                    target=chest+np.array([sign*.52,-.07,.10])*sc
+                    direction=[sign,0,0];facing=[0,1,0];amount=env
+                elif base=='comemorar':
+                    target=self.origins['head']+np.array([sign*.20,.16+.02*pulse,.08])*sc
+                    direction=[0,1,0];facing=[0,0,1];amount=env
+                elif base.startswith('apontar_'):
+                    target=chest+np.array([sign*.48,.05,.17])*sc
+                    direction=[sign,.12,.12];facing=[0,0,1];amount=env
+                else:
+                    target=chest+np.array([sign*.22,.03+.04*pulse,.27])*sc
+                    direction=[sign*.4,.4,1];facing=[0,1,0];amount=env
+                arm=self.arm_ik(side,target,[sign*.7,-1.1,.08],shoulder_elevation=.7 if base=='comemorar' else 0.)
+                for name,q in arm.items():overrides[name]=qblend(quat(*r[name]),q,amount)
+                overrides['wrist.'+side]=qblend(quat(),self.hand_facing(side,arm,direction,facing),amount)
+                if base.startswith('apontar_'):
+                    self.finger_pose(side,0,'idle',False)
+                    for finger in range(1,6):
+                        for segment in (1,2,3):
+                            name=f'finger{finger}-{segment}.{side}'
+                            angle=math.radians(0 if finger==2 else 55)/2
+                            overrides[name]=qblend(quat(),np.r_[self._finger_axes[name]*math.sin(angle),math.cos(angle)],amount)
+            return jaw,blink
+        if base in ('olhar_esquerda','olhar_direita'):r['head']=[0,35 if base.endswith('esquerda') else -35,0]
+        elif base=='surpresa':r['head']=[-8,0,0];jaw=.45
+        elif base=='triste':r['head']=[15,0,5];r['spine05'][0]=6
+        elif base=='serio':r['head']=[0,0,0]
+        elif base=='rir':jaw=.25+.32*abs(pulse);blink=.55*env;r['head'][0]=-6*env+3*pulse
+        elif base=='sentar':
+            for side in ('L','R'):r['upperleg01.'+side][0]=-85;r['lowerleg01.'+side][0]=85
+        elif base in ('passo_atras','passo_frente'):
+            sign=-1 if base=='passo_frente' else 1
+            r['upperleg01.R'][0]=sign*25*env;r['lowerleg01.R'][0]=28*env;r['foot.R'][0]=-12*env
+        elif base=='dancar':
+            r['spine02'][2]=9*pulse;r['spine05'][1]=15*pulse
+            for side in ('L','R'):
+                sign=1 if side=='L' else -1
+                r['upperarm01.'+side]=[-15*pulse,0,-sign*(45+12*pulse)]
+                r['lowerarm01.'+side][0]=-45-20*pulse
+                r['upperleg01.'+side][0]=sign*12*pulse;r['lowerleg01.'+side][0]=12*abs(pulse)
+        if base=='concordar':r['head']=[13*pulse,0,0]
+        elif base=='negar':r['head']=[0,22*pulse,0]
+        elif base=='piscar':blink=math.exp(-((t-.8)/.10)**2)
+        elif base=='fechar_olhos':blink=1.
+        elif base=='abrir_olhos':blink=0.
+        elif base=='bocejar':
+            env=ease(t/.9)*(1-ease((t-2.8)/1.2))
+            jaw=.95*env;blink=.86*env;r['head'][0]=-9*env
+        elif base.startswith('olhar_para_tras_'):
+            sign=-1 if base.endswith('direita') else 1
+            r['spine02'][1]=sign*33;r['spine05'][1]=sign*30;r['head'][1]=sign*50
+        elif base=='levantar_pe_direito':
+            r['upperleg01.R'][0]=-32;r['lowerleg01.R'][0]=65;r['foot.R'][0]=-33
+            r['spine02'][2]=-4
+        for side in ('L','R'):
+            sign=1 if side=='L' else -1
+            hand=base.endswith('mao_'+('esquerda' if side=='L' else 'direita'))
+            overhead=base=='levantar_ambas_maos' or (base=='levantar_mao_esquerda' and side=='L')
+            demonstrative=base in ('gesticular_ok','positivo','negativo','nao_com_o_dedo') and side=='R'
+            heart=base=='coracao_com_as_maos'
+            amount=1. if hand or overhead else env
+            if overhead:
+                target=self.origins['head']+np.array([sign*.17,.20,.09])*sc
+                arm=self.arm_ik(side,target,shoulder_elevation=1.)
+            elif hand or demonstrative or heart:
+                target=chest+np.array([sign*(.070 if heart else .23),.08 if heart else .15,.24])*sc
+                arm=self.arm_ik(side,target,[sign*.6,-1.2,.05])
+            else:continue
+            for name,q in arm.items():overrides[name]=qblend(quat(*r[name]),q,amount)
+            direction=[-sign*.10,1,0] if heart else [0,1,0]
+            if base in ('positivo','negativo'):direction=[-.68,.73 if base=='positivo' else -.73,0]
+            if base=='nao_com_o_dedo':direction=[.35*pulse,1,0]
+            wrist=self.hand_facing(side,arm,direction,[-sign,0,0] if heart else [0,0,1])
+            overrides['wrist.'+side]=qblend(quat(),wrist,amount)
+            # Initialize anatomical axes from the profile's mirrored phalanges.
+            rest=self.finger_pose(side,0,'idle',False)
+            for finger in range(1,6):
+                curl=3.
+                if hand and base.startswith('fechar'):curl=62 if finger>1 else 36
+                if base in ('positivo','negativo'):curl=0 if finger==1 else 65
+                if base=='gesticular_ok':curl={1:48,2:68}.get(finger,4)
+                if base=='nao_com_o_dedo':curl=0 if finger==2 else 62
+                if heart:curl={1:18,2:38,3:60,4:65,5:65}[finger]
+                for segment,factor in ((1,.65 if finger==1 else 1.),(2,1.15),(3,.65)):
+                    name=f'finger{finger}-{segment}.{side}'
+                    angle=math.radians(curl*factor)/2
+                    q=np.r_[self._finger_axes[name]*math.sin(angle),math.cos(angle)]
+                    overrides[name]=qblend(rest[name],q,amount)
+            if heart:
+                # Thumbs form the lower V, while curved index fingers form the
+                # two upper lobes. A generic fist curl flattens this silhouette.
+                total=np.array(quat())
+                for part in ('clavicle.','shoulder01.','upperarm01.','lowerarm01.'):
+                    total=qmul(total,arm[part+side])
+                total=qmul(total,wrist)
+                inward=qrotate(qinverse(total),np.array([-sign*.9,-.45,0]))
+                first='finger1-1.'+side
+                direction=self.origins['finger1-2.'+side]-self.origins[first]
+                overrides[first]=qblend(rest[first],between(direction,inward),amount)
+                for segment in (2,3):
+                    name=f'finger1-{segment}.{side}'
+                    overrides[name]=qblend(rest[name],quat(),amount)
+        return jaw,blink
+
+    def compact_buffers(self):
+        accessors=set()
+        for skin in self.doc['skins']:accessors.add(skin['inverseBindMatrices'])
+        for mesh in self.doc['meshes']:
+            for primitive in mesh['primitives']:
+                accessors.update(primitive['attributes'].values())
+                if 'indices' in primitive:accessors.add(primitive['indices'])
+                for target in primitive.get('targets',[]):accessors.update(target.values())
+        for animation in self.doc['animations']:
+            for sampler in animation['samplers']:accessors.update((sampler['input'],sampler['output']))
+        ordered=sorted(accessors);remap={old:new for new,old in enumerate(ordered)}
+        for skin in self.doc['skins']:skin['inverseBindMatrices']=remap[skin['inverseBindMatrices']]
+        for mesh in self.doc['meshes']:
+            for primitive in mesh['primitives']:
+                primitive['attributes']={k:remap[v] for k,v in primitive['attributes'].items()}
+                if 'indices' in primitive:primitive['indices']=remap[primitive['indices']]
+                for target in primitive.get('targets',[]):
+                    for key in target:target[key]=remap[target[key]]
+        for animation in self.doc['animations']:
+            for sampler in animation['samplers']:
+                for key in ('input','output'):sampler[key]=remap[sampler[key]]
+        self.doc['accessors']=[self.doc['accessors'][i] for i in ordered]
+        views=sorted({a['bufferView'] for a in self.doc['accessors']})
+        remap={old:new for new,old in enumerate(views)};binary=bytearray()
+        selected=[]
+        for i in views:
+            view=dict(self.doc['bufferViews'][i]);offset=view.get('byteOffset',0)
+            while len(binary)%4:binary.append(0)
+            view['byteOffset']=len(binary);binary.extend(self.binary[offset:offset+view['byteLength']]);selected.append(view)
+        for a in self.doc['accessors']:a['bufferView']=remap[a['bufferView']]
+        self.doc['bufferViews']=selected;self.binary=binary
+
+    def update_gestures(self):
+        # Append animation data to existing art, preserving geometry/textures.
+        path=self.folder/'modelo.gltf'
+        self.doc=json.loads(path.read_text(encoding='utf-8'))
+        self.binary=bytearray(base64.b64decode(self.doc['buffers'][0]['uri'].split(',')[1]))
+        self.bone_nodes={n['name']:i for i,n in enumerate(self.doc['nodes']) if n['name'] in self.bones}
+        self.face_node=next((i for i,n in enumerate(self.doc['nodes']) if 'mesh' in n and self.doc['meshes'][n['mesh']]['primitives'][0].get('targets')), next(i for i,n in enumerate(self.doc['nodes']) if 'mesh' in n))
+        self.doc['animations']=[a for a in self.doc['animations'] if a['name'] not in GESTURE_CLIPS]
+        previous=self.doc['animations'][:]
+        self.animate(gestures_only=True)
+        if self.profile=='ze_gotinha':
+            self.doc['animations']=self.doc['animations'][len(previous):]
+            self.eye_nodes=[i for i,n in enumerate(self.doc['nodes']) if n['name'].startswith(('Olho ','Íris ','Pupila ','Brilho '))]
+            self.animate_face()
+            self.doc['animations']=previous+self.doc['animations']
+        self.compact_buffers()
+        self.doc['buffers']=[{'byteLength':len(self.binary),'uri':'data:application/octet-stream;base64,'+base64.b64encode(self.binary).decode()}]
+        path.write_text(json.dumps(self.doc,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+        print(self.profile, 'gestures:',len(GESTURE_CLIPS),flush=True)
+
+    def animate(self, gestures_only=False):
         sc=(self.world(self.p).max(0)[1]-self.world(self.p).min(0)[1])/1.78
         face_drivers=self.facial_drivers()
         animated=['head','jaw','spine02','spine05','eye.L','eye.R']+[n for n in self.bones if n.startswith('finger')]+[part+side for part in
@@ -652,8 +842,10 @@ class Avatar:
                 for raised in ((False,) if base.startswith('applause') else (False,True)):
                     name=base+('_smile' if smiling else '')+('_right_hand_up' if raised else '')
                     variants.append((name,base,smiling,raised))
+        if gestures_only: variants=[]
+        variants.extend((name,name,False,False) for name in GESTURE_CLIPS)
         for clip,base,smiling,raised in variants:
-            duration={'idle':6.,'listening':4.,'thinking':4.2,'talking':3.6,'wave':2.4,'walk':1.2,'applause':2.4,'applause_talking':2.4}[base]
+            duration={'idle':6.,'listening':4.,'thinking':4.2,'talking':3.6,'wave':2.4,'walk':1.2,'applause':2.4,'applause_talking':2.4}.get(base,4. if base=='bocejar' else 2.4)
             # CGE's pinned glTF loader approximates cubic tangents by linear values.
             # Bake eased trajectories at 60 Hz, then let it interpolate quaternions.
             frames=round(duration*60)+1
@@ -726,13 +918,16 @@ class Avatar:
                 if raised:
                     ik=self.arm_ik('R',self.origins['head']+(np.array([-.17,.20,.09])+np.array([.002*math.sin(phase),.003*math.cos(phase),0]))*sc,shoulder_elevation=1.)
                     overrides.update(ik);r['wrist.R']=[0,-10,2*math.sin(phase)]
+                if base in GESTURE_CLIPS:
+                    jaw,blink=self.gesture_frame(base,t,duration,sc,r,overrides,jaw,blink)
                 # Positive X opens downward/backward about the mandibular hinge.
                 # Upper teeth remain head-bound; lower teeth follow the jaw skin.
                 r['jaw'][0]=22*jaw
                 gaze=3.5*math.sin(phase)+1.2*math.sin(phase*3)
                 for side in ('L','R'):
                     r['eye.'+side]=[1.5*math.sin(phase*2),gaze,0]
-                    overrides.update(self.finger_pose(side,phase,base,raised))
+                    for bone,q in self.finger_pose(side,phase,base,raised).items():
+                        if bone not in overrides:overrides[bone]=q
                 expression=np.array([jaw,blink,.35 if smiling else .04])
                 offsets=np.einsum('e,ebc->bc',expression,face_drivers)
                 for name,offset in zip(self.face_bones,offsets):
@@ -744,7 +939,11 @@ class Avatar:
                     facial[name].append(rest+offset)
                 for name in animated:
                     rotations[name].append(overrides[name] if name in overrides else (quat(*r[name]) if name in r else [0,0,0,1]))
-                root.append(self.doc['nodes'][self.bone_nodes['root']]['translation']+np.array([0,bob,0]))
+                offset=np.array([0,bob,0])
+                if base=='sentar':offset[1]-=.36*sc
+                if base in ('passo_atras','passo_frente'):offset[2]+=(1 if base=='passo_frente' else -1)*.10*sc*math.sin(math.pi*t/duration)**2
+                if base=='dancar':offset[0]+=.035*sc*math.sin(2*phase)
+                root.append(self.doc['nodes'][self.bone_nodes['root']]['translation']+offset)
                 # Reference morphs are retained for authoring, but remain zero:
                 # the skeletal fallback must not double the expression elsewhere.
                 morph.append([0,0,0])
@@ -758,12 +957,16 @@ class Avatar:
 
 def main():
     import argparse
-    p=argparse.ArgumentParser(__doc__);p.add_argument('--profile',choices=list(PROFILES));args=p.parse_args()
+    p=argparse.ArgumentParser(__doc__);p.add_argument('--profile',choices=list(PROFILES));p.add_argument('--update-gestures',action='store_true');args=p.parse_args()
     for profile in ([args.profile] if args.profile else PROFILES):
         if profile == 'ze_gotinha':
             from ze_gotinha_avatar import ZeGotinha
-            ZeGotinha().build()
+            avatar=ZeGotinha()
+            if args.update_gestures:avatar.update_gestures()
+            else:avatar.build()
         else:
-            Avatar(profile).build()
+            avatar=Avatar(profile)
+            if args.update_gestures:avatar.update_gestures()
+            else:avatar.build()
 
 if __name__=='__main__': main()
