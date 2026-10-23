@@ -1,0 +1,20 @@
+{
+  "version": "0.200",
+  "installer_sha256": "d46caa7902d4265f0cf91466cfe98b73767f4f73c313f7595b161d03ef9cb5dc",
+  "result": "PASS",
+  "payload_files": 181,
+  "profiles": 11,
+  "checks": [
+    "PASS: all eleven installed avatars are current (Zé Gotinha v5, others v4) and match the validated source models byte for byte",
+    "PASS: actual installer extracted 181 files; all SHA-256 hashes match; eleven avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "PASS: installed assistente.exe opened and closed normally with isolated configuration; editor selects adjacent Assistant",
+    "PASS: installed presentation_editor.exe opened and closed normally with isolated configuration; editor selects adjacent Assistant",
+    "PASS: mixed parser, traversal, joints, AI preservation, SHA256",
+    "PASS: exported",
+    "PASS: valid PVA, 2 files",
+    "PASS: installed PVA tool selftest and block/event example pack/verify",
+    "PASS: reinstall preserved user configuration/history and left application registration unchanged",
+    "PASS: uninstaller removed packaged files, preserved user files and did not change registration"
+  ]
+}
