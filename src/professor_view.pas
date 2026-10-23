@@ -6,7 +6,7 @@ interface
 
 uses Classes, SysUtils, Controls, ExtCtrls, StdCtrls, IniFiles,
   CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
-  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands;
+  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints;
 
 type
   TProfessorZoomEvent = procedure(Steps: Single) of object;
@@ -32,6 +32,7 @@ type
     FZoom, FModelHeight: Single;
     FSmile, FRightHandUp: Boolean;
     FRenderingActive: Boolean;
+    FRenderingPausedAt: QWord;
     FDirectiveGesture: string;
     FDirectiveUntil: QWord;
     FExtraPose: string;
@@ -93,7 +94,7 @@ begin
   FViewport.AutoCamera := True;
   FViewport.BackgroundColor := Vector4(1, 1, 1, 1);
   FControl.Container.Controls.InsertFront(FViewport);
-  FScene := TCastleScene.Create(Self);
+  FScene := TPresentationScene.Create(Self);
   FScene.DefaultAnimationTransition := 0.32;
   FRenderingActive:=True;
   FViewport.Items.Add(FScene);
@@ -129,6 +130,7 @@ var S: TProfessorState; Ini: TIniFile; Missing, Requested: string;
 begin
   Result := False;
   FDiagnostic := '';
+  TPresentationScene(FScene).ForgetRig;
   FSmile := False;
   FRightHandUp := False;
   FDirectiveGesture := '';
@@ -176,6 +178,7 @@ begin
       end;
       if Missing <> '' then FDiagnostic := FDiagnostic + ' | Clipes ausentes:' + Missing;
     finally Ini.Free; end;
+    TPresentationScene(FScene).PrepareSpeechMouth;
     FViewport.AssignDefaultCamera;
     { glTF convention: Y up, character faces +Z. Frame using model bounds. }
     FModelHeight := Max(0.1, FScene.BoundingBox.Size.Y);
@@ -263,12 +266,16 @@ end;
 
 procedure TProfessorView.ResetCommands;
 begin
+  TPresentationScene(FScene).ResetJoints;
   FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;FExtraPose:='';
   ApplyAnimation;
 end;
 
 procedure TProfessorView.SetRenderingActive(Active: Boolean);
 begin
+  if FRenderingActive<>Active then
+    if not Active then FRenderingPausedAt:=GetTickCount64
+    else if (FDirectiveUntil<>0) and (FRenderingPausedAt<>0) then Inc(FDirectiveUntil,GetTickCount64-FRenderingPausedAt);
   FRenderingActive:=Active;
   FTimer.Enabled:=Active;
   FControl.AutoRedisplay:=Active;
@@ -282,6 +289,7 @@ end;
 
 procedure TProfessorView.SetActivity(AState: TProfessorState);
 begin
+  TPresentationScene(FScene).Speaking:=AState=psSpeaking;
   FMachine.SetActivity(AState);
   ApplyAnimation;
 end;

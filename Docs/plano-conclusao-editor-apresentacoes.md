@@ -1,28 +1,43 @@
-# Plano para concluir o Editor de Apresentações do Assistente
+# Conclusão do Editor de Apresentações do Assistente
 
-Atualizado em 23/10/2026. Documento de planejamento; itens abaixo não devem ser considerados concluídos sem validação.
+Atualizado em 23/10/2026. O parser inicial foi confirmado no código e integrado à implementação. O status abaixo distingue implementação de evidência de execução.
 
-## Situação
-O interpretador inicial `src/presentation_tags.pas` foi relatado como publicado na `main`. Confirmar no código e compilar. O editor independente e a reprodução multimídia integrada continuam pendentes.
+## Objetivo implementado
 
-## Objetivo
-Editor independente em Lazarus: usuário escreve roteiro, IA insere tags de movimento automaticamente, usuário posiciona imagens, vídeos e slides, exporta pacote ZIP versionado `.pva`, e o Assistente instalado executa fala, gestos e mídias.
+Editor independente Lazarus para escrever roteiros, gerar gestos pela IA preservando o texto e as mídias, posicionar recursos, exportar ZIP versionado `.pva` e executar no Assistente com fala, gestos e mídias.
 
-## Etapas pendentes
-1. **Formato do pacote:** manifesto JSON, roteiro UTF-8, assets, hashes, versão e caminhos relativos; validação contra ZIP traversal.
-2. **Tags:** integrar parser de apresentação ao parser de movimentos; preservar os 40 comandos existentes e definir formalmente tags de abrir/fechar mídia e controlar slides.
-3. **Editor Lazarus:** edição, salvar/abrir, inserir mídia na posição do cursor, botões de slide, desfazer/refazer, lista de recursos e validação.
-4. **IA:** reutilizar componentes ChatGPT do projeto; inserir movimentos sem reescrever texto ou alterar posições de mídias; permitir regeneração e desfazer.
-5. **Articulações:** tags parametrizadas por osso, eixo, ângulo, duração e interpolação; limites conforme rig do avatar.
-6. **Executor:** Assistente recebe caminho `.pva`, valida, carrega e executa roteiro com pausa, retomada e cancelamento.
-7. **Mídia única:** abrir imagem/vídeo/apresentação substitui a anterior; fechar mídia encerra a ativa sem exigir nome.
-8. **PowerPoint:** slide inicial, próximo, anterior e slide específico; definir renderização confiável e dependências.
-9. **Sincronização:** tags executadas no ponto do roteiro; TTS não pronuncia tags; boca continua exclusivamente sob controle da fala.
-10. **Empacotamento e execução:** exportar somente recursos referenciados, validar integridade e chamar o Assistente instalado para prévia.
-11. **Testes:** parser, mídia única, slides, regeneração, ZIP inválido, cancelamento, fala e gestos simultâneos, compilação e execução real.
-12. **Documentação e entrega:** README, catálogo de tags, formato `.pva`, manual, exemplos, changelog, CI e commits na `main`.
+## Entrega e validação
+
+| Etapa | Implementação e evidência |
+| --- | --- |
+| 1. Formato do pacote | Manifesto JSON v1, roteiro UTF-8, recursos relativos e SHA-256. Streams e expansão limitados, validação de cabeçalhos/caminhos ZIP. Testes de ida/volta e 22 pacotes adversariais aprovados. |
+| 2. Tags | Parser unificado preservando os 40 comandos anteriores; tags de mídia, slides e articulações documentadas. Regressão anterior aprovada. |
+| 3. Editor Lazarus | Abrir/salvar PVA, edição, inserção no cursor, navegação de slides, desfazer/refazer, recursos e validação. Teste da janela nativa e captura de interface. |
+| 4. IA | Componente TCHATGPT existente; geração/regeneração, preservação exata da projeção sem gestos, cancelamento e alteração como uma operação de desfazer. Provedor HTTP local aprovado, incluindo UTF-8 e recusa de reescrita. |
+| 5. Articulações | Osso, eixo, ângulo, duração e interpolação; allowlist e limites conservadores do rig incluído; mandíbula/lábios excluídos. Movimento real da cabeça observado no renderer. |
+| 6. Executor | Argumento `.pva` ou `--presentation`, validação antes da extração, pausa/retomada por P e cancelamento por Esc. Teste integrado da janela aprovado. |
+| 7. Mídia única | Abrir substitui/encerra a anterior; fechar é idempotente. PNG e AVI reais testados. |
+| 8. PowerPoint | Automação COM de PPTX, abertura no slide 1, próximo/anterior/específico e limites. Requer PowerPoint funcional na sessão interativa. PPTX real aprovado na sessão do usuário: slide inicial, próximo, anterior, específico, limites e fechamento. |
+| 9. Sincronização | Eventos na fila confirmada pelo thread da interface; tags removidas do TTS; mandíbula depende de áudio em reprodução, independentemente dos gestos. Boca silenciosa verificada no renderer. |
+| 10. Empacotamento e prévia | Exportação apenas dos recursos referenciados; validação de integridade; editor inicia o Assistente selecionado com o PVA. Temporários privados e limpeza no término/cancelamento. |
+| 11. Testes | Parser, formato, ZIP inválido, IA local, editor, imagem/vídeo, pausa, cancelamento e compilação Win32. Áudio WAV real, pausa/retomada, cancelamento pausado e PPTX real aprovados na sessão do usuário. O relatório registra as evidências. |
+| 12. Documentação e entrega | Manual, catálogo, formato PVA, exemplo, changelog, build e workflow manual para runner Windows preparado. O histórico Git registra a entrega local. |
+
+## Arquivos de referência
+
+- [Manual e comandos de build/teste](editor-apresentacoes.md)
+- [Catálogo de tags](tags-apresentacoes.md)
+- [Formato PVA v1](formato-pva.md)
+- [Changelog](../CHANGELOG-apresentacoes.md)
+- Exemplo em `examples/apresentacoes/`.
+- Executáveis compilados em `build/presentations/`.
 
 ## Critérios de aceite
-Um roteiro deve receber tags automáticas da IA, preservar mídia posicionada manualmente, exportar pacote único e ser executado pelo Assistente com fala, movimentos, navegação de slides e somente uma mídia visual aberta. A boca deve seguir o áudio independentemente dos gestos. Compilação e testes precisam passar.
 
-Documento Google Docs: https://docs.google.com/document/d/1x2jXgRQilURskN3N1wooBeG8CyNvKXO0ZbWg0JaUGzY/edit
+O aceite exige gerar gestos preservando mídia manual, exportar pacote único e reproduzir fala, gestos, slides e uma única mídia visual. Os testes não utilizam credenciais reais nem comprovam qualidade de voz de provedores externos. O workflow foi adicionado, mas só uma execução no runner configurado comprova seu funcionamento no GitHub.
+
+Homologação local concluída em Windows Win32, incluindo navegação real de PPTX na sessão interativa. Office em conta de serviço/sessão isolada não foi homologado. O teste inicial nessa conta falhou por logon e foi repetido com sucesso na sessão do usuário.
+
+Relatório: [validacao-apresentacoes.json](validacao-apresentacoes.json).
+
+Documento Google Docs original: https://docs.google.com/document/d/1x2jXgRQilURskN3N1wooBeG8CyNvKXO0ZbWg0JaUGzY/edit

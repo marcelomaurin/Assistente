@@ -7,7 +7,8 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   professor_listener, professor_state, professor_view,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
   professor_ui, professor_commands, fpjson, assistant_integration_protocol,
-  assistant_integration_server, assistant_integration_jobs;
+  assistant_integration_server, assistant_integration_jobs, presentation_package,
+  presentation_media, presentation_tags, presentation_joints;
 type
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -26,6 +27,11 @@ type
     FAssistantManager: TAssistantManager;
     FJarvisClient: TJarvisAPIClient;
     FSpeechJob: TReceptionJob;
+    FPresentationMedia: TPresentationMedia;
+    FPresentationRoot: string;
+    FPresentationMode: Boolean;
+    procedure FinishPresentation;
+  private
     FVoiceInput: TVoiceInputBridge;
     FIntegration: TAssistantIntegrationServer;
     FIntegrationJobs: TIntegrationJobs;
@@ -83,15 +89,17 @@ type
     procedure PararVideo;
     procedure ProfileChange(Sender: TObject);
   public
+    procedure StartPresentation(const FileName: string);
     procedure FalarResposta(const ATexto: string);
     function ApresentandoResposta: Boolean;
+    function ActivePresentationMedia: string;
     procedure ReloadAvatars(Sender: TObject);
     property AssistantManager: TAssistantManager read FAssistantManager;
     property VoiceInput: TVoiceInputBridge read FVoiceInput;
   end;
 var frmmain: Tfrmmain;
 implementation
-uses professor_settings, Math;
+uses professor_settings, Math, FileUtil, LazFileUtils, LazUTF8;
 {$R *.lfm}
 
 procedure Tfrmmain.FormCreate(Sender: TObject);
@@ -295,6 +303,7 @@ begin
     FreeAndNil(FAssistantManager);
   end;
   if Assigned(FSpeechJob) then begin FSpeechJob.Cancel; FreeAndNil(FSpeechJob); end;
+  FinishPresentation;
   PararVideo;
   SalvarMemoria;
   FreeAndNil(FProfessor);
@@ -310,6 +319,12 @@ begin
     IniciarEscuta;
     IniciarVideo;
     FProfessor.Gesture(psWave);
+    try
+      if (ParamStrUTF8(1)='--presentation') or (ParamStrUTF8(1)='--presentation-silent') then begin
+        if ParamCount<>2 then raise Exception.Create('Informe um arquivo .pva');
+        StartPresentation(ParamStrUTF8(2));
+      end else if SameText(ExtractFileExt(ParamStrUTF8(1)),'.pva') then StartPresentation(ParamStrUTF8(1));
+    except on E: Exception do begin FinishPresentation;MessageDlg(E.Message,mtError,[mbOK],0);end;end;
   end;
   if edPergunta.CanFocus then edPergunta.SetFocus;
 end;
@@ -560,11 +575,12 @@ var C: TReceptionConfig; Script: TAvatarScript;
 begin
   if FClosing or Assigned(FSpeechJob) then Exit;
   Script:=ParseAvatarScript(ATexto);
-  if (Trim(ATexto)='') or (not FSetMain.AutoSpeak and (Script.CommandCount=0)) then begin RetomarEscuta;Exit;end;
+  if (Trim(ATexto)='') or (not FSetMain.AutoSpeak and (Script.CommandCount+Script.PresentationCount+Script.JointCount=0) and not FPresentationMode) then begin RetomarEscuta;Exit;end;
   PausarEscuta;
   C := Default(TReceptionConfig);
   C.EnableAvatarCommands:=True;
-  C.SilentPresentation:=not FSetMain.AutoSpeak;
+  C.EnablePresentationCommands:=FPresentationMode;
+  C.SilentPresentation:=not FSetMain.AutoSpeak or (ParamStrUTF8(1)='--presentation-silent');
   C.Token := FSetMain.CHATGPT;
   C.AudioToken := FSetMain.VoiceAPIToken;
   if C.AudioToken = '' then C.AudioToken := FSetMain.CHATGPT;
@@ -587,20 +603,65 @@ begin
   end;
 end;
 
+function Tfrmmain.ActivePresentationMedia: string;
+begin if FPresentationMedia=nil then Result:='' else Result:=FPresentationMedia.Active;end;
+
 function Tfrmmain.ApresentandoResposta: Boolean;
 begin Result:=Assigned(FSpeechJob);end;
 
-procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure Tfrmmain.StartPresentation(const FileName: string);
+var P: TPVAPackage; G: TGUID;
 begin
-  if (Key=VK_ESCAPE) and Assigned(FSpeechJob) then
-  begin
+  if Assigned(FSpeechJob) or FAguardandoResposta then raise Exception.Create('Assistente ocupado');
+  FinishPresentation;
+  P:=TPVAPackage.Create;
+  try
+    try
+    P.Load(FileName);
+    if FSetMain.AutoSpeak and (FSetMain.SynthEngine=2) then raise Exception.Create('Apresentacoes com pausa requerem SAPI ou voz remota no Windows');
+    CreateGUID(G);
+    FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
+    P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot);
+    FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
+    FalarResposta(P.Script);
+    if FSpeechJob=nil then FinishPresentation;
+    except FinishPresentation;raise;end;
+  finally P.Free;end;
+end;
+procedure Tfrmmain.FinishPresentation;
+begin
+  FreeAndNil(FPresentationMedia);FPresentationMode:=False;
+  if Assigned(FProfessor) then begin
+    TPresentationScene(FProfessor.Scene).PauseJoints(False);
+    FProfessor.SetRenderingActive(True);FProfessor.ResetCommands;
+  end;
+  if (Pos('assistente-pva-',ExtractFileName(FPresentationRoot))=1) and
+    (ExtractFileDir(FPresentationRoot)=ExcludeTrailingPathDelimiter(GetTempDir(False))) then
+    DeleteDirectory(FPresentationRoot,False);
+  FPresentationRoot:='';
+end;
+procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
+var Paused: Boolean;
+begin
+  if not Assigned(FSpeechJob) then Exit;
+  if FPresentationMode and (Key=Ord('P')) and (Shift=[]) then begin
+    Paused:=not FSpeechJob.Paused;FSpeechJob.SetPaused(Paused);
+    TPresentationScene(FProfessor.Scene).PauseJoints(Paused);
+    FProfessor.SetRenderingActive(not Paused);
+    try FPresentationMedia.SetPaused(Paused);
+    except on E: Exception do begin FSpeechJob.Cancel;lblStatus.Caption:=E.Message;end;end;
+    if Paused then lblStatus.Caption:='Apresentacao pausada (P retoma; Esc cancela)';
+    Key:=0;Exit;
+  end;
+  if Key=VK_ESCAPE then begin
     FSpeechJob.Cancel;FProfessor.ResetCommands;Key:=0;
-    lblStatus.Caption:='Interrompendo apresentação...';
+    if FPresentationMode then FinishPresentation;
+    lblStatus.Caption:='Interrompendo apresentacao...';
   end;
 end;
 
 procedure Tfrmmain.TimerTick(Sender: TObject);
-var Ok: Boolean; Err: string; Command: TAvatarCommand;
+var Ok: Boolean; Err: string; Command: TAvatarScriptStep;
 begin
   if FClosing then Exit;
   if Assigned(FIntegration) then FIntegration.Pump;
@@ -612,21 +673,27 @@ begin
   if not Assigned(FSpeechJob) then Exit;
   if not FSpeechJob.Done then
   begin
-    if FSpeechJob.PlaybackActive then
+    if FSpeechJob.Paused then begin FProfessor.SetActivity(psIdle);end
+    else if FSpeechJob.PlaybackActive then
     begin FProfessor.SetActivity(psSpeaking); lblStatus.Caption := 'Falando...'; end
     else if FSpeechJob.IsSilent then FProfessor.SetActivity(psIdle)
     else FProfessor.SetActivity(psThinking);
   end;
-  while FSpeechJob.TakeAvatarCommand(Command) do
+  while FSpeechJob.TakeScriptCommand(Command) do begin
     try
-      if not FSpeechJob.IsSilent then FProfessor.SetActivity(psSpeaking);
-      FProfessor.ExecuteCommand(Command);
-    finally FSpeechJob.ConfirmAvatarCommand;end;
+      if FSpeechJob.PlaybackActive then FProfessor.SetActivity(psSpeaking);
+      if FPresentationMode and (Command.Presentation.Action<>paNone) then FPresentationMedia.Execute(Command.Presentation)
+      else if FPresentationMode and (Command.Joint.Bone<>'') then TPresentationScene(FProfessor.Scene).ExecuteJoint(Command.Joint)
+      else FProfessor.ExecuteCommand(Command.Command);
+    except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
+    FSpeechJob.ConfirmAvatarCommand;
+  end;
   if not FSpeechJob.Done then Exit;
   Ok := FSpeechJob.Success;
   Err := FSpeechJob.ErrorText;
-  if FSpeechJob.Cancelled then Err:='Apresentação cancelada';
+  if FSpeechJob.Cancelled and (Err='') then Err:='Apresentação cancelada';
   FreeAndNil(FSpeechJob);
+  if FPresentationMode then FinishPresentation;
   SetEstado('Pronto para conversar', False);
   RetomarEscuta;
   if not Ok then begin FProfessor.ResetCommands;lblStatus.Caption := Err;end;
@@ -777,6 +844,7 @@ begin
   if RequestAction='cancel' then begin
     if FAguardandoResposta then begin FIntegrationCancelled:=True;FAssistantManager.CancelExecution;end;
     if Assigned(FSpeechJob) then FSpeechJob.Cancel;
+    if FPresentationMode then FinishPresentation;
     FProfessor.ResetCommands;Response:=IntegrationOK(TJSONObject.Create(['accepted',True]));Exit;
   end;
   if not ((RequestAction='ask') or (RequestAction='speak') or (RequestAction='avatar') or (RequestAction='select_avatar')) then begin
@@ -808,7 +876,7 @@ begin
   end;
   ID:=IntegrationString(Request,'command');
   for Command:=Succ(Low(TAvatarCommand)) to High(TAvatarCommand) do
-    if ID=Commands[Ord(Command)] then begin
+    if (ID=AvatarCommandName(Command)) or ((Ord(Command)<=High(Commands)) and (ID=Commands[Ord(Command)])) then begin
       if FProfessor.ExecuteCommand(Command) then Response:=IntegrationOK(TJSONObject.Create(['accepted',True]))
       else Response:=IntegrationError('unsupported_gesture');Exit;
     end;

@@ -97,3 +97,10 @@ estão documentados em [professor-virtual-3d.md](Docs/professor-virtual-3d.md).
 Com Kinect físico disponível, validar ambos ativos, desligamento independente,
 troca de dispositivos e recuperação quando um dispositivo está ausente.
 Os testes isolados não comprovam captura simultânea com Kinect físico.
+
+
+## Editor de Apresentações PVA
+
+Editor Lazarus independente, pacote único com roteiro e mídias, geração de gestos por IA e execução no Assistente com pausa/retomada.
+
+Consulte o [manual do editor](Docs/editor-apresentacoes.md), o [catálogo de tags](Docs/tags-apresentacoes.md), o [formato PVA](Docs/formato-pva.md) e o [status de conclusão](Docs/plano-conclusao-editor-apresentacoes.md).

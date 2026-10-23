@@ -1,0 +1,38 @@
+name: Presentation editor (Windows)
+on:
+  workflow_dispatch:
+    inputs:
+      office:
+        description: Run native PowerPoint checks (interactive Office session required)
+        required: true
+        default: false
+        type: boolean
+jobs:
+  validate:
+    runs-on: [self-hosted, Windows, assistente-build]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build editor, assistant and CLI
+        shell: pwsh
+        run: python scripts/build_presentations.py
+      - name: Build tests
+        shell: pwsh
+        run: python scripts/build_presentations.py --target tests
+      - name: Package and regression tests
+        shell: pwsh
+        run: |
+          python tests/run_presentation_checks.py build/presentations/pva_tool.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & build/presentations/professor_commands_tests.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & build/presentations/professor_speech_commands_tests.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & build/presentations/professor_state_tests.exe
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Native editor, media, avatar, AI and audio
+        shell: pwsh
+        run: |
+          $arguments = @('tests/run_presentation_native.py','build/presentations','AVATARES/professor/modelo.gltf')
+          if ('${{ inputs.office }}' -ne 'true') { $arguments += '--without-office' }
+          python @arguments
+          exit $LASTEXITCODE

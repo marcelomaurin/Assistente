@@ -40,6 +40,7 @@ type
     destructor Destroy; override;
     function Play(const AFileName: string): Boolean;
     procedure Stop;
+    procedure SetPaused(Value: Boolean);
   published
     property LastError: string read FLastError;
     property Playing: Boolean read GetPlaying;
@@ -194,6 +195,17 @@ begin
     {$ENDIF}
   end;
   Result := FPlaying;
+end;
+
+procedure TAIAudioPlayer.SetPaused(Value: Boolean);
+var R: MCIERROR;
+begin
+  {$IFDEF MSWINDOWS}
+  if FDeviceID=0 then Exit;
+  if Value then R:=mciSendCommandW(FDeviceID,MCI_PAUSE,MCI_WAIT,0)
+  else R:=mciSendCommandW(FDeviceID,MCI_RESUME,MCI_WAIT,0);
+  if R<>0 then begin FLastError:='Falha ao pausar/retomar audio';Stop;end;
+  {$ENDIF}
 end;
 
 procedure TAIAudioPlayer.Stop;

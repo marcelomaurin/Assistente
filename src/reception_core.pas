@@ -6,13 +6,13 @@ interface
 
 uses Classes, SysUtils, SyncObjs, fpjson, jsonparser, chatgpt, aiagent,
   aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace,
-  professor_commands;
+  professor_commands, presentation_tags;
 
 type
   TReceptionConfig = record
     Token, AudioToken, Model, URL, Language, Voice: string;
     Provider, RecogEngine, SynthEngine, Volume, Rate: Integer;
-    EnableAvatarCommands, SilentPresentation: Boolean;
+    EnableAvatarCommands, SilentPresentation, EnablePresentationCommands: Boolean;
   end;
   TReceptionJobKind = (rjReply, rjTranscribe, rjSpeak);
   { Each job owns its suite components. No UI or mutable session objects cross
@@ -27,9 +27,10 @@ type
     FLLM: TCHATGPT;
     FPlaybackActive: LongInt;
     FCommandAck: TEvent;
-    FPendingCommand: TAvatarCommand;
+    FPendingCommand: TAvatarScriptStep;
+    FPaused: LongInt;
     FCommandPending: Boolean;
-    procedure DeliverCommand(Command: TAvatarCommand);
+    procedure DeliverCommand(const Command: TAvatarScriptStep);
     procedure ExecuteSpeech;
   protected
     procedure Execute; override;
@@ -47,6 +48,9 @@ type
     function TakeAvatarCommand(out Command: TAvatarCommand): Boolean;
     procedure ConfirmAvatarCommand;
     function IsSilent: Boolean;
+    procedure SetPaused(Value: Boolean);
+    function Paused: Boolean;
+    function TakeScriptCommand(out Command: TAvatarScriptStep): Boolean;
   end;
 
   TReceptionMemory = class
@@ -111,7 +115,7 @@ end;
 
 function TReceptionJob.PlaybackActive: Boolean;
 begin
-  Result := InterlockedCompareExchange(FPlaybackActive, 0, 0) <> 0;
+  Result := (InterlockedCompareExchange(FPlaybackActive, 0, 0) <> 0) and not Paused;
 end;
 
 function TReceptionJob.Cancelled: Boolean;
@@ -130,22 +134,36 @@ end;
 function TReceptionJob.IsSilent: Boolean;
 begin Result:=FConfig.SilentPresentation;end;
 
-function TReceptionJob.TakeAvatarCommand(out Command: TAvatarCommand): Boolean;
+procedure TReceptionJob.SetPaused(Value: Boolean);
+begin InterlockedExchange(FPaused,Ord(Value));end;
+function TReceptionJob.Paused: Boolean;
+begin Result:=InterlockedCompareExchange(FPaused,0,0)<>0;end;
+function TReceptionJob.TakeScriptCommand(out Command: TAvatarScriptStep): Boolean;
 begin
   FLock.Acquire;
   try
-    Result:=FCommandPending and not Terminated;
+    Result:=FCommandPending and not Terminated and not Paused;
     if Result then begin Command:=FPendingCommand;FCommandPending:=False;end
-    else Command:=acNone;
+    else Command:=Default(TAvatarScriptStep);
   finally FLock.Release;end;
+end;
+function TReceptionJob.TakeAvatarCommand(out Command: TAvatarCommand): Boolean;
+var Step: TAvatarScriptStep;
+begin
+  Result:=TakeScriptCommand(Step);Command:=Step.Command;
+  if Result and (Command=acNone) then begin ConfirmAvatarCommand;Result:=False;end;
 end;
 
 procedure TReceptionJob.ConfirmAvatarCommand;
 begin FCommandAck.SetEvent;end;
 
-procedure TReceptionJob.DeliverCommand(Command: TAvatarCommand);
+procedure TReceptionJob.DeliverCommand(const Command: TAvatarScriptStep);
 begin
   if Terminated or not FConfig.EnableAvatarCommands then Exit;
+  if ((Command.Presentation.Action<>paNone) or (Command.Joint.Bone<>'')) and
+    not FConfig.EnablePresentationCommands then Exit;
+  while not Terminated and Paused do Sleep(10);
+  if Terminated then Exit;
   FCommandAck.ResetEvent;
   FLock.Acquire;
   try FPendingCommand:=Command;FCommandPending:=True;
@@ -157,8 +175,22 @@ end;
 
 procedure TReceptionJob.ExecuteSpeech;
 var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
-  Player: TAIAudioPlayer; Pending: array of TAvatarCommand;
+  Player: TAIAudioPlayer; Pending: array of TAvatarScriptStep;
   Part,SpeechFile: string;
+  WasPaused: Boolean;
+  procedure PollPause;
+  begin
+    if Paused<>WasPaused then begin
+      WasPaused:=Paused;
+      if Player<>nil then Player.SetPaused(WasPaused);
+      if Synth<>nil then Synth.SetPaused(WasPaused);
+    end;
+  end;
+  procedure WaitReady;
+  begin
+    PollPause;
+    while not Terminated and Paused do begin Sleep(10);PollPause;end;
+  end;
   procedure FlushCommands;
   var K: Integer;
   begin
@@ -166,11 +198,22 @@ var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
     SetLength(Pending,0);
   end;
   procedure WaitUntil(Deadline: QWord);
-  begin while not Terminated and (GetTickCount64<Deadline) do Sleep(10);end;
+  var Previous,Current,Remaining: QWord;
+  begin
+    Previous:=GetTickCount64;if Previous>=Deadline then Exit;Remaining:=Deadline-Previous;
+    while not Terminated and (Remaining>0) do begin
+      Sleep(10);Current:=GetTickCount64;
+      if not Paused then begin
+        if Current-Previous>=Remaining then Remaining:=0 else Dec(Remaining,Current-Previous);
+      end;
+      Previous:=Current;
+    end;
+  end;
 begin
-  Script:=ParseAvatarScript(FInput);
+  if FConfig.EnablePresentationCommands then Script:=ParseAvatarScript(FInput,4096)
+  else Script:=ParseAvatarScript(FInput);
   Text:=Script.PlainText;
-  Synth:=nil;Player:=nil;SpeechFile:='';
+  Synth:=nil;Player:=nil;SpeechFile:='';WasPaused:=False;
   try
     if not FConfig.SilentPresentation then
     begin
@@ -192,9 +235,10 @@ begin
     for I:=0 to High(Script.Steps) do
     begin
       if Terminated then Break;
-      if Script.Steps[I].Command<>acNone then
+      WaitReady;
+      if (Script.Steps[I].Command<>acNone) or (Script.Steps[I].Presentation.Action<>paNone) or (Script.Steps[I].Joint.Bone<>'') then
       begin
-        J:=Length(Pending);SetLength(Pending,J+1);Pending[J]:=Script.Steps[I].Command;
+        J:=Length(Pending);SetLength(Pending,J+1);Pending[J]:=Script.Steps[I];
         Continue;
       end;
       Part:=Trim(Script.Steps[I].Text);
@@ -212,13 +256,13 @@ begin
         if Terminated then Break;
         { Remote synthesis finishes before applying tags: gestures start at the
           audible segment boundary, not while waiting for the provider. }
-        FlushCommands;
+        WaitReady;FlushCommands;
         if Terminated then Break;
         if not Player.Play(SpeechFile) then begin ErrorText:=Player.LastError;Break;end;
         InterlockedExchange(FPlaybackActive,1);
         { Playing queries the backend, not the WAV size or an estimated timer.
           Keep capture paused and talking active until completion or cancel. }
-        while not Terminated and Player.Playing do Sleep(10);
+        while not Terminated and Player.Playing do begin Sleep(10);PollPause;end;
         if Player.LastError<>'' then ErrorText:=Player.LastError;
         Player.Stop;InterlockedExchange(FPlaybackActive,0);
         SysUtils.DeleteFile(SpeechFile);SpeechFile:='';
@@ -228,7 +272,11 @@ begin
         FlushCommands;
         if Terminated then Break;
         InterlockedExchange(FPlaybackActive,1);
-        try Synth.Say(Part);finally InterlockedExchange(FPlaybackActive,0);end;
+        try
+          Synth.Asynchronous:=True;Synth.Say(Part);
+          while not Terminated and Synth.LocalSpeaking do begin Sleep(10);PollPause;end;
+          if Terminated then Synth.Stop;
+        finally InterlockedExchange(FPlaybackActive,0);end;
         if Synth.LastError<>'' then begin ErrorText:=Synth.LastError;Break;end;
       end;
     end;

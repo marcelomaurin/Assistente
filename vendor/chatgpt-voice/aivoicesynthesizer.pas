@@ -148,6 +148,8 @@ type
 
     procedure Say(const AText: string = '');
     procedure Stop;
+    procedure SetPaused(Value: Boolean);
+    function LocalSpeaking: Boolean;
     procedure GetAvailableVoices(AList: TStrings);
     function ValidateRemoteConfig(const AText: string): Boolean;
     function ValidateOpenAIConfig(const AText: string): Boolean;
@@ -803,6 +805,21 @@ begin
 
   // Local speech engine pathway (SAPI or eSpeak)
   SpeakLocal(FEngine, SpeakText);
+end;
+
+function TAIVoiceSynthesizer.LocalSpeaking: Boolean;
+begin
+  Result:=False;
+  {$IFDEF MSWINDOWS}
+  if FSpVoiceCreated then Result:=not Boolean(FSpVoice.WaitUntilDone(0));
+  {$ENDIF}
+end;
+procedure TAIVoiceSynthesizer.SetPaused(Value: Boolean);
+begin
+  {$IFDEF MSWINDOWS}
+  if FSpVoiceCreated then
+    if Value then FSpVoice.Pause else FSpVoice.Resume;
+  {$ENDIF}
 end;
 
 procedure TAIVoiceSynthesizer.Stop;

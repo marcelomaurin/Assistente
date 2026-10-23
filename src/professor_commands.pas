@@ -1,7 +1,7 @@
 unit professor_commands;
 {$mode objfpc}{$H+}
 interface
-uses SysUtils;
+uses SysUtils, presentation_tags, presentation_joint_tags;
 type
   TAvatarCommand = (acNone, acSmile, acNeutral, acApplause, acRaiseRightHand,
     acLowerRightHand, acWave, acWalk,
@@ -9,13 +9,16 @@ type
   TAvatarScriptStep = record
     Text: string;
     Command: TAvatarCommand;
+    Presentation: TPresentationTag;
+    Joint: TJointTag;
+    SourceStart, SourceLength: Integer;
   end;
   TAvatarScript = record
     PlainText: string;
     Steps: array of TAvatarScriptStep;
-    CommandCount: Integer;
+    CommandCount, PresentationCount, JointCount: Integer;
   end;
-function ParseAvatarScript(const Source: string): TAvatarScript;
+function ParseAvatarScript(const Source: string; CommandLimit: Integer = 64): TAvatarScript;
 function AvatarCommandName(Command: TAvatarCommand): string;
 function AvatarInstructionText: string;
 function SilentSegmentDuration(const Text: string): QWord;
@@ -82,12 +85,14 @@ begin
   else if (S='relaxar') then Result:=acRelax;
 end;
 
-function ParseAvatarScript(const Source: string): TAvatarScript;
-var I,J,N,Backticks,CodeTicks: Integer; Buffer,Tag: string; Command: TAvatarCommand;
+function ParseAvatarScript(const Source: string; CommandLimit: Integer): TAvatarScript;
+var I,J,N,Backticks,CodeTicks: Integer; Buffer,Tag: string; Command: TAvatarCommand; Media: TPresentationTag; Joint: TJointTag;
   procedure AddStep(const Text: string; Cmd: TAvatarCommand);
   var Count: Integer;
   begin
     Count:=Length(Result.Steps);SetLength(Result.Steps,Count+1);
+    Result.Steps[Count]:=Default(TAvatarScriptStep);
+    Result.Steps[Count].SourceStart:=I;Result.Steps[Count].SourceLength:=J-I+1;
     Result.Steps[Count].Text:=Text;Result.Steps[Count].Command:=Cmd;
   end;
   procedure Flush;
@@ -108,18 +113,27 @@ begin
     if (Source[I]='[') and (CodeTicks=0) and ((I=1) or (Source[I-1]<>'\')) then
     begin
       J:=I+1;
-      while (J<=N) and (J-I<=80) and not (Source[J] in [']',#10,#13,'[']) do Inc(J);
+      while (J<=N) and (J-I<=512) and not (Source[J] in [']',#10,#13,'[']) do Inc(J);
       if (J<=N) and (Source[J]=']') then
       begin
         Tag:=Copy(Source,I+1,J-I-1);Command:=CommandForTag(Tag);
+        if not TryParsePresentationTag(Tag,Media) then Media:=Default(TPresentationTag);
+        if not TryParseJointTag(Tag,Joint) then Joint:=Default(TJointTag);
         { Links and images with bracketed labels are ordinary text. }
-        if (J<N) and (Source[J+1]='(') then Command:=acNone;
-        if (I>1) and (Source[I-1]='!') then Command:=acNone;
+        if (J<N) and (Source[J+1]='(') then begin Command:=acNone;Media.Action:=paNone;Joint.Bone:='';end;
+        if (I>1) and (Source[I-1]='!') then begin Command:=acNone;Media.Action:=paNone;Joint.Bone:='';end;
+        if (Media.Action<>paNone) or (Joint.Bone<>'') then
+        begin
+          Flush;AddStep('',acNone);
+          if Media.Action<>paNone then begin Result.Steps[High(Result.Steps)].Presentation:=Media;Inc(Result.PresentationCount);end
+          else begin Result.Steps[High(Result.Steps)].Joint:=Joint;Inc(Result.JointCount);end;
+          I:=J+1;Continue;
+        end;
         if Command<>acNone then
         begin
           Flush;
           { Limit animation events, but never pronounce extra recognized tags. }
-          if Result.CommandCount<64 then begin AddStep('',Command);Inc(Result.CommandCount);end;
+          if Result.CommandCount<CommandLimit then begin AddStep('',Command);Inc(Result.CommandCount);end;
           I:=J+1;Continue;
         end;
       end;

@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-23",
+  "platform": "Windows i386-win32",
+  "compiler": "Free Pascal 3.2.2",
+  "source_base": "420bcbb",
+  "builds": [
+    "presentation_editor",
+    "assistente",
+    "pva_tool"
+  ],
+  "passed": [
+    "all 40 avatar commands",
+    "mixed tags and literal code/links",
+    "SHA-256 known vector",
+    "UTF-8 script and Unicode/spaced Windows paths",
+    "referenced assets only",
+    "22 hostile ZIP cases",
+    "invalid tags and case-divergent references",
+    "existing avatar parser/speech/state regressions",
+    "native editor cursor/undo/redo/save/open",
+    "native PNG and AVI single-media replacement",
+    "PowerPoint slide 1/next/previous/goto/range/close in user session",
+    "main PVA execution, joint interpolation, silent mouth, pause/resume/cancel",
+    "real WAV playback with media/gesture queue and pause/resume/cancel while paused",
+    "real TCHATGPT component against local HTTP mock, preserved UTF-8 and rejected rewrites"
+  ],
+  "native_reports": {
+    "media": "PASS: real PNG single-media replacement\nPASS: real AVI playback, pause/resume\nPASS: single-media close and real slide navigation/bounds; Office mode=with-office\n",
+    "editor": "PASS: native editor opened, cursor insertion, undo/redo, PVA save/open roundtrip; screenshot saved\n",
+    "main": "PASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: cancellation joins speech worker and closes media; real joint interpolation and silent mouth verified\n"
+  },
+  "limits": [
+    "Win64/Linux not validated",
+    "external paid AI/TTS credentials not used; mock TTS WAV is silent",
+    "PowerPoint requires interactive user session; isolated account activation failed",
+    "workflow committed but not executed on remote runner",
+    "video codecs depend on Windows"
+  ],
+  "package_version": 1,
+  "binaries": {
+    "presentation_editor.exe": {
+      "size": 32576761,
+      "sha256": "d930109f3146e410e64784268e29eaa0da9efb970d1b233b597a8e9537989e59"
+    },
+    "assistente.exe": {
+      "size": 59394591,
+      "sha256": "e609d5410cc5d39ad548821242e613547e6d4203587b0ad5826c484be4b7372d"
+    },
+    "pva_tool.exe": {
+      "size": 794795,
+      "sha256": "2e3ac33c3a01b55b4692445acf41c98c04a9aebfb7fa9449cb235440f716c167"
+    }
+  },
+  "runtime": {
+    "avatars_files": 142,
+    "avatars_size_mib": 239.1,
+    "ssl_libraries": [
+      "libeay32.dll",
+      "ssleay32.dll",
+      "libcrypto-1_1.dll",
+      "libssl-1_1.dll"
+    ]
+  }
+}

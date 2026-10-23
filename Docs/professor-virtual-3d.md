@@ -194,7 +194,7 @@ walk=Walk
 Clipes ausentes são informados e usam idle quando disponível. A prévia da aba
 de configuração reproduz os seis estados de verdade, sem afirmar sucesso por
 uma simples mensagem. Auto-idle é funcional. Piscar está nos clipes incluídos;
-a fala tem animação genérica de boca, sem sincronização por fonemas/visemas.
+a fala tem animação genérica de mandíbula, dirigida pelo estado real de áudio independentemente do clipe corporal, sem sincronização por fonemas/visemas.
 As opções legadas de piscar, qualidade e lip-sync não implementadas pelo
 adaptador ficam desabilitadas, preservando os valores anteriores.
 
@@ -343,8 +343,9 @@ dirigindo o avatar. Os testes não comprovam captura física simultânea nem
 conversa completa com provedores remotos; isso exige hardware e credenciais.
 
 Não há barge-in durante fala: a escuta é pausada para evitar realimentação.
-SAPI síncrono pode atrasar o fechamento até o trecho corrente terminar;
-preparação de voz remota pode aguardar o timeout do provedor.
+A fala SAPI é acompanhada de forma assíncrona e pode ser cancelada/pausada pelo worker. A preparação de voz remota pode aguardar o timeout do provedor.
+
+O [Editor de Apresentações](editor-apresentacoes.md) adiciona roteiro PVA, mídia única, controle de slides e articulações limitadas, usando a mesma fila de eventos e o mesmo renderer.
 
 Referências oficiais:
 [TCastleControl no formulário](https://castle-engine.io/control_on_form),

@@ -22,3 +22,8 @@ validado nesta alteração. A biblioteca externa CHATGPT permanece intacta.
 
 A entrega de eventos à LCL é feita por `src/professor_listener.pas`, sem
 alterar a biblioteca CHATGPT compartilhada.
+
+
+## Controle de apresentação PVA
+
+O adaptador local acrescenta TAIAudioPlayer.SetPaused e TAIVoiceSynthesizer.SetPaused/LocalSpeaking. O worker consulta a reprodução real e aplica pausa/retomada no próprio thread de áudio. A fila continua com confirmação da interface; as tags de mídia/articulação são habilitadas somente para PVA validado. SAPI é iniciado de forma assíncrona para permitir cancelamento e acompanhamento do término. Testes específicos: presentation_speech_tests.lpr e run_presentation_native.py.

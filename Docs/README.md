@@ -26,3 +26,10 @@ Esta documentação descreve as fontes atuais, incluindo a integração externa 
 O antigo receptor de texto bruto na porta 18765 não é iniciado pela aplicação atual. Clientes desse protótipo precisam migrar para o protocolo autenticado v1. Código legado preservado não equivale a um serviço ativo.
 
 As versões são independentes: versão do instalador, versão artística do avatar (v4), versão JSON do protocolo (`v:1`) e versão da ABI da DLL (`0x00010000`). Confira sempre qual delas um documento descreve.
+
+
+## Editor de Apresentações PVA
+
+Editor Lazarus independente, pacote único com roteiro e mídias, geração de gestos por IA e execução no Assistente com pausa/retomada.
+
+Consulte o [manual do editor](editor-apresentacoes.md), o [catálogo de tags](tags-apresentacoes.md), o [formato PVA](formato-pva.md) e o [status de conclusão](plano-conclusao-editor-apresentacoes.md).

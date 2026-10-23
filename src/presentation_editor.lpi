@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12" />
+    <General>
+      <Title Value="Editor de Apresentacoes" />
+      <UseXPManifest Value="True" />
+    </General>
+    <RequiredPackages>
+      <Item>
+        <PackageName Value="LCL" />
+      </Item>
+      <Item>
+        <PackageName Value="SynEdit" />
+      </Item>
+    </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="presentation_editor.lpr" />
+        <IsPartOfProject Value="True" />
+      </Unit>
+      <Unit>
+        <Filename Value="presentation_editor_ui.pas" />
+        <IsPartOfProject Value="True" />
+      </Unit>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11" />
+    <Target>
+      <Filename Value="../build/presentations/presentation_editor" />
+    </Target>
+    <SearchPaths>
+      <OtherUnitFiles Value="../vendor/chatgpt-voice;../.deps/chatgpt-integration-baseline;../.deps/chatgpt-integration-baseline/pacote;../.deps/chatgpt-integration-baseline/pacote/AI;../.deps/chatgpt-integration-baseline/pacote/AI A2A;../.deps/chatgpt-integration-baseline/pacote/AI Agent;../.deps/chatgpt-integration-baseline/pacote/AI Communication;../.deps/chatgpt-integration-baseline/pacote/AI Communication/AIWebRTC;../.deps/chatgpt-integration-baseline/pacote/AI DBase;../.deps/chatgpt-integration-baseline/pacote/AI Evaluation;../.deps/chatgpt-integration-baseline/pacote/AI Files;../.deps/chatgpt-integration-baseline/pacote/AI Filtros Sonoros;../.deps/chatgpt-integration-baseline/pacote/AI Graph;../.deps/chatgpt-integration-baseline/pacote/AI Graphic;../.deps/chatgpt-integration-baseline/pacote/AI Hardware;../.deps/chatgpt-integration-baseline/pacote/AI Image;../.deps/chatgpt-integration-baseline/pacote/AI Industrial;../.deps/chatgpt-integration-baseline/pacote/AI Input;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIAudio;../.deps/chatgpt-integration-baseline/pacote/AI Input/AICaptureSource;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIChromiumBrowser;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIEmail;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIInput;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIJoystick;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIKinect;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIMessenger;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISerial;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISerial/docs;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISockets;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIUSB;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIVirtualSerial;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIWebServer;../.deps/chatgpt-integration-baseline/pacote/AI LlamaCpp;../.deps/chatgpt-integration-baseline/pacote/AI Math;../.deps/chatgpt-integration-baseline/pacote/AI MCP;../.deps/chatgpt-integration-baseline/pacote/AI Observability;../.deps/chatgpt-integration-baseline/pacote/AI Output;../.deps/chatgpt-integration-baseline/pacote/AI Project;../.deps/chatgpt-integration-baseline/pacote/AI Project Core;../.deps/chatgpt-integration-baseline/pacote/AI RAG;../.deps/chatgpt-integration-baseline/pacote/AI Schedule;../.deps/chatgpt-integration-baseline/pacote/AI Simulation;../.deps/chatgpt-integration-baseline/pacote/AI Simulation/Marlin;../.deps/chatgpt-integration-baseline/pacote/AI Vision;../.deps/chatgpt-integration-baseline/pacote/AI Voice;../.deps/chatgpt-integration-baseline/pacote/DOC;../.deps/chatgpt-integration-baseline/pacote/DOC/AI DBase;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Industrial;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Input;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Native Vision;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Simulation;../.deps/chatgpt-integration-baseline/pacote/packages;../.deps/chatgpt-integration-baseline/pacote/python;../.deps/chatgpt-integration-baseline/pacote/tests;../.deps/chatgpt-integration-baseline/pacote/tests/agent_graph_test;../.deps/chatgpt-integration-baseline/pacote/tests/agent_tools_test;../.deps/chatgpt-integration-baseline/pacote/tests/airag_provider_lifecycle_test;../.deps/chatgpt-integration-baseline/pacote/tests/evaluation_guardrails_test;../.deps/chatgpt-integration-baseline/pacote/tests/hardware_linux_test;../.deps/chatgpt-integration-baseline/pacote/tests/human_pose_detector_bridge_test;../.deps/chatgpt-integration-baseline/pacote/tests/llm_provider_streaming_test;../.deps/chatgpt-integration-baseline/pacote/tests/mcp_protocol_test;../.deps/chatgpt-integration-baseline/pacote/tests/observability_test;../.deps/chatgpt-integration-baseline/pacote/tests/rag_retrieval_graph_benchmark;../.deps/chatgpt-integration-baseline/pacote/tests/voice_pipeline_test" />
+      <IncludeFiles Value="../vendor/chatgpt-voice;../.deps/chatgpt-integration-baseline;../.deps/chatgpt-integration-baseline/pacote;../.deps/chatgpt-integration-baseline/pacote/AI;../.deps/chatgpt-integration-baseline/pacote/AI A2A;../.deps/chatgpt-integration-baseline/pacote/AI Agent;../.deps/chatgpt-integration-baseline/pacote/AI Communication;../.deps/chatgpt-integration-baseline/pacote/AI Communication/AIWebRTC;../.deps/chatgpt-integration-baseline/pacote/AI DBase;../.deps/chatgpt-integration-baseline/pacote/AI Evaluation;../.deps/chatgpt-integration-baseline/pacote/AI Files;../.deps/chatgpt-integration-baseline/pacote/AI Filtros Sonoros;../.deps/chatgpt-integration-baseline/pacote/AI Graph;../.deps/chatgpt-integration-baseline/pacote/AI Graphic;../.deps/chatgpt-integration-baseline/pacote/AI Hardware;../.deps/chatgpt-integration-baseline/pacote/AI Image;../.deps/chatgpt-integration-baseline/pacote/AI Industrial;../.deps/chatgpt-integration-baseline/pacote/AI Input;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIAudio;../.deps/chatgpt-integration-baseline/pacote/AI Input/AICaptureSource;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIChromiumBrowser;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIEmail;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIInput;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIJoystick;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIKinect;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIMessenger;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISerial;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISerial/docs;../.deps/chatgpt-integration-baseline/pacote/AI Input/AISockets;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIUSB;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIVirtualSerial;../.deps/chatgpt-integration-baseline/pacote/AI Input/AIWebServer;../.deps/chatgpt-integration-baseline/pacote/AI LlamaCpp;../.deps/chatgpt-integration-baseline/pacote/AI Math;../.deps/chatgpt-integration-baseline/pacote/AI MCP;../.deps/chatgpt-integration-baseline/pacote/AI Observability;../.deps/chatgpt-integration-baseline/pacote/AI Output;../.deps/chatgpt-integration-baseline/pacote/AI Project;../.deps/chatgpt-integration-baseline/pacote/AI Project Core;../.deps/chatgpt-integration-baseline/pacote/AI RAG;../.deps/chatgpt-integration-baseline/pacote/AI Schedule;../.deps/chatgpt-integration-baseline/pacote/AI Simulation;../.deps/chatgpt-integration-baseline/pacote/AI Simulation/Marlin;../.deps/chatgpt-integration-baseline/pacote/AI Vision;../.deps/chatgpt-integration-baseline/pacote/AI Voice;../.deps/chatgpt-integration-baseline/pacote/DOC;../.deps/chatgpt-integration-baseline/pacote/DOC/AI DBase;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Industrial;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Input;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Native Vision;../.deps/chatgpt-integration-baseline/pacote/DOC/AI Simulation;../.deps/chatgpt-integration-baseline/pacote/packages;../.deps/chatgpt-integration-baseline/pacote/python;../.deps/chatgpt-integration-baseline/pacote/tests;../.deps/chatgpt-integration-baseline/pacote/tests/agent_graph_test;../.deps/chatgpt-integration-baseline/pacote/tests/agent_tools_test;../.deps/chatgpt-integration-baseline/pacote/tests/airag_provider_lifecycle_test;../.deps/chatgpt-integration-baseline/pacote/tests/evaluation_guardrails_test;../.deps/chatgpt-integration-baseline/pacote/tests/hardware_linux_test;../.deps/chatgpt-integration-baseline/pacote/tests/human_pose_detector_bridge_test;../.deps/chatgpt-integration-baseline/pacote/tests/llm_provider_streaming_test;../.deps/chatgpt-integration-baseline/pacote/tests/mcp_protocol_test;../.deps/chatgpt-integration-baseline/pacote/tests/observability_test;../.deps/chatgpt-integration-baseline/pacote/tests/rag_retrieval_graph_benchmark;../.deps/chatgpt-integration-baseline/pacote/tests/voice_pipeline_test" />
+      <UnitOutputDirectory Value="../build/presentations/ide-units/$(TargetCPU)-$(TargetOS)" />
+    </SearchPaths>
+    <CodeGeneration>
+      <TargetCPU Value="i386" />
+      <TargetOS Value="win32" />
+    </CodeGeneration>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True" />
+        </Win32>
+      </Options>
+    </Linking>
+  </CompilerOptions>
+</CONFIG>
