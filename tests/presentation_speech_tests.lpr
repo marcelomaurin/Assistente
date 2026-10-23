@@ -9,9 +9,11 @@ procedure Consume;
 begin
   while J.TakeScriptCommand(Step) do begin
     case Count of
-      0: Check(Step.Presentation.Action=paOpenFile,'open event order');
-      1: Check(Step.Command=acSmile,'gesture event order');
-      2: Check(Step.Presentation.Action=paCloseFile,'close event order');
+      0: Check((Step.Presentation.Action=paSelectVoice) and (Step.Presentation.Argument='nova'),'first voice event');
+      1: Check(Step.Presentation.Action=paOpenFile,'open event order');
+      2: Check(Step.Command=acSmile,'gesture event order');
+      3: Check((Step.Presentation.Action=paSelectVoice) and (Step.Presentation.Argument='padrao'),'default voice event');
+      4: Check(Step.Presentation.Action=paCloseFile,'close event order');
       else Check(False,'extra directive');
     end;
     Inc(Count);J.ConfirmAvatarCommand;
@@ -23,7 +25,7 @@ begin
     C:=Default(TReceptionConfig);C.EnableAvatarCommands:=True;C.EnablePresentationCommands:=True;
     C.SynthEngine:=3;C.AudioToken:='local-test-only';C.URL:=ParamStr(1);
     C.Model:='local-test';C.Voice:='alloy';C.Volume:=100;
-    J:=TReceptionJob.Create(rjSpeak,C,'[abrir arquivo=assets/one.png][sorriso]Primeiro trecho.[fechar arquivo]Segundo trecho.','','test');
+    J:=TReceptionJob.Create(rjSpeak,C,'[voz=nova][abrir arquivo=assets/one.png][sorriso]Primeiro trecho.[voz=padrao][fechar arquivo]Segundo trecho.','','test');
     Started:=GetTickCount64;
     try
       while not J.Done do begin
@@ -31,12 +33,12 @@ begin
         if J.PlaybackActive and not PausedOnce then begin J.SetPaused(True);PauseAt:=GetTickCount64;PausedOnce:=True;end;
         if PausedOnce and not Resumed and (GetTickCount64-PauseAt>100) then begin
           Check(J.Paused and not J.PlaybackActive,'audio pause not reflected');
-          Check(Count=2,'timeline advanced while paused');
+          Check(Count=3,'timeline advanced while paused');
           if GetTickCount64-PauseAt>1100 then begin J.SetPaused(False);Resumed:=True;end;
         end;
         Sleep(5);
       end;
-      Check(J.Success,J.ErrorText);Check(PausedOnce and Resumed and (Count=3),'missing playback events');
+      Check(J.Success,J.ErrorText);Check(PausedOnce and Resumed and (Count=5),'missing playback events');
       Check(Pos('[',J.Text)=0,'TTS contains tags');
     finally J.Free;end;
     J:=TReceptionJob.Create(rjSpeak,C,'Cancelamento durante a pausa.','','cancel');
@@ -47,6 +49,21 @@ begin
       Started:=GetTickCount64;J.WaitFor;
       Check(GetTickCount64-Started<1000,'cancel while paused blocked');
       Check(J.Done and not J.Success and not J.PlaybackActive,'paused cancellation failed');
+    finally J.Free;end;
+    C.EnablePresentationCommands:=False;
+    J:=TReceptionJob.Create(rjSpeak,C,'[voz=echo]Chat nao troca a voz.','','chat');
+    Started:=GetTickCount64;
+    try
+      while not J.Done do begin Check(GetTickCount64-Started<6000,'chat stalled');Sleep(5);end;
+      Check(J.Success,J.ErrorText);
+    finally J.Free;end;
+    C.EnablePresentationCommands:=True;C.SynthEngine:=1;C.Voice:='';
+    J:=TReceptionJob.Create(rjSpeak,C,'[voz=voz_inexistente_12345]Nao deve falar.','','invalid-voice');
+    Started:=GetTickCount64;
+    try
+      while not J.Done do begin Check(GetTickCount64-Started<6000,'voice validation stalled');Sleep(5);end;
+      Check(not J.Success and (Pos('Voz SAPI nao instalada',J.ErrorText)>0),'invalid SAPI voice silently replaced');
+      Check(not J.PlaybackActive,'invalid voice played audio');
     finally J.Free;end;
     WriteLn('PASS: real WAV playback with synchronized media/gesture events, pause/resume, clean TTS, cancellation while paused');
   except on E: Exception do begin WriteLn(StdErr,E.Message);Halt(1);end;end;

@@ -1,8 +1,9 @@
+[avatar=professor][voz=padrao]
 [sorriso] Olá! Bem-vindo à demonstração.
-[executar arquivo=assets/boas-vindas.png] O roteiro posiciona esta imagem.
+[executar arquivo=assets/boas-vindas.png][executar arquivo=assets/ambiente.wav|inicio=00:00:01] O roteiro posiciona esta imagem.
 [articulacao=head,y,15,800,suave] O avatar acompanha a apresentação.
 [articulacao=head,y,0,800,suave]
-[executar arquivo=assets/aula.pptx] Começamos no primeiro slide.
+[fechar som][executar arquivo=assets/aula.pptx] Começamos no primeiro slide.
 [proximo slide] Este é o segundo slide.
 [ir para slide=3] Agora o terceiro.
 [slide anterior] Voltamos ao segundo.

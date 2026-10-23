@@ -41,3 +41,8 @@ Homologação local concluída em Windows Win32, incluindo navegação real de P
 Relatório: [validacao-apresentacoes.json](validacao-apresentacoes.json).
 
 Documento Google Docs original: https://docs.google.com/document/d/1x2jXgRQilURskN3N1wooBeG8CyNvKXO0ZbWg0JaUGzY/edit
+
+
+## Complemento — recursos temporais e identidade
+
+Implementados áudio WAV/MP3/WMA, início opcional hh:mm:ss de vídeo/som, tags de escolha de avatar e voz e respectivos controles no editor. Som e mídia visual têm canais independentes. O avatar original é restaurado ao encerrar; a voz fica restrita ao worker da apresentação. A IA preserva essas escolhas. Testes adicionais verificam seek real, duração, som com imagem, troca/restauração de avatar e a voz enviada ao TTS.

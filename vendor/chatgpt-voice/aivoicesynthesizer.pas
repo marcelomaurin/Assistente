@@ -150,6 +150,7 @@ type
     procedure Stop;
     procedure SetPaused(Value: Boolean);
     function LocalSpeaking: Boolean;
+    function LocalVoiceName: string;
     procedure GetAvailableVoices(AList: TStrings);
     function ValidateRemoteConfig(const AText: string): Boolean;
     function ValidateOpenAIConfig(const AText: string): Boolean;
@@ -807,6 +808,18 @@ begin
   SpeakLocal(FEngine, SpeakText);
 end;
 
+function TAIVoiceSynthesizer.LocalVoiceName: string;
+var Voices: TStringList;
+begin
+  Result:='';
+  {$IFDEF MSWINDOWS}
+  if not FSpVoiceCreated then begin
+    Voices:=TStringList.Create;
+    try GetAvailableVoices(Voices);finally Voices.Free;end;
+  end;
+  if FSpVoiceCreated then Result:=UTF8Encode(WideString(FSpVoice.Voice.GetAttribute('Name')));
+  {$ENDIF}
+end;
 function TAIVoiceSynthesizer.LocalSpeaking: Boolean;
 begin
   Result:=False;

@@ -176,7 +176,7 @@ end;
 procedure TReceptionJob.ExecuteSpeech;
 var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
   Player: TAIAudioPlayer; Pending: array of TAvatarScriptStep;
-  Part,SpeechFile: string;
+  Part,SpeechFile,DefaultVoice: string;
   WasPaused: Boolean;
   procedure PollPause;
   begin
@@ -190,6 +190,25 @@ var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
   begin
     PollPause;
     while not Terminated and Paused do begin Sleep(10);PollPause;end;
+  end;
+  procedure ApplyPendingVoices;
+  var K: Integer; Name: string; Voices: TStringList;
+  begin
+    if not FConfig.EnablePresentationCommands or (Synth=nil) then Exit;
+    for K:=0 to High(Pending) do
+      if Pending[K].Presentation.Action=paSelectVoice then begin
+        Name:=Pending[K].Presentation.Argument;
+        if SameText(Name,'padrao') then Name:=DefaultVoice
+        else if Synth.Engine in [seSAPI,seSystemDefault] then begin
+          Voices:=TStringList.Create;
+          try
+            Synth.GetAvailableVoices(Voices);
+            if Voices.IndexOf(Name)<0 then raise Exception.Create('Voz SAPI nao instalada: '+Name);
+          finally Voices.Free;end;
+        end;
+        Synth.VoiceName:=Name;
+        if Synth.Engine=seOpenAI then Synth.OpenAIVoice:=Name;
+      end;
   end;
   procedure FlushCommands;
   var K: Integer;
@@ -231,6 +250,10 @@ begin
         sound before the LCL acknowledges the avatar command; the component
         cache otherwise redirects OutputFile to a different file. }
       Synth.AutoPlay:=False;Synth.EnableCache:=False;
+      DefaultVoice:=FConfig.Voice;
+      if FConfig.EnablePresentationCommands and (DefaultVoice='') then
+        if Synth.Engine=seOpenAI then DefaultVoice:=Synth.OpenAIVoice
+        else if Synth.Engine in [seSAPI,seSystemDefault] then DefaultVoice:=Synth.LocalVoiceName;
     end;
     for I:=0 to High(Script.Steps) do
     begin
@@ -243,6 +266,7 @@ begin
       end;
       Part:=Trim(Script.Steps[I].Text);
       if Part='' then Continue;
+      ApplyPendingVoices;
       if FConfig.SilentPresentation then
       begin
         FlushCommands;

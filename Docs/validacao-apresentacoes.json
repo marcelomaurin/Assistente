@@ -22,12 +22,20 @@
     "PowerPoint slide 1/next/previous/goto/range/close in user session",
     "main PVA execution, joint interpolation, silent mouth, pause/resume/cancel",
     "real WAV playback with media/gesture queue and pause/resume/cancel while paused",
-    "real TCHATGPT component against local HTTP mock, preserved UTF-8 and rejected rewrites"
+    "real TCHATGPT component against local HTTP mock, preserved UTF-8 and rejected rewrites",
+    "optional hh:mm:ss parser, invalid/duplicate time options rejected",
+    "real AVI/WAV seek, duration bounds and pause position",
+    "independent background sound with visual media and close sound",
+    "avatar tag, preflight catalog lookup and restoration on finish/cancel",
+    "TTS voice nova/default selected before synthesis; chat cannot change voices",
+    "SAPI nonexistent voice rejected before audio; system default voice captured",
+    "AI preserves avatar/voice selections",
+    "trailing audio completes before presentation cleanup"
   ],
   "native_reports": {
-    "media": "PASS: real PNG single-media replacement\nPASS: real AVI playback, pause/resume\nPASS: single-media close and real slide navigation/bounds; Office mode=with-office\n",
+    "media": "PASS: real PNG single-media replacement\nPASS: real AVI/WAV offsets, independent image+sound, sound close, duration bounds, pause/resume\nPASS: single-media close and real slide navigation/bounds; Office mode=with-office\n",
     "editor": "PASS: native editor opened, cursor insertion, undo/redo, PVA save/open roundtrip; screenshot saved\n",
-    "main": "PASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: cancellation joins speech worker and closes media; real joint interpolation and silent mouth verified\n"
+    "main": "PASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode=with-office\nPASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth\n"
   },
   "limits": [
     "Win64/Linux not validated",
@@ -39,16 +47,16 @@
   "package_version": 1,
   "binaries": {
     "presentation_editor.exe": {
-      "size": 32576761,
-      "sha256": "d930109f3146e410e64784268e29eaa0da9efb970d1b233b597a8e9537989e59"
+      "size": 32632614,
+      "sha256": "9f0a1d318c34cf0db39b1c6119bdd310e1a0b7c611c27378e6274e644761bb1f"
     },
     "assistente.exe": {
-      "size": 59394591,
-      "sha256": "e609d5410cc5d39ad548821242e613547e6d4203587b0ad5826c484be4b7372d"
+      "size": 59407590,
+      "sha256": "83ff327d21eca76f86829efb722109f93927ec17d0b30bbb85a88c1044cedd05"
     },
     "pva_tool.exe": {
-      "size": 794795,
-      "sha256": "2e3ac33c3a01b55b4692445acf41c98c04a9aebfb7fa9449cb235440f716c167"
+      "size": 802221,
+      "sha256": "a8fdd92b6dcae0791fada41dc834a0327b09c1cd370543d1142a32ccac0aef6e"
     }
   },
   "runtime": {
@@ -60,5 +68,6 @@
       "libcrypto-1_1.dll",
       "libssl-1_1.dll"
     ]
-  }
+  },
+  "extension_base": "a58bd246b0656d740f67d6e40cedc46741af7f1f"
 }

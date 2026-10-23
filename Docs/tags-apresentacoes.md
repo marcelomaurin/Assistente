@@ -6,7 +6,13 @@ As tags abaixo compartilham o parser com os 40 comandos de avatar existentes, de
 | --- | --- |
 | `[executar arquivo=assets/figura.png]` | Abre a mídia e encerra a anterior |
 | `[abrir arquivo=assets/figura.png]` | Mesmo efeito |
-| `[fechar arquivo]` | Fecha a mídia ativa, sem argumento |
+| `[fechar arquivo]` | Fecha a mídia visual e o som ativo, sem argumento |
+| `[fechar som]` | Fecha somente o arquivo de áudio, preservando a imagem/vídeo/slide |
+| `[executar arquivo=assets/filme.mp4\|inicio=00:01:30]` | Inicia o vídeo no ponto indicado |
+| `[executar arquivo=assets/som.wav\|inicio=00:00:10]` | Inicia o som no ponto indicado |
+| `[avatar=engenheiro]` | Seleciona o avatar instalado pelo ID |
+| `[voz=nova]` | Seleciona a voz para as próximas falas |
+| `[voz=padrao]` | Restaura a voz original da apresentação |
 | `[proximo slide]` | Avança um slide da apresentação ativa |
 | `[slide anterior]` | Retorna um slide |
 | `[ir para slide=3]` | Vai a um slide numerado a partir de 1 |
@@ -55,3 +61,34 @@ Mandíbula, lábios, língua e demais ossos não listados são recusados. A boca
 ```
 
 Não use marcações inválidas de mídia/articulação como texto falado: a validação do roteiro as recusa. Os exemplos pressupõem os recursos correspondentes dentro do pacote.
+
+
+## Início de vídeo e som
+
+O sufixo opcional é **|inicio=hh:mm:ss**, com exatamente dois dígitos em cada campo. Horas: 00–99; minutos/segundos: 00–59. Sem o sufixo, o recurso começa em 00:00:00. Um ponto igual ou posterior ao fim real do arquivo é recusado antes de reproduzir. Imagens e PPTX não aceitam início temporal.
+
+Áudio aceita WAV, MP3 e WMA, conforme os codecs do Windows. Há uma única mídia visual e um único som de recurso ativos. Assim, uma imagem ou slide pode ficar visível enquanto um som toca. Abrir outro som substitui o anterior, sem fechar a imagem. Abrir outra mídia visual preserva o som. O áudio do vídeo e a fala TTS são independentes desse canal.
+
+P pausa/retoma todos os canais. Esc fecha tudo. Ao chegar ao fim do roteiro, o executor aguarda vídeo/som ainda em reprodução; uma imagem estática ou PPTX não prolonga a apresentação. Som de recurso não movimenta a boca: a mandíbula acompanha somente a fala TTS.
+
+## Avatar e voz
+
+O ID de avatar vem do catálogo AVATARES junto do Assistente, por exemplo professor, engenheiro, medico ou robo. O editor tem **Escolher avatar**, com a lista do Assistente selecionado. Avatar ausente é recusado antes de iniciar o roteiro. A troca ocorre no ponto da tag e reinicia as poses do modelo. O avatar original é restaurado no fim, no erro e no cancelamento, sem alterar a configuração salva.
+
+**Escolher voz** insere a tag pelo nome do provedor já configurado no Assistente. Para SAPI, use o nome instalado completo, por exemplo Microsoft Maria Desktop, se essa voz existir na máquina. Uma voz SAPI não instalada produz erro, sem substituição silenciosa. Para voz remota, use o identificador aceito pelo provedor; a resposta dele valida disponibilidade. A tag não troca o provedor nem as credenciais.
+
+A voz vale para as falas seguintes, até outra tag. **voz=padrao** retorna à escolha inicial. A seleção é aplicada antes da síntese do trecho seguinte e fica restrita à execução atual. As tags de voz e avatar não são pronunciadas e a regeneração da IA precisa preservá-las exatamente.
+
+Exemplo:
+
+```text
+[avatar=professor][voz=padrao]
+[executar arquivo=assets/figura.png] Esta imagem continua na tela.
+[executar arquivo=assets/ambiente.wav|inicio=00:00:05] Um som pode acompanhá-la.
+[fechar som]
+[avatar=engenheiro][voz=nova] Agora outro avatar e outra voz do provedor.
+[executar arquivo=assets/filme.mp4|inicio=00:01:30]
+[fechar arquivo]
+```
+
+O exemplo com nova pressupõe que essa voz existe no provedor configurado. Todos os recursos precisam estar dentro do PVA.

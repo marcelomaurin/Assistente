@@ -1,0 +1,1 @@
+O roteiro inclui seleção de avatar/voz padrão, imagem, áudio com início em 00:00:01 e slides. O WAV é silêncio técnico de três segundos. Para ouvir narração, habilite AutoSpeak no Assistente. A voz padrão usa o provedor configurado.

@@ -11,3 +11,11 @@
 - Mandíbula controlada pelo estado real de reprodução, independentemente dos gestos.
 - Build, CLI, exemplos, testes de regressão, testes nativos e workflow manual de CI.
 - Validados PPTX real, navegação, limites e fechamento na sessão Windows do usuário; áudio WAV real com pausa/retomada e cancelamento durante pausa. Sessões Office de serviço/isoladas não são suportadas pelo teste.
+
+## Complemento de recursos temporais e escolhas
+
+- Início opcional hh:mm:ss para vídeo e áudio.
+- Som WAV/MP3/WMA em canal independente da mídia visual, com fechar som.
+- Tags avatar/voz, seleção no editor e restauração das escolhas originais.
+- Voz selecionada antes da síntese, validação SAPI explícita e preservação pela IA.
+- Término do roteiro aguarda vídeo/som; pausa e cancelamento continuam ativos.

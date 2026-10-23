@@ -12,14 +12,15 @@ def main():
     print(run(tool,'selftest').strip())
     with tempfile.TemporaryDirectory(prefix='pva-tests-') as tmp:
         root=Path(tmp)/'ação com espaços';root.mkdir();(root/'assets').mkdir();(root/'assets/figura.png').write_bytes(b'image-fixture')
+        (root/'assets/som.wav').write_bytes(b'audio-fixture')
         (root/'assets/nao-usado.png').write_bytes(b'unused')
-        script='[sorriso] Olá! [abrir arquivo=assets/figura.png] Imagem.[fechar arquivo]'
+        script='[avatar=professor][voz=nova][sorriso] Olá! [abrir arquivo=assets/figura.png] Imagem.[abrir arquivo=assets/som.wav|inicio=00:00:01][fechar som][fechar arquivo]'
         source=root/'roteiro.txt';source.write_text(script,encoding='utf-8')
         valid=root/'valid.pva';run(tool,'pack',source,root,valid);run(tool,'verify',valid,root/'extraido')
         assert (root/'extraido/script.txt').read_bytes()==script.encode()
         with zipfile.ZipFile(valid) as z:
             entries={n:z.read(n) for n in z.namelist()}
-        assert set(entries)=={'manifest.json','script.txt','assets/figura.png'},set(entries)
+        assert set(entries)=={'manifest.json','script.txt','assets/figura.png','assets/som.wav'},set(entries)
         manifest=json.loads(entries['manifest.json'])
         for f in manifest['files']:
             assert hashlib.sha256(entries[f['path']]).hexdigest()==f['sha256']
@@ -58,7 +59,7 @@ def main():
             data=bytearray(data);i=data.index(b'PK\x03\x04');n=struct.unpack_from('<H',data,i+26)[0]
             data[i+30:i+30+n]=b'../'+b'x'*(n-3);return data
         reject('local-header-traversal',base,local_traversal)
-        for bad in ['[abrir arquivo=../x.png]','[ir para slide=0]','[articulacao=jaw,y,1,1000,linear]','[abrir arquivo=assets/figura.png][abrir arquivo=assets/FIGURA.png]']:
+        for bad in ['[abrir arquivo=../x.png]','[ir para slide=0]','[avatar=]','[voz=]','[abrir arquivo=assets/som.wav|inicio=00:60:00]','[abrir arquivo=assets/figura.png|inicio=00:00:01]','[articulacao=jaw,y,1,1000,linear]','[abrir arquivo=assets/figura.png][abrir arquivo=assets/FIGURA.png]']:
             source.write_text(bad,encoding='utf-8');run(tool,'pack',source,root,root/'bad.pva',ok=False)
         # Existing extraction targets must never be overwritten.
         run(tool,'verify',valid,root/'extraido',ok=False)

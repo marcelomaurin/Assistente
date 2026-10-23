@@ -24,17 +24,20 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('build',type=Path);p.add_argument('model',type=Path);p.add_argument('--without-office',action='store_true');a=p.parse_args()
     build=a.build.resolve();root=build/'presentation-native';(root/'assets').mkdir(parents=True,exist_ok=True)
     for n,c in [('one','navy'),('two','darkorange')]:Image.new('RGB',(640,360),c).save(root/f'assets/{n}.png')
+    with wave.open(str(root/'assets/sound.wav'),'wb') as wav:
+        wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(16000);wav.writeframes(b'\0'*(16000*2*3))
     avi(root/'assets/movie.avi');prs=Presentation()
     for i in range(3):
         slide=prs.slides.add_slide(prs.slide_layouts[0]);slide.shapes.title.text=f'Slide {i+1}'
     prs.save(root/'assets/slides.pptx')
-    script=('[abrir arquivo=assets/one.png]Uma imagem para observar e pausar. '
+    script=('[avatar=engenheiro][voz=padrao][abrir arquivo=assets/one.png]Uma imagem para observar e pausar. '
             '[articulacao=head,y,20,500,suave]A cabeca se move enquanto a boca fica parada. '
             '[abrir arquivo=assets/two.png]Outra imagem. [fechar arquivo]Fechou. '
             '[abrir arquivo=assets/slides.pptx]Primeiro slide. [proximo slide]Segundo slide. '
             '[slide anterior]Primeiro novamente. [ir para slide=3]Terceiro slide. [fechar arquivo]')
     if a.without_office:script=script[:script.index('[abrir arquivo=assets/slides.pptx]')]+'[fechar arquivo]'
-    for name,s in [('main',script),('cancel','[abrir arquivo=assets/one.png]Uma frase longa para testar cancelamento e limpeza de todos os recursos visuais.')]:
+    script+='[abrir arquivo=assets/sound.wav|inicio=00:00:01]'
+    for name,s in [('main',script),('cancel','[avatar=engenheiro][abrir arquivo=assets/sound.wav|inicio=00:00:01][abrir arquivo=assets/one.png]Uma frase longa para testar cancelamento e limpeza de todos os recursos visuais.')]:
         source=root/(name+'.txt');source.write_text(s,encoding='utf-8')
         run([build/'pva_tool.exe','pack',source,root,root/(name+'.pva')])
     for mode in ['media','editor','main']:
@@ -42,7 +45,7 @@ def main():
         run([build/'presentation_native_smoke.exe',root,mode,a.model.resolve(),('without-office' if a.without_office else 'with-office')],timeout=65)
         assert report.exists(),mode
         body=report.read_text(encoding='utf-8');assert 'FAIL' not in body,body;print(body.strip(),flush=True)
-    original='Olá [abrir arquivo=assets/one.png]mundo.\n'
+    original='[avatar=professor][voz=alloy]Olá [abrir arquivo=assets/one.png]mundo.\n'
     seen=[]
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_POST(self):
@@ -64,7 +67,8 @@ def main():
         for mode in ['accept','reject']:
             run([build/'presentation_ai_tests.exe',f'http://127.0.0.1:{server.server_port}/{mode}',mode])
         run([build/'presentation_speech_tests.exe',f'http://127.0.0.1:{server.server_port}/audio'])
-        assert len(seen)==5
+        assert len(seen)==6
+        assert [b['voice'] for b in seen if 'input' in b]==['nova','alloy','alloy','alloy'],seen
     finally:server.shutdown();thread.join();server.server_close()
     if a.without_office:print('SKIP: PowerPoint activation/navigation requires an interactive Office session')
     print('PASS: real WAV playback, media/gesture queue, pause/resume, cancellation while paused')

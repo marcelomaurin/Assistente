@@ -32,7 +32,7 @@ begin
     if Source[I]='[' then begin
       J:=I+1;while (J<=Length(Source)) and not (Source[J] in [']',#10,#13]) do Inc(J);
       T:=LowerCase(Trim(Copy(Source,I+1,J-I-1)));
-      if (Pos('arquivo',T)>0) or (Pos('slide',T)>0) or (Pos('articulacao',T)=1) then begin
+      if (Pos('arquivo',T)>0) or (Pos('slide',T)>0) or (Pos('articulacao',T)=1) or (Pos('avatar',T)=1) or (Pos('voz',T)=1) or (Pos('fechar som',T)=1) then begin
         if (J>Length(Source)) or (Source[J]<>']') or
           not (TryParsePresentationTag(Copy(Source,I,J-I+1),A) or TryParseJointTag(Copy(Source,I,J-I+1),B)) then
           raise Exception.CreateFmt('Tag invalida na posicao %d',[I]);

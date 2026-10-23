@@ -29,7 +29,8 @@ type
     FSpeechJob: TReceptionJob;
     FPresentationMedia: TPresentationMedia;
     FPresentationRoot: string;
-    FPresentationMode: Boolean;
+    FPresentationMode,FPresentationAvatarChanged: Boolean;
+    procedure SelectPresentationAvatar(const AvatarID: string);
     procedure FinishPresentation;
   private
     FVoiceInput: TVoiceInputBridge;
@@ -93,6 +94,8 @@ type
     procedure FalarResposta(const ATexto: string);
     function ApresentandoResposta: Boolean;
     function ActivePresentationMedia: string;
+    function ActivePresentationAvatar: string;
+    function ActivePresentationSound: string;
     procedure ReloadAvatars(Sender: TObject);
     property AssistantManager: TAssistantManager read FAssistantManager;
     property VoiceInput: TVoiceInputBridge read FVoiceInput;
@@ -609,8 +612,25 @@ begin if FPresentationMedia=nil then Result:='' else Result:=FPresentationMedia.
 function Tfrmmain.ApresentandoResposta: Boolean;
 begin Result:=Assigned(FSpeechJob);end;
 
+procedure Tfrmmain.SelectPresentationAvatar(const AvatarID: string);
+var I: Integer;
+begin
+  I:=FCatalog.IndexOfID(AvatarID);
+  if I<0 then raise Exception.Create('Avatar nao instalado: '+AvatarID);
+  FPresentationAvatarChanged:=True;
+  if not FProfessor.LoadModel(FCatalog[I].ModelFile,FSetMain.Avatar3DAutoIdle) then
+    raise Exception.Create('Falha ao carregar avatar: '+AvatarID);
+  FProfileCombo.ItemIndex:=I;
+end;
+function Tfrmmain.ActivePresentationSound: string;
+begin if FPresentationMedia=nil then Result:='' else Result:=FPresentationMedia.ActiveSound;end;
+function Tfrmmain.ActivePresentationAvatar: string;
+begin
+  if (FProfileCombo.ItemIndex>=0) and (FProfileCombo.ItemIndex<FCatalog.Count) then
+    Result:=FCatalog[FProfileCombo.ItemIndex].ID else Result:='custom';
+end;
 procedure Tfrmmain.StartPresentation(const FileName: string);
-var P: TPVAPackage; G: TGUID;
+var P: TPVAPackage; G: TGUID; Script: TAvatarScript; I: Integer;
 begin
   if Assigned(FSpeechJob) or FAguardandoResposta then raise Exception.Create('Assistente ocupado');
   FinishPresentation;
@@ -618,6 +638,11 @@ begin
   try
     try
     P.Load(FileName);
+    Script:=ParseAvatarScript(P.Script,4096);
+    for I:=0 to High(Script.Steps) do
+      if (Script.Steps[I].Presentation.Action=paSelectAvatar) and
+        (FCatalog.IndexOfID(Script.Steps[I].Presentation.Argument)<0) then
+        raise Exception.Create('Avatar nao instalado: '+Script.Steps[I].Presentation.Argument);
     if FSetMain.AutoSpeak and (FSetMain.SynthEngine=2) then raise Exception.Create('Apresentacoes com pausa requerem SAPI ou voz remota no Windows');
     CreateGUID(G);
     FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
@@ -631,6 +656,10 @@ end;
 procedure Tfrmmain.FinishPresentation;
 begin
   FreeAndNil(FPresentationMedia);FPresentationMode:=False;
+  if FPresentationAvatarChanged then begin
+    FPresentationAvatarChanged:=False;
+    if not FClosing then AplicarConfiguracao;
+  end;
   if Assigned(FProfessor) then begin
     TPresentationScene(FProfessor.Scene).PauseJoints(False);
     FProfessor.SetRenderingActive(True);FProfessor.ResetCommands;
@@ -682,13 +711,26 @@ begin
   while FSpeechJob.TakeScriptCommand(Command) do begin
     try
       if FSpeechJob.PlaybackActive then FProfessor.SetActivity(psSpeaking);
-      if FPresentationMode and (Command.Presentation.Action<>paNone) then FPresentationMedia.Execute(Command.Presentation)
+      if FPresentationMode and (Command.Presentation.Action=paSelectAvatar) then
+        SelectPresentationAvatar(Command.Presentation.Argument)
+      else if FPresentationMode and (Command.Presentation.Action=paSelectVoice) then
+        begin { voice is selected by the speech worker before synthesis } end
+      else if FPresentationMode and (Command.Presentation.Action<>paNone) then FPresentationMedia.Execute(Command.Presentation)
       else if FPresentationMode and (Command.Joint.Bone<>'') then TPresentationScene(FProfessor.Scene).ExecuteJoint(Command.Joint)
       else FProfessor.ExecuteCommand(Command.Command);
     except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
     FSpeechJob.ConfirmAvatarCommand;
   end;
   if not FSpeechJob.Done then Exit;
+  if FPresentationMode and not FSpeechJob.Cancelled and FSpeechJob.Success then begin
+    FProfessor.SetActivity(psIdle);
+    try
+      if FPresentationMedia.TimedPlaybackActive then begin
+        if not FSpeechJob.Paused then lblStatus.Caption:='Reproduzindo midia... (P pausa; Esc cancela)';
+        Exit;
+      end;
+    except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
+  end;
   Ok := FSpeechJob.Success;
   Err := FSpeechJob.ErrorText;
   if FSpeechJob.Cancelled and (Err='') then Err:='Apresentação cancelada';

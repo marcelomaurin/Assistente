@@ -9,7 +9,8 @@ type
     Timer: TTimer;
     Started, PausedAt: QWord;
     PauseSent, ResumeSent, CancelSent: Boolean;
-    Images,SecondImage,Slides,ClosedMedia,SawJoint: Boolean;
+    Images,SecondImage,Slides,ClosedMedia,SawJoint,SawAvatar,SawSound: Boolean;
+    SoundStarted: QWord;
     Report: TStringList;
     View: TProfessorView;
     procedure Tick(Sender: TObject);
@@ -25,6 +26,10 @@ begin
   try
     Elapsed:=GetTickCount64-Started;Check(Elapsed<40000,'main presentation stalled');
     Active:=frmmain.ActivePresentationMedia;
+    SawAvatar:=SawAvatar or (frmmain.ActivePresentationAvatar='engenheiro');
+    if frmmain.ActivePresentationSound<>'' then begin
+      SawSound:=True;if SoundStarted=0 then SoundStarted:=GetTickCount64;
+    end;
     Images:=Images or (Active='assets/one.png');
     SecondImage:=SecondImage or (Active='assets/two.png');
     if (View<>nil) and (View.Scene.RootNode<>nil) then begin
@@ -49,15 +54,20 @@ begin
     if not frmmain.ApresentandoResposta then begin
       if not CancelSent then begin
         Check(Pos('Pronto',frmmain.lblStatus.Caption)=1,'main execution error: '+frmmain.lblStatus.Caption);
+        Check(SawAvatar and SawSound,'avatar/sound tags did not execute');
+        Check(frmmain.ActivePresentationAvatar='custom','original avatar not restored');
+        Check(GetTickCount64-SoundStarted>=1800,'trailing sound cut off');
         Check(SawJoint,'parametric head motion did not render');
         Check(Images and SecondImage and (Slides or (ParamStr(4)='without-office')) and ClosedMedia,'missing media execution');
         Check(frmmain.ActivePresentationMedia='','completed presentation left media open');
         Report.Add('PASS: main loaded PVA; image/close tags, pause/resume and completion cleanup; Office mode='+ParamStr(4));
+        Started:=GetTickCount64;
         frmmain.StartPresentation(Root+PathDelim+'cancel.pva');
         CancelSent:=True;PausedAt:=GetTickCount64;
       end else begin
         Check(frmmain.ActivePresentationMedia='','cancel left media open');
-        Report.Add('PASS: cancellation joins speech worker and closes media; real joint interpolation and silent mouth verified');
+        Check((frmmain.ActivePresentationSound='') and (frmmain.ActivePresentationAvatar='custom'),'cancel failed to restore avatar/close sound');
+        Report.Add('PASS: avatar tag/restoration, trailing audio completion, cancellation, joint interpolation and silent mouth');
         Report.SaveToFile(Root+PathDelim+'main-result.txt');Timer.Enabled:=False;Application.Terminate;
       end;
     end else if CancelSent and (GetTickCount64-PausedAt>300) then begin
@@ -69,16 +79,28 @@ begin
   end;end;
 end;
 procedure MediaTest;
+var Position: Integer;
 begin
   Media:=TPresentationMedia.Create(Root);
   try
     TryParsePresentationTag('[abrir arquivo=assets/one.png]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/one.png','image not open');
+    Check(TryParsePresentationTag('[abrir arquivo=assets/sound.wav|inicio=00:00:01]',Tag),'sound tag');Media.Execute(Tag);
+    Check((Media.Active='assets/one.png') and (Media.ActiveSound='assets/sound.wav'),'sound replaced visual');
+    Check((Media.SoundPositionMS>=1000) and (Media.SoundPositionMS<1300),'sound offset not applied');
+    Media.SetPaused(True);Position:=Media.SoundPositionMS;Sleep(120);
+    Check(Abs(Media.SoundPositionMS-Position)<30,'sound advanced while paused');Media.SetPaused(False);
+    TryParsePresentationTag('[fechar som]',Tag);Media.Execute(Tag);
+    Check((Media.ActiveSound='') and (Media.Active='assets/one.png'),'close sound disturbed visual');
+    TryParsePresentationTag('[abrir arquivo=assets/sound.wav|inicio=00:00:10]',Tag);
+    try Media.Execute(Tag);raise Exception.Create('invalid sound position accepted');
+    except on E: Exception do Check(Pos('Inicio fora',E.Message)>0,'wrong sound offset error');end;
     TryParsePresentationTag('[abrir arquivo=assets/two.png]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/two.png','image replacement failed');Report.Add('PASS: real PNG single-media replacement');Report.SaveToFile(Root+PathDelim+'media-result.txt');
-    TryParsePresentationTag('[abrir arquivo=assets/movie.avi]',Tag);Media.Execute(Tag);
+    TryParsePresentationTag('[abrir arquivo=assets/movie.avi|inicio=00:00:01]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/movie.avi','video not open');
-    Media.SetPaused(True);Sleep(100);Media.SetPaused(False);Report.Add('PASS: real AVI playback, pause/resume');Report.SaveToFile(Root+PathDelim+'media-result.txt');
+    Check((Media.VideoPositionMS>=1000) and (Media.VideoPositionMS<1300),'video offset not applied');
+    Media.SetPaused(True);Sleep(100);Media.SetPaused(False);Report.Add('PASS: real AVI/WAV offsets, independent image+sound, sound close, duration bounds, pause/resume');Report.SaveToFile(Root+PathDelim+'media-result.txt');
     if ParamStr(4)<>'without-office' then begin
     TryParsePresentationTag('[abrir arquivo=assets/slides.pptx]',Tag);Media.Execute(Tag);
     Check(Media.Active='assets/slides.pptx','PowerPoint replacement failed');Check(Media.CurrentSlide=1,'initial slide');

@@ -4,6 +4,8 @@ interface
 uses SysUtils, Classes;
 function ValidPresentationUTF8(const S: string): Boolean;
 function SafePresentationPath(const S: string): Boolean;
+function AudioPresentationMedia(const S: string): Boolean;
+function TimedPresentationMedia(const S: string): Boolean;
 function SupportedPresentationMedia(const S: string): Boolean;
 implementation
 function ValidPresentationUTF8(const S: string): Boolean;
@@ -49,11 +51,20 @@ begin
     Result:=Parts.Count>0;
   finally Parts.Free;end;
 end;
+function AudioPresentationMedia(const S: string): Boolean;
+var E: string;
+begin E:=LowerCase(ExtractFileExt(S));Result:=(E='.wav') or (E='.mp3') or (E='.wma');end;
+function TimedPresentationMedia(const S: string): Boolean;
+var E: string;
+begin
+  E:=LowerCase(ExtractFileExt(S));
+  Result:=AudioPresentationMedia(S) or (E='.mp4') or (E='.avi') or (E='.wmv');
+end;
 function SupportedPresentationMedia(const S: string): Boolean;
 var E: string;
 begin
   E:=LowerCase(ExtractFileExt(S));
   Result:=(E='.png') or (E='.jpg') or (E='.jpeg') or (E='.bmp') or
-    (E='.mp4') or (E='.avi') or (E='.wmv') or (E='.pptx');
+    TimedPresentationMedia(S) or (E='.pptx');
 end;
 end.

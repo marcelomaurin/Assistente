@@ -6,7 +6,7 @@ var P: TPVAPackage;
 procedure Check(B: Boolean; const S: string);
 begin if not B then raise Exception.Create(S);end;
 procedure SelfTest;
-var S: TAvatarScript; T: TPresentationTag; J: TJointTag; M: TMemoryStream; X: string; Cmd: TAvatarCommand;
+var S: TAvatarScript; T: TPresentationTag; J: TJointTag; M: TMemoryStream; X: string; Cmd: TAvatarCommand; MS: Integer;
 begin
   for Cmd:=Succ(Low(TAvatarCommand)) to High(TAvatarCommand) do begin
     S:=ParseAvatarScript('['+AvatarCommandName(Cmd)+']');
@@ -20,6 +20,23 @@ begin
   Check(TryParsePresentationTag('[abrir arquivo=assets/a.png]',T),'open tag');
   Check(not TryParsePresentationTag('[abrir arquivo=../a.png]',T),'unsafe tag');
   Check(not TryParsePresentationTag('[ir para slide=0]',T),'slide zero');
+  Check(TryParsePresentationTime('01:02:03',MS) and (MS=3723000),'hh:mm:ss');
+  Check(TryParsePresentationTime('99:59:59',MS) and (MS=359999000),'time upper bound');
+  Check(not TryParsePresentationTime('00:60:00',MS),'minutes limit');
+  Check(not TryParsePresentationTime('1:02:03',MS),'time shape');
+  Check(TryParsePresentationTag('[abrir arquivo=assets/video.mp4|inicio=00:01:30]',T) and
+    T.HasStart and (T.StartMS=90000) and (T.Argument='assets/video.mp4'),'video offset');
+  Check(TryParsePresentationTag('[abrir arquivo=assets/som.wav|inicio=00:00:01]',T) and (T.StartMS=1000),'audio offset');
+  Check(not TryParsePresentationTag('[abrir arquivo=assets/a.png|inicio=00:00:01]',T),'image offset rejected');
+  Check(not TryParsePresentationTag('[abrir arquivo=assets/a.mp4|inicio=00:00:01|inicio=00:00:02]',T),'duplicate offset');
+  Check(not TryParsePresentationTag('[abrir arquivo=assets/a.wav|inicio=00:00:99]',T),'seconds limit');
+  Check(TryParsePresentationTag('[avatar=engenheiro]',T) and (T.Action=paSelectAvatar),'avatar tag');
+  Check(TryParsePresentationTag('[voz=Microsoft Maria Desktop]',T) and (T.Action=paSelectVoice),'voice spaces');
+  Check(not TryParsePresentationTag('[voz=]',T),'empty voice');
+  Check(not TryParsePresentationTag('[avatar=]',T),'empty avatar');
+  Check(TryParsePresentationTag('[fechar som]',T) and (T.Action=paCloseSound),'close sound');
+  S:=ParseAvatarScript('[avatar=professor][voz=nova]Ola[abrir arquivo=assets/som.mp3|inicio=00:00:01]');
+  Check((S.PlainText='Ola') and (S.PresentationCount=3),'new tags not spoken');
   Check(TryParseJointTag('[articulacao=head,y,20,1000,suave]',J),'joint');
   Check(not TryParseJointTag('[articulacao=jaw,y,20,1000,suave]',J),'mouth forbidden');
   Check(not TryParseJointTag('[articulacao=head,y,90,1000,suave]',J),'joint limit');

@@ -3,7 +3,7 @@ unit presentation_editor_ui;
 interface
 uses Windows, Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Dialogs, SynEdit,
   Process, FileUtil, LazFileUtils, presentation_package, presentation_document,
-  presentation_paths, presentation_tags, presentation_ai;
+  presentation_paths, presentation_tags, presentation_ai, professor_catalog;
 type
   TPresentationEditor = class(TForm)
   private
@@ -20,6 +20,8 @@ type
     procedure ExportTo(const AFileName: string);
     procedure RefreshResources;
     procedure ResourceInsert(Sender: TObject);
+    procedure InsertResource(const Resource: string);
+    procedure ChooseAvatar;
     function CanDiscard: Boolean;
   public
     constructor Create(AOwner: TComponent); override;
@@ -43,11 +45,12 @@ begin
 
   end;
   FSettings:=LoadPresentationAIConfig(Config);
-  FToolbar:=TFlowPanel.Create(Self);FToolbar.Parent:=Self;FToolbar.Align:=alTop;FToolbar.Height:=88;FToolbar.AutoWrap:=True;
+  FToolbar:=TFlowPanel.Create(Self);FToolbar.Parent:=Self;FToolbar.Align:=alTop;FToolbar.Height:=120;FToolbar.AutoWrap:=True;
   AddButton('Novo',1);AddButton('Abrir .pva',2);AddButton('Salvar',3);AddButton('Salvar como',4);
   AddButton('Inserir midia',5);AddButton('Fechar midia',6);AddButton('Slide anterior',7);
   AddButton('Proximo slide',8);AddButton('Ir ao slide',9);AddButton('Desfazer',10);AddButton('Refazer',11);
   AddButton('Validar',12);AddButton('Gerar movimentos IA',13);AddButton('Previa no Assistente',14);AddButton('Cancelar IA',15);
+  AddButton('Escolher avatar',17);AddButton('Escolher voz',18);AddButton('Fechar som',19);
   P:=TPanel.Create(Self);P.Parent:=Self;P.Align:=alTop;P.Height:=38;P.BevelOuter:=bvNone;
   L:=TLabel.Create(Self);L.Parent:=P;L.Caption:='Executavel do Assistente:';L.SetBounds(8,10,190,24);
   FAssistant:=TEdit.Create(Self);FAssistant.Parent:=P;FAssistant.SetBounds(200,6,800,28);FAssistant.Anchors:=[akTop,akLeft,akRight];
@@ -100,7 +103,32 @@ procedure TPresentationEditor.Insert(const AText: string);
 begin FEdit.SelText:=AText;FEdit.SetFocus;end;
 procedure TPresentationEditor.ResourceInsert(Sender: TObject);
 begin
-  if (FJob=nil) and (FResources.ItemIndex>=0) then Insert('[executar arquivo='+FResources.Items[FResources.ItemIndex]+']');
+  if (FJob=nil) and (FResources.ItemIndex>=0) then
+    try InsertResource(FResources.Items[FResources.ItemIndex]);except on E: Exception do MessageDlg(E.Message,mtError,[mbOK],0);end;
+end;
+procedure TPresentationEditor.InsertResource(const Resource: string);
+var StartTime: string;
+begin
+  StartTime:='';
+  if TimedPresentationMedia(Resource) then
+    if not InputQuery('Inicio do recurso','Opcional: hh:mm:ss. Vazio inicia no comeco.',StartTime) then Exit;
+  Insert(PresentationMediaTag(Resource,StartTime));
+end;
+procedure TPresentationEditor.ChooseAvatar;
+var Catalog: TAvatarCatalog; D: TForm; List: TListBox; OK,Cancel: TButton; I: Integer;
+begin
+  Catalog:=TAvatarCatalog.Create(ExtractFilePath(FAssistant.Text)+'AVATARES');
+  D:=nil;
+  try
+    if Catalog.Count=0 then raise Exception.Create('Nenhum avatar encontrado junto do Assistente selecionado');
+    D:=TForm.CreateNew(Self);D.Caption:='Escolher avatar';D.Position:=poOwnerFormCenter;D.SetBounds(100,100,440,420);
+    List:=TListBox.Create(D);List.Parent:=D;List.SetBounds(10,10,420,350);List.Anchors:=[akTop,akLeft,akRight,akBottom];
+    for I:=0 to Catalog.Count-1 do List.Items.Add(Catalog[I].Name+' ('+Catalog[I].ID+')');
+    List.ItemIndex:=0;
+    OK:=TButton.Create(D);OK.Parent:=D;OK.Caption:='Inserir';OK.ModalResult:=mrOK;OK.SetBounds(230,375,90,28);OK.Anchors:=[akBottom,akRight];
+    Cancel:=TButton.Create(D);Cancel.Parent:=D;Cancel.Caption:='Cancelar';Cancel.ModalResult:=mrCancel;Cancel.SetBounds(330,375,90,28);Cancel.Anchors:=[akBottom,akRight];
+    if (D.ShowModal=mrOK) and (List.ItemIndex>=0) then Insert('[avatar='+Catalog[List.ItemIndex].ID+']');
+  finally D.Free;Catalog.Free;end;
 end;
 procedure TPresentationEditor.RefreshResources;
 var R: TSearchRec;
@@ -140,7 +168,7 @@ begin
 end;
 procedure TPresentationEditor.Action(Sender: TObject);
 var ID,N: Integer; D: TOpenDialog; S: TSaveDialog; P: TPVAPackage; M: TMemoryStream;
-  AFileName,Dest: string; Proc: TProcess;
+  AFileName,Dest: string; Proc: TProcess; VoiceTag: TPresentationTag;
 begin
   ID:=TControl(Sender).Tag;
   if FJob<>nil then begin if ID=15 then FJob.Cancel;Exit;end;
@@ -167,7 +195,7 @@ begin
       5: begin
         D:=TOpenDialog.Create(Self);
         try
-          D.Filter:='Midia|*.png;*.jpg;*.jpeg;*.bmp;*.mp4;*.avi;*.wmv;*.pptx';
+          D.Filter:='Midia|*.png;*.jpg;*.jpeg;*.bmp;*.mp4;*.avi;*.wmv;*.pptx;*.wav;*.mp3;*.wma';
           if D.Execute then begin
             if not SupportedPresentationMedia(D.FileName) then raise Exception.Create('Formato nao suportado');
             M:=TMemoryStream.Create;
@@ -178,7 +206,7 @@ begin
               Dest:=FRoot+PathDelim+StringReplace(AFileName,'/',PathDelim,[rfReplaceAll]);
               M.SaveToFile(Dest);
             finally M.Free;end;
-            Insert('[executar arquivo='+AFileName+']');RefreshResources;
+            InsertResource(AFileName);RefreshResources;
           end;
         finally D.Free;end;
       end;
@@ -201,6 +229,15 @@ begin
         ValidatePresentationScript(FEdit.Text);FOriginal:=FEdit.Text;
         FJob:=TPresentationAIJob.Create(FSettings,FOriginal);FEdit.ReadOnly:=True;FStatus.Caption:='Gerando movimentos...';
       end;
+      17: ChooseAvatar;
+      18: begin
+        AFileName:='padrao';
+        if InputQuery('Escolher voz','Nome exato da voz do provedor/SAPI, ou padrao:',AFileName) then begin
+          if not TryParsePresentationTag('[voz='+AFileName+']',VoiceTag) then raise Exception.Create('Nome de voz invalido');
+          Insert('[voz='+AFileName+']');
+        end;
+      end;
+      19: Insert('[fechar som]');
       16: begin
         D:=TOpenDialog.Create(Self);
         try D.Filter:='Assistente|assistente.exe';if D.Execute then FAssistant.Text:=D.FileName;finally D.Free;end;

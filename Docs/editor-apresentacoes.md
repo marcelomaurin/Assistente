@@ -51,7 +51,7 @@ O movimento de mandíbula acompanha somente o estado de áudio efetivamente em r
 - AVI, WMV e MP4: MCI do Windows, dentro da mesma janela. O codec do arquivo precisa estar disponível no Windows; uma extensão aceita não garante codec instalado. Falhas são exibidas e interrompem a apresentação.
 - PPTX: Microsoft PowerPoint instalado, ativado e disponível na sessão interativa do usuário. A automação abre o arquivo em leitura e com macros desabilitadas, inicia no slide 1 e usa avanço manual comandado pelo roteiro. Imagens e vídeos usam a janela Lazarus; slides usam a janela nativa de apresentação do PowerPoint, controlada pelo Assistente. Não há conversão por LibreOffice nem renderer parcial de PPTX embutido.
 
-Abrir qualquer mídia substitui e encerra a anterior. **Fechar mídia** é idempotente e não exige nome. Comandos de slides sem apresentação ativa ou fora dos limites causam erro explícito. O pacote não aceita executáveis, URLs, PPT/PPTM nem links simbólicos.
+Abrir outra mídia visual substitui e encerra a anterior. O som tem canal próprio, descrito abaixo. **Fechar mídia** encerra o visual e o som, é idempotente e não exige nome. Comandos de slides sem apresentação ativa ou fora dos limites causam erro explícito. O pacote não aceita executáveis, URLs, PPT/PPTM nem links simbólicos.
 
 ## Verificação
 
@@ -75,3 +75,14 @@ Veja o [catálogo de tags](tags-apresentacoes.md), o [formato PVA](formato-pva.m
 
 
 O adaptador fecha somente o arquivo que abriu e preserva apresentações que já estavam no PowerPoint. Restaura a configuração de segurança de automação após abrir o PPTX. O comportamento de aplicação compartilhada segue o [modelo de automação do PowerPoint](https://learn.microsoft.com/en-us/previous-versions/office/troubleshoot/office-developer/use-visual-c-automate-run-program-instance); a abertura com macros desabilitadas segue [AutomationSecurity](https://learn.microsoft.com/en-us/office/vba/api/powerpoint.application.automationsecurity).
+
+
+## Vídeo/som em hh:mm:ss, avatar e voz
+
+**Inserir mídia** e o duplo clique em recursos de áudio/vídeo perguntam pelo ponto inicial opcional em hh:mm:ss. Deixar vazio reproduz desde o começo. WAV, MP3 e WMA são importados e empacotados como os demais recursos; o codec continua sendo responsabilidade do Windows.
+
+Use **Escolher avatar** para inserir a seleção pelo catálogo do Assistente escolhido, **Escolher voz** para inserir o nome da voz do provedor/SAPI e **Fechar som** para encerrar somente o canal de recurso sonoro. Os nomes e o início ficam no roteiro, são incluídos no PVA e preservados pela IA. O avatar/voz padrão da instalação não é gravado nem modificado por essas tags.
+
+O canal de som pode acompanhar uma mídia visual. Se vídeo ou som ainda estiverem tocando depois da última fala, a apresentação aguarda seu término. P pausa/retoma e Esc encerra também esse período final. As tags e as regras de validação estão no [catálogo](tags-apresentacoes.md).
+
+Os testes adicionais verificam posição real de AVI/WAV, limites de duração, som junto de imagem, encerramento independente, troca de avatar/restauração, conclusão do som final e o campo de voz nas requisições TTS locais. Voz SAPI inexistente é recusada antes de emitir áudio.

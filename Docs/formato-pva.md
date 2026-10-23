@@ -44,3 +44,6 @@ pva_tool.exe verify apresentacao.pva pasta-nova
 `pasta-do-projeto` contém `assets/`. O destino de extração precisa ser novo, para não sobrescrever arquivos alheios. Erros retornam código 1. O utilitário aceita caminhos Windows com espaços e Unicode.
 
 A versão 1 não referencia arquivos externos, URLs ou executáveis. Vídeos e PowerPoint conservam seus formatos originais e precisam das dependências de reprodução descritas no [manual](editor-apresentacoes.md).
+
+
+A versão 1 também permite recursos de som WAV/MP3/WMA em assets/. A opção de início temporal e as escolhas de avatar/voz ficam no roteiro; o inventário aponta somente para os arquivos reais, sem incluir o sufixo |inicio=. Avatar e voz são referências às opções instaladas/configuradas na máquina executora, não arquivos embutidos. Pacotes com essas tags precisam do executor atualizado.
