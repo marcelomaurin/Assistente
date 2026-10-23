@@ -1,6 +1,6 @@
 param(
-    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.210',
-    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0210',
+    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.211',
+    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0211',
     [string]$Compiler = 'C:\Program Files\Inno Setup 7\ISCC.exe',
     [string]$Executable = '',
     [string]$Editor = '',
@@ -42,6 +42,8 @@ Copy-Item -LiteralPath $Executable -Destination (Join-Path $payload 'assistente.
 Copy-Item -LiteralPath $Editor -Destination (Join-Path $payload 'presentation_editor.exe')
 Copy-Item -LiteralPath $Tool -Destination (Join-Path $payload 'pva_tool.exe')
 Copy-Item -LiteralPath (Join-Path $root 'AVATARES') -Destination $payload -Recurse
+Copy-Item -LiteralPath (Join-Path $root 'runtime\WebView2\1.0.4314.35\x86\WebView2Loader.dll') -Destination $payload
+Copy-Item -LiteralPath (Join-Path $root 'runtime\WebView2\1.0.4314.35\LICENSE.txt') -Destination (Join-Path $payload 'LICENSES\WebView2.txt')
 foreach ($name in @('libcrypto-1_1.dll','libssl-1_1.dll','libeay32.dll','ssleay32.dll')) {
     Copy-Item -LiteralPath (Join-Path $root ('src\' + $name)) -Destination $payload
 }

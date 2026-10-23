@@ -62,7 +62,7 @@ begin
     if (Source[I]='[') and (CodeTicks=0) and ((I=1) or (Source[I-1]<>'\')) then
     begin
       J:=I+1;
-      while (J<=N) and (J-I<=512) and not (Source[J] in [']',#10,#13,'[']) do Inc(J);
+      while (J<=N) and (J-I<=2304) and not (Source[J] in [']',#10,#13,'[']) do Inc(J);
       if (J<=N) and (Source[J]=']') then
       begin
         Tag:=Copy(Source,I+1,J-I-1);Command:=CommandForTag(Tag,MotionID);

@@ -68,6 +68,7 @@ type
     FDeviceStatus: TLabel;
     FMovementPanel:TPanel;FMovementCombo:TComboBox;FMovementRun, FMovementReload:TButton;
     FMovementIDs:TStringList;
+    FYouTubeCommandPending:Boolean;
     procedure RefreshMovements(Sender:TObject);
     procedure RunMovement(Sender:TObject);
   private
@@ -786,6 +787,7 @@ end;
 
 procedure Tfrmmain.FinishPresentation;
 begin
+  FYouTubeCommandPending:=False;
   FreeAndNil(FPresentationMedia);FPresentationMode:=False;
   if FPresentationAvatarChanged then begin
     FPresentationAvatarChanged:=False;
@@ -831,9 +833,21 @@ begin
   FRenderStatus.Hint := FDeviceStatus.Caption;
   FRenderStatus.ShowHint := True;
   if not Assigned(FSpeechJob) then Exit;
+  if FYouTubeCommandPending then begin
+    try
+      if (FPresentationMedia=nil) or not FPresentationMedia.YouTubeWaiting then begin
+        FYouTubeCommandPending:=False;FSpeechJob.ConfirmAvatarCommand;
+      end;
+    except on E:Exception do begin
+      FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;FYouTubeCommandPending:=False;
+    end;end;
+  end;
   if not FSpeechJob.Done then
   begin
     if FSpeechJob.Paused then begin FProfessor.SetActivity(psIdle);end
+    else if FYouTubeCommandPending then begin
+      FProfessor.SetActivity(psIdle);lblStatus.Caption:='YouTube: reproduza o video ou clique em Continuar apresentacao. P pausa; Esc cancela.';
+    end
     else if FSpeechJob.PlaybackActive then
     begin FProfessor.SetActivity(psSpeaking); lblStatus.Caption := 'Falando...'; end
     else if FSpeechJob.IsSilent then FProfessor.SetActivity(psIdle)
@@ -846,7 +860,10 @@ begin
         SelectPresentationAvatar(Command.Presentation.Argument)
       else if FPresentationMode and (Command.Presentation.Action=paSelectVoice) then
         begin { voice is selected by the speech worker before synthesis } end
-      else if FPresentationMode and (Command.Presentation.Action<>paNone) then FPresentationMedia.Execute(Command.Presentation)
+      else if FPresentationMode and (Command.Presentation.Action<>paNone) then begin
+        FPresentationMedia.Execute(Command.Presentation);
+        if Command.Presentation.Action=paYouTube then FYouTubeCommandPending:=True;
+      end
       else if FPresentationMode and (Command.Joint.Bone<>'') then TPresentationScene(FProfessor.Scene).ExecuteJoint(Command.Joint)
       else if Command.MovementID<>'' then begin
         if not FProfessor.ExecuteMovement(Command.MovementID) then
@@ -854,7 +871,7 @@ begin
       end
       else FProfessor.ExecuteCommand(Command.Command);
     except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
-    FSpeechJob.ConfirmAvatarCommand;
+    if not FYouTubeCommandPending then FSpeechJob.ConfirmAvatarCommand;
   end;
   if not FSpeechJob.Done then Exit;
   if FPresentationMode and not FSpeechJob.Cancelled and FSpeechJob.Success then begin

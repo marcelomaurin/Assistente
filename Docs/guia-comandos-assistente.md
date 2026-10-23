@@ -471,3 +471,10 @@ Valide sempre antes da prévia. Referências inexistentes, ciclos entre blocos e
 ---
 
 Documentação correspondente aos comandos implementados no Editor de Apresentações e no Assistente. Os quatro eventos da seção 5 permanecem preparados para implementação futura.
+
+## Vídeo do YouTube
+
+Use `[youtube=https://youtu.be/M7lc1UVf-VE]` no roteiro. O player aparece
+dentro do Assistente e inicia ao clicar em **Reproduzir vídeo**. Ao terminar
+ou clicar em **Continuar apresentação**, o roteiro prossegue.
+`[fechar arquivo]` fecha o vídeo. Veja [YouTube nas apresentações](youtube-apresentacoes.md).

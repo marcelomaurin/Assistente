@@ -296,6 +296,11 @@ begin
       if (Script.Steps[I].Command<>acNone) or (Script.Steps[I].Presentation.Action<>paNone) or (Script.Steps[I].Joint.Bone<>'') then
       begin
         J:=Length(Pending);SetLength(Pending,J+1);Pending[J]:=Script.Steps[I];
+        if Script.Steps[I].Presentation.Action=paYouTube then begin
+          { The video is an interaction boundary. Deliver it before requesting
+            speech for the text that follows, then await the UI's completion. }
+          ApplyPendingVoices;FlushCommands;
+        end;
         Continue;
       end;
       Part:=Trim(Script.Steps[I].Text);

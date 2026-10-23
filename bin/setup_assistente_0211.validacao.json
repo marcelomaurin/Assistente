@@ -1,0 +1,21 @@
+{
+  "version": "0.211",
+  "installer_sha256": "0bd730937199f7f1c595fd0bcc0065d3ca848f532aa930c79ecac096f6614aa4",
+  "result": "PASS",
+  "payload_files": 189,
+  "profiles": 11,
+  "checks": [
+    "PASS: official pinned WebView2 Win32 loader and redistribution license packaged",
+    "PASS: upgrade replaces the unchanged original catalog with corrected arm aliases",
+    "PASS: all eleven installed avatars are current (Zé Gotinha v5, others v4) and match the validated source models byte for byte",
+    "PASS: actual installer extracted 189 files; all SHA-256 hashes match; eleven avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "SKIP: interactive application-window checks disabled (--no-ui); packaged files and console tools are still verified",
+    "PASS: mixed parser, traversal, joints, AI preservation, SHA256",
+    "PASS: exported",
+    "PASS: valid PVA, 2 files",
+    "PASS: installed PVA tool selftest and block/event example pack/verify",
+    "PASS: reinstall preserved user configuration/history, custom shared JSON movements and application registration",
+    "PASS: uninstaller removed application binaries, preserved user files and JSON movements, and did not change registration"
+  ]
+}

@@ -7,10 +7,10 @@
 #endif
 #define MyAppName "Assistente"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.210"
+  #define MyAppVersion "0.211"
 #endif
 #ifndef SetupCode
-  #define SetupCode "0210"
+  #define SetupCode "0211"
 #endif
 #define MyAppPublisher "MAURINSOFT"
 #define MyAppExeName "assistente.exe"

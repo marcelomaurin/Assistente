@@ -4,7 +4,7 @@ interface
 uses Windows, Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Dialogs, SynEdit,
   Graphics, Buttons, ComCtrls, Menus, ImgList, Math, Types, LazUTF8, LCLProc, movement_catalog, assistente_visual_identity,
   Process, FileUtil, LazFileUtils, presentation_package, presentation_document,
-  presentation_paths, presentation_tags, presentation_ai, professor_catalog, presentation_rag, presentation_flow;
+  presentation_paths, presentation_tags, presentation_youtube, presentation_ai, professor_catalog, presentation_rag, presentation_flow;
 type
   TPresentationEditor = class(TForm)
   private
@@ -42,6 +42,7 @@ type
     destructor Destroy; override;
     procedure LoadPackage(const FileName: string);
     procedure InsertMovement(const ID:string);
+    procedure InsertYouTube(const Link:string);
     procedure RefreshMovementLibrary;
     property MovementList:TListBox read FMovements;
     property MovementSearch:TEdit read FMovementSearch;
@@ -119,7 +120,7 @@ begin
   Tools.ActivePageIndex:=0;
   AddButton('Novo',1);AddButton('Abrir .pva',2);AddButton('Salvar',3);AddButton('Salvar como',4);
   AddButton('Desfazer',10);AddButton('Refazer',11);AddButton('Validar',12);AddButton('Gerar movimentos IA',13);AddButton('Cancelar IA',15);
-  AddButton('Inserir mídia',5);AddButton('Fechar mídia',6);AddButton('Slide anterior',7);
+  AddButton('YouTube',26);AddButton('Inserir mídia',5);AddButton('Fechar mídia',6);AddButton('Slide anterior',7);
   AddButton('Próximo slide',8);AddButton('Ir ao slide',9);AddButton('Escolher avatar',17);AddButton('Escolher voz',18);AddButton('Fechar som',19);
   AddButton('Bloco',20);AddButton('GOTO',21);AddButton('Chamar bloco',22);AddButton('Evento futuro',23);AddButton('FIM',24);AddButton('Prévia do bloco',25);
   P:=Pane(Self,alBottom,32,$00F8F5F3);
@@ -176,7 +177,7 @@ var B:TBitBtn;IconIndex:Integer;
 begin
   B:=TBitBtn.Create(Self);
   if ID in [20..25] then B.Parent:=FFlowToolbar
-  else if ID in [5..9,17..19] then B.Parent:=FMediaToolbar else B.Parent:=FToolbar;
+  else if (ID in [5..9,17..19]) or (ID=26) then B.Parent:=FMediaToolbar else B.Parent:=FToolbar;
   B.Caption:=Title;B.AutoSize:=True;B.Height:=34;B.BorderSpacing.Around:=3;
   B.Tag:=ID;B.OnClick:=@Action;B.Margin:=8;B.Spacing:=6;
   B.Hint:=Title;B.ShowHint:=True;
@@ -284,7 +285,7 @@ begin
   CanClose:=CanDiscard;
 end;
 procedure TPresentationEditor.Insert(const AText: string);
-begin FEdit.SelText:=AText;FEdit.SetFocus;end;
+begin FEdit.SelText:=AText;if Showing and FEdit.CanFocus then FEdit.SetFocus;end;
 procedure TPresentationEditor.ResourceInsert(Sender: TObject);
 begin
   if (FJob=nil) and (FResources.ItemIndex>=0) then
@@ -346,6 +347,12 @@ begin
       finally Proc.Free;end;
     end;
   end;
+end;
+procedure TPresentationEditor.InsertYouTube(const Link:string);
+begin
+  if FJob<>nil then raise Exception.Create('Aguarde a geracao');
+  Insert(YouTubeTag(Link));
+  FStatus.Caption:='Video inserido. Na apresentacao, clique em Reproduzir video para assistir.';
 end;
 procedure TPresentationEditor.ChooseAvatar;
 var Catalog: TAvatarCatalog; D: TForm; List: TListBox; OK,Cancel: TButton; I: Integer;
@@ -411,6 +418,10 @@ begin
   try
     case ID of
       20..25: InsertFlowAction(ID);
+      26: begin
+        AFileName:='';
+        if InputQuery('Inserir video do YouTube','Cole o link do video:',AFileName) then InsertYouTube(AFileName);
+      end;
       1: if CanDiscard then begin FEdit.Clear;FEdit.ClearUndo;FFile:='';FDirty:=False;Caption:='Assistente | Editor de Apresentações';end;
       2: if CanDiscard then begin
         D:=TOpenDialog.Create(Self);

@@ -2,10 +2,11 @@ unit presentation_media;
 {$mode objfpc}{$H+}
 interface
 uses Classes, SysUtils, Forms, Controls, ExtCtrls, Graphics, presentation_tags,
-  presentation_paths, Windows, ActiveX, MMSystem, Variants, ComObj, FPReadPNG, FPReadJPEG;
+  presentation_paths, presentation_youtube, presentation_webview, Windows, ActiveX, MMSystem, Variants, ComObj, FPReadPNG, FPReadJPEG;
 type
   TPresentationMedia = class
   private
+    FYouTube:TPresentationWebView;
     FHost: TPanel; FImage: TImage;
     FSlideHandle: HWND; FOnVisualChange: TNotifyEvent; FVideo,FSound: Boolean;
     FPowerPoint,FDeck,FShow: OleVariant;
@@ -30,6 +31,7 @@ type
     function VideoPositionMS: Integer;
     function SoundPositionMS: Integer;
     function TimedPlaybackActive: Boolean;
+    function YouTubeWaiting: Boolean;
     procedure SetPaused(Value: Boolean);
     property OnVisualChange: TNotifyEvent read FOnVisualChange write FOnVisualChange;
     property Active: string read FActive;
@@ -106,12 +108,14 @@ procedure TPresentationMedia.MCI(const Command: string);
 begin QueryMCI(Command);end;
 procedure TPresentationMedia.Resize(Sender: TObject);
 begin
+  if FYouTube<>nil then FYouTube.Resize;
   if FVideo then MCI(Format('put pva_media window at 0 0 %d %d',[FHost.ClientWidth,FHost.ClientHeight]));
   if (FSlideHandle<>0) and IsWindow(FSlideHandle) then
     MoveWindow(FSlideHandle,0,0,FHost.ClientWidth,FHost.ClientHeight,True);
 end;
 procedure TPresentationMedia.CloseVisual;
 begin
+  FreeAndNil(FYouTube);if FImage<>nil then FImage.Visible:=True;
   if FVideo then begin mciSendStringW('close pva_media',nil,0,0);FVideo:=False;end;
   if not VarIsEmpty(FShow) then try FShow.View.Exit;except end;
   if not VarIsEmpty(FDeck) then try FDeck.Saved:=True;FDeck.Close;except end;
@@ -133,10 +137,16 @@ function TPresentationMedia.VideoPositionMS: Integer;
 begin if FVideo then Result:=StrToInt(QueryMCI('status pva_media position')) else Result:=0;end;
 function TPresentationMedia.SoundPositionMS: Integer;
 begin if FSound then Result:=StrToInt(QueryMCI('status pva_sound position')) else Result:=0;end;
+function TPresentationMedia.YouTubeWaiting:Boolean;
+begin
+  Result:=FYouTube<>nil;if not Result then Exit;
+  if FYouTube.ErrorText<>'' then raise Exception.Create(FYouTube.ErrorText);
+  Result:=not FYouTube.Finished;
+end;
 function TPresentationMedia.TimedPlaybackActive: Boolean;
 var Mode: string;
 begin
-  Result:=False;
+  Result:=YouTubeWaiting;
   if FVideo then begin Mode:=QueryMCI('status pva_media mode');Result:=(Mode='playing') or (Mode='paused');end;
   if FSound then begin Mode:=QueryMCI('status pva_sound mode');Result:=Result or (Mode='playing') or (Mode='paused');end;
 end;
@@ -158,11 +168,17 @@ begin
   FShow.View.GotoSlide(N);Resize(nil);
 end;
 procedure TPresentationMedia.Execute(const Tag: TPresentationTag);
-var P,E,Stage,Device: string; Settings: OleVariant; N,PreviousSecurity: Integer; Before: TList;
+var P,E,Stage,Device,VideoID,URL: string;StartSeconds:Integer; Settings: OleVariant; N,PreviousSecurity: Integer; Before: TList;
 begin
   case Tag.Action of
     paCloseFile,paEndTask: Close;
     paCloseSound: CloseSound;
+    paYouTube: begin
+      if not TryYouTubeURL(Tag.Argument,VideoID,URL,StartSeconds) then raise Exception.Create('Link do YouTube invalido');
+      CloseVisual;CloseSound;FActive:=URL;FImage.Visible:=False;NotifyVisualChange;
+      try FYouTube:=TPresentationWebView.Create(FHost,VideoID,StartSeconds);
+      except CloseVisual;raise;end;
+    end;
     paOpenFile: begin
       P:=FRoot+StringReplace(Tag.Argument,'/',PathDelim,[rfReplaceAll]);
       if not FileExists(P) then raise Exception.Create('Midia ausente: '+Tag.Argument);
@@ -218,6 +234,7 @@ begin
 end;
 procedure TPresentationMedia.SetPaused(Value: Boolean);
 begin
+  if FYouTube<>nil then FYouTube.SetPaused(Value);
   if FVideo then PauseTrack('pva_media',Value);
   if FSound then PauseTrack('pva_sound',Value);
   if not VarIsEmpty(FShow) then if Value then FShow.View.State:=3 else FShow.View.State:=1;

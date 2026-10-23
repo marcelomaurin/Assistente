@@ -68,6 +68,7 @@ try {
     foreach ($speechTlsLibrary in Get-ChildItem -LiteralPath $speechTlsSource -Filter '*.dll' -File) {
         Copy-Item -LiteralPath $speechTlsLibrary.FullName -Destination $out -Force
     }
+    Copy-Item -LiteralPath (Join-Path $root ('runtime\WebView2\1.0.4314.35\' + $speechTlsArchitecture + '\WebView2Loader.dll')) -Destination $out -Force
     $exe = Join-Path $out ([IO.Path]::GetFileNameWithoutExtension($Target) + '.exe')
     if ($Run) {
         & $exe @RunArguments

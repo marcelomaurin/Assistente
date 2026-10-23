@@ -43,8 +43,8 @@ def main():
     targets={'tool':root/'tools/pva_tool.lpr','editor':root/'src/presentation_editor.lpr',
              'assistant':root/'src/assistente.lpr'}
     if a.target=='tests':
-        targets={n:base/'tests'/f'{n}.lpr' for n in ['professor_commands_tests','professor_speech_commands_tests','professor_state_tests','professor_movement_sequence_tests']}
-        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests','presentation_flow_tests','presentation_flow_editor_tests','assistant_documents_tests','presentation_flow_native_tests','presentation_flow_speech_tests']})
+        targets={n:base/'tests'/f'{n}.lpr' for n in ['professor_commands_tests','professor_speech_commands_tests','professor_state_tests','professor_movement_sequence_tests','presentation_youtube_tests']}
+        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests','presentation_flow_tests','presentation_flow_editor_tests','assistant_documents_tests','presentation_flow_native_tests','presentation_flow_speech_tests','presentation_youtube_editor_tests']})
     elif a.target!='all':targets={a.target:targets[a.target]}
     for name,source in targets.items():
         cmd=args+(['-WG'] if name in ['editor','assistant'] else [])+[str(source)]
@@ -57,5 +57,7 @@ def main():
         for name in ['libeay32.dll','ssleay32.dll','libcrypto-1_1.dll','libssl-1_1.dll']:
             source=base/'src'/name
             if source.exists():shutil.copy2(source,out/name)
+    if any(n in targets for n in ['assistant','editor']):
+        shutil.copy2(base/'runtime/WebView2/1.0.4314.35/x86/WebView2Loader.dll',out/'WebView2Loader.dll')
     print('Build:',out)
 if __name__=='__main__':main()

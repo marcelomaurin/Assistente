@@ -17,8 +17,8 @@ import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--build-code',default='0210')
-parser.add_argument('--version',default='0.210')
+parser.add_argument('--build-code',default='0211')
+parser.add_argument('--version',default='0.211')
 parser.add_argument('--no-ui',action='store_true',help='Validate extraction, binaries, configuration preservation and uninstall without opening application windows')
 OPTIONS=parser.parse_args()
 assert len(OPTIONS.build_code)==4 and OPTIONS.build_code.isdigit()
@@ -60,6 +60,11 @@ def main():
         assert path.is_relative_to(INSTALL.resolve())
         assert path.stat().st_size==record['size'],record['path']
         assert hashlib.sha256(path.read_bytes()).hexdigest()==record['sha256'],record['path']
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 211):
+        webview_lock=json.loads((ROOT/'runtime/WebView2/1.0.4314.35/sdk-lock.json').read_text(encoding='utf-8'))
+        assert hashlib.sha256((INSTALL/'WebView2Loader.dll').read_bytes()).hexdigest()==webview_lock['files']['x86/WebView2Loader.dll'],'Incorrect WebView2 loader'
+        assert (INSTALL/'LICENSES/WebView2.txt').is_file(),'WebView2 license missing'
+        REPORT.append('PASS: official pinned WebView2 Win32 loader and redistribution license packaged')
     catalog=json.loads((INSTALL/'AVATARES/movimentos.json').read_text(encoding='utf-8-sig'))
     # An unchanged catalog from the first 0.210 package must receive fixed aliases.
     catalog_path=INSTALL/'AVATARES/movimentos.json'

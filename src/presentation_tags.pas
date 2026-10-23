@@ -1,10 +1,10 @@
 unit presentation_tags;
 {$mode objfpc}{$H+}
 interface
-uses SysUtils, presentation_paths;
+uses SysUtils, presentation_paths, presentation_youtube;
 type
   TPresentationAction = (paNone, paOpenFile, paCloseFile, paNextSlide,
-    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound, paEndTask);
+    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound, paEndTask, paYouTube);
   TPresentationTag = record
     Action: TPresentationAction;
     Argument: string;
@@ -36,14 +36,17 @@ begin
   Result:=True;
 end;
 function TryParsePresentationTag(const TagText: string; out Tag: TPresentationTag): Boolean;
-var S,Key,Value,Path,Option: string; P,N,Q: Integer; Parsed: TPresentationTag;
+var S,Key,Value,Path,Option,VideoID,URL: string; P,N,Q: Integer; Parsed: TPresentationTag;
 begin
   Result:=False;Tag:=Default(TPresentationTag);Parsed:=Tag;S:=Trim(TagText);
   if (Length(S)>=2) and (S[1]='[') and (S[Length(S)]=']') then S:=Trim(Copy(S,2,Length(S)-2));
+  if (Pos('youtube:',LowerCase(S))=1) then S:='youtube='+Copy(S,9,MaxInt);
   P:=Pos('=',S);
   if P>0 then begin Key:=LowerCase(Trim(Copy(S,1,P-1)));Value:=Trim(Copy(S,P+1,MaxInt));end
   else begin Key:=LowerCase(S);Value:='';end;
-  if (Key='executar arquivo') or (Key='abrir arquivo') then begin
+  if ((Key='youtube') or (Key='youtybe')) and TryYouTubeURL(Value,VideoID,URL,N) then begin
+    Parsed.Action:=paYouTube;Parsed.Argument:=URL;Parsed.StartMS:=N*1000;Parsed.HasStart:=N>0;
+  end else if (Key='executar arquivo') or (Key='abrir arquivo') then begin
     Path:=Value;Q:=Pos('|',Value);
     if Q>0 then begin
       Path:=Trim(Copy(Value,1,Q-1));Option:=Copy(Value,Q+1,MaxInt);
@@ -76,6 +79,6 @@ function PresentationTagHelp: string;
 begin
   Result:='[executar arquivo=assets/filme.mp4|inicio=00:01:30], '+
     '[executar arquivo=assets/som.wav|inicio=00:00:10], [fechar arquivo], [fechar som], '+
-    '[avatar=professor], [voz=padrao], [proximo slide], [slide anterior], [ir para slide=3]';
+    '[youtube=https://www.youtube.com/watch?v=VIDEO_ID], [avatar=professor], [voz=padrao], [proximo slide], [slide anterior], [ir para slide=3]';
 end;
 end.
