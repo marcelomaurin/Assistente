@@ -34,6 +34,7 @@ type
     FRenderingActive: Boolean;
     FDirectiveGesture: string;
     FDirectiveUntil: QWord;
+    FExtraPose: string;
     procedure TimerTick(Sender: TObject);
     procedure ApplyAnimation;
     function DefaultModel: string;
@@ -132,6 +133,7 @@ begin
   FRightHandUp := False;
   FDirectiveGesture := '';
   FDirectiveUntil := 0;
+  FExtraPose := '';
   FAutoIdle := AAutoIdle;
   Requested := Trim(AFileName);
   if Requested = '' then Requested := DefaultModel
@@ -191,10 +193,11 @@ var Clip, Base, Requested: string;
 begin
   if FModelFile = '' then Exit;
   Clip := FAnimations[FMachine.State];
-  if FDirectiveGesture<>'' then Clip:=FDirectiveGesture;
+  if FDirectiveGesture<>'' then Clip:=FDirectiveGesture
+  else if FExtraPose<>'' then Clip:=FExtraPose;
   Base:=Clip;
   if FSmile then Clip:=Clip+'_smile';
-  if FRightHandUp and (FDirectiveGesture='') then Clip:=Clip+'_right_hand_up';
+  if FRightHandUp and (FDirectiveGesture='') and (FExtraPose='') then Clip:=Clip+'_right_hand_up';
   Requested:=Clip;
   if FScene.AnimationsList.IndexOf(Clip)<0 then
   begin
@@ -227,6 +230,13 @@ begin
     acNeutral: begin ResetCommands;Exit(True);end;
     acRaiseRightHand: begin FRightHandUp:=True;FDirectiveGesture:='';Expected:=FAnimations[psIdle]+'_right_hand_up';end;
     acLowerRightHand: begin FRightHandUp:=False;FDirectiveGesture:='';end;
+    acStopGesture: begin FDirectiveGesture:='';FDirectiveUntil:=0;end;
+    acRelax: begin FExtraPose:='';end;
+    acRaiseLeftHand,acRaiseBothHands,acLookLeft,acLookRight,acSurprise,
+    acSad,acSerious,acCrossArms,acSit:
+      begin FExtraPose:=StringReplace(AvatarCommandName(Command),' ','_',[rfReplaceAll]);Expected:=FExtraPose;end;
+    acLowerLeftHand,acLowerBothHands,acLookFront,acCloseArms,acUncrossArms,acStand:
+      begin FExtraPose:='';end;
     acApplause,acWave,acWalk:
       begin
         case Command of
@@ -237,6 +247,11 @@ begin
         Expected:=FDirectiveGesture;
         FDirectiveUntil:=GetTickCount64+2400;
       end;
+    else begin
+      FDirectiveGesture:=StringReplace(AvatarCommandName(Command),' ','_',[rfReplaceAll]);
+      Expected:=FDirectiveGesture;
+      FDirectiveUntil:=GetTickCount64+2400;
+    end;
   end;
   if Command in [acRaiseRightHand,acLowerRightHand] then FScene.DefaultAnimationTransition:=0.6;
   ApplyAnimation;
@@ -248,7 +263,7 @@ end;
 
 procedure TProfessorView.ResetCommands;
 begin
-  FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;
+  FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;FExtraPose:='';
   ApplyAnimation;
 end;
 
