@@ -16,21 +16,21 @@ O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servi
 
 ## Instalação Windows
 
-Versão atual: [setup_assistente_0200.exe](bin/setup_assistente_0200.exe).
-Inclui o Assistente atualizado, o Editor de Apresentações, a ferramenta PVA,
+Versão atual: [setup_assistente_0214.exe](bin/setup_assistente_0214.exe).
+Inclui o Assistente atualizado, o Editor de Apresentações, o Editor de Movimentos (prévia), a ferramenta PVA,
 11 avatares e os guias de comandos. O editor tem atalho próprio no menu Iniciar
 e opção de atalho na área de trabalho.
 A instalação padrão é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação e verificação da versão 0.200](Docs/INSTALACAO_0200.md) e o
+Veja [instalação e verificação da versão 0.214](Docs/INSTALACAO_0214.md) e o
 [guia de comandos](Docs/guia-comandos-assistente.md).
-Os hashes estão no [manifesto](bin/setup_assistente_0200.manifest.json), e os
-resultados dos testes no [relatório](bin/setup_assistente_0200.validacao.json).
+Os hashes estão no [manifesto](bin/setup_assistente_0214.manifest.json), e os
+resultados dos testes no [relatório](bin/setup_assistente_0214.validacao.json).
 As versões [0.130](Docs/INSTALACAO_0130.md) e [0.120](Docs/INSTALACAO_0120.md)
 permanecem disponíveis como histórico.
 
 ## Professor Virtual 3D
 
-Avatar 3D nativo no formulário Lazarus, com dez perfis selecionáveis e
+Avatar 3D nativo no formulário Lazarus, com onze perfis selecionáveis e
 animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.
@@ -106,3 +106,9 @@ Os testes isolados não comprovam captura simultânea com Kinect físico.
 Editor Lazarus independente, pacote único com roteiro e mídias, geração de gestos por IA e execução no Assistente com pausa/retomada.
 
 Consulte o [manual do editor](Docs/editor-apresentacoes.md), o [catálogo de tags](Docs/tags-apresentacoes.md), o [formato PVA](Docs/formato-pva.md) e o [status de conclusão](Docs/plano-conclusao-editor-apresentacoes.md).
+
+## Validação da integração de 24/10/2026
+
+As fontes corrigidas após a sincronização geram os programas em `build/validation-20261024`. Esses executáveis incluem correções posteriores ao instalador 0.213; os instaladores históricos não são alterados por uma compilação local. O Editor de Movimentos também compila, mas continua sendo um protótipo. Consulte o [relatório de revisão e validação](Docs/VALIDACAO_2026-10-24.md) para evidências, comandos reproduzíveis e limitações.
+
+O instalador 0.214 inclui essas correções e a prévia do Editor de Movimentos. Veja o [guia de uso](Docs/editor-movimentos.md).

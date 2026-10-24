@@ -2,13 +2,13 @@ program professor_remote_speech_tests;
 {$mode objfpc}{$H+}
 uses Classes, SysUtils, reception_core, professor_commands;
 var Config: TReceptionConfig; Job: TReceptionJob; Command: TAvatarCommand;
-  Started, PlayingSince: QWord; Count, Iteration: Integer; SawPlayback: Boolean;
+  Started, PlayingSince,LongestPlayback: QWord; Count, Iteration: Integer; SawPlayback: Boolean;
 procedure Check(B: Boolean; const Msg: string);
 begin if not B then raise Exception.Create(Msg); end;
 procedure StartJob(const Text: string);
 begin
   Job:=TReceptionJob.Create(rjSpeak,Config,Text,'','remote-test');
-  Started:=GetTickCount64;PlayingSince:=0;Count:=0;SawPlayback:=False;
+  Started:=GetTickCount64;PlayingSince:=0;LongestPlayback:=0;Count:=0;SawPlayback:=False;
 end;
 procedure Poll;
 begin
@@ -22,6 +22,10 @@ begin
   begin
     SawPlayback:=True;
     if PlayingSince=0 then PlayingSince:=GetTickCount64;
+  end;
+  if not Job.PlaybackActive and (PlayingSince<>0) then begin
+    if GetTickCount64-PlayingSince>LongestPlayback then LongestPlayback:=GetTickCount64-PlayingSince;
+    PlayingSince:=0;
   end;
   Sleep(5);
 end;
@@ -40,7 +44,9 @@ begin
       Check(SawPlayback,'No actual remote playback');
       Check(not Job.PlaybackActive,'Completed job still reports playback');
       Check(GetTickCount64-Started>=1400,'Playback returned before both segments completed');
-      Check(GetTickCount64-Started<6000,'Metadata inflated speech duration');
+      if (PlayingSince<>0) and (GetTickCount64-PlayingSince>LongestPlayback) then LongestPlayback:=GetTickCount64-PlayingSince;
+      // Fixture PCM is 500 ms; gesture waits are separate from audio completion.
+      Check(LongestPlayback<1500,'Metadata inflated individual WAV playback duration');
     finally Job.Free;end;
   end;
   WriteLn('PASS: repeated remote WAV, actual completion, metadata chunks, commands before playback');

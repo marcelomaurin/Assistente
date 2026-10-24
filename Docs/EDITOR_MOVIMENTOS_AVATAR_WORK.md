@@ -9,7 +9,7 @@ Criar aplicativo independente em Lazarus/Free Pascal com Castle Game Engine, int
 Fluxo: texto/apresentação -> tag existente [nome] -> catálogo AVATARES/movimentos.json -> campo animation_file -> arquivo JSON externo na pasta movimentos relativa ao catálogo -> interpretador de trilhas -> rig 3D do professor. Não confundir o catálogo de tags com os arquivos de animação. Manter aliases, tags, modos, clipes legados e sincronização com fala. A IA poderá propor tags ou sequências, mas os movimentos devem passar por validação antes de gravar. Nunca executar código arbitrário contido no JSON.
 
 ## Fontes existentes
-- tools/motion_editor/motion_editor.lpr: protótipo de janela, viewport do professor, abertura e gravação JSON, seleção de osso/eixo, edição de ângulo e tempo, criação de keyframes.
+- tools/motion_editor/motion_editor.lpr: janela com tema MultiCNC, viewport do professor, abrir/salvar JSON v1/v2, seleção de membros no avatar/lista, anéis XYZ, campos de ângulo/tempo, poses, scrub e vistas CAD.
 - src/professor_view.pas: TProfessorView e ExecuteMovement; usa catálogo e TPresentationScene.ExecuteAnimation.
 - src/movement_animation.pas: TMotionAnimation, TMotionTrack e TMotionKeyframe, leitor validado e interpolação.
 - src/movement_catalog.pas: tags, aliases, catálogo, animation_file e validação.
@@ -17,7 +17,7 @@ Fluxo: texto/apresentação -> tag existente [nome] -> catálogo AVATARES/movime
 - scripts/build_professor.ps1: referência de compilação Windows com Lazarus, Castle e dependências.
 
 ## Formato atual
-JSON com format=assistente-motion, version=1, name, duration_ms, loop, return_to_base, interpolation (linear ou smoothstep) e tracks. Cada track tem bone, axis (x/y/z) e keyframes ordenados com time_ms e angle. Suporta várias articulações e várias passagens temporais, inclusive oscilações. Limitações atuais: um único eixo por osso, uma trilha por osso, rotação angular escalar; não há quaternions, translação ou curvas Bézier. Qualquer extensão deve ser versionada, manter compatibilidade v1 e ser implementada também no player.
+JSON com format=assistente-motion, version=1, name, duration_ms, loop, return_to_base, interpolation (linear ou smoothstep) e tracks. Cada track tem bone, axis (x/y/z) e keyframes ordenados com time_ms e angle. Suporta várias articulações e várias passagens temporais, inclusive oscilações. O contrato v1 usa um único eixo por osso. A revisão 3D adiciona o contrato v2, com `axis: "xyz"`, `rotation_deg: [x,y,z]` e interpolação por quaternions; mantém uma trilha por osso. Translação de ossos e curvas Bézier continuam pendentes. Qualquer extensão deve ser versionada, manter compatibilidade v1 e ser implementada também no player.
 
 Exemplo ilustrativo:
 ```json
@@ -26,7 +26,9 @@ Exemplo ilustrativo:
 O nome de osso e limites devem ser confirmados contra o modelo e JointAngleLimit antes de usar.
 
 ## Estado real e lacunas
-O protótipo foi commitado, mas não há confirmação de compilação ou execução local. O botão 'Prévia no avatar' ainda apenas informa que a prévia não está conectada ao rig. A linha do tempo mostra valores da trilha selecionada, mas não aplica a pose ao avatar. Não existe manipulação 3D direta por clique/arraste, gizmos, seleção visual de ossos, painel de trilhas, play/pause/stop, undo/redo, exclusão de keyframes, controle de curvas, persistência da tag no catálogo ou geração por IA. O salvamento precisa ser revisto para garantir rollback atômico e liberar recursos mesmo em exceções. Conferir assinatura de FileUtil.CopyFile, dependências de compilação, ciclo de vida de TProfessorView e comportamento do rig. Não afirmar que está pronto sem compilar e testar.
+Em 24/10/2026 o protótipo foi compilado em i386-win32 com o mesmo script dos programas principais. A construção da janela usa `CreateNew`, sem exigir um formulário de recurso inexistente. O botão **Reproduzir movimento** valida a definição e executa as trilhas no motor de colisão compartilhado. O salvamento valida um temporário privado, cria backup e substitui o destino sem apagar antes o original; preserva loop, retorno e interpolação. Cancelar o diálogo libera os recursos.
+
+Na revisão 3D, a linha do tempo aplica a pose ao avatar; há seleção visual, anéis XYZ, campos simultâneos, gravação de poses, reprodução e parada. A câmera oferece sete vistas, projeção ortográfica/perspectiva, órbita, pan, zoom e rolagem, com cores/layout do MultiCNC. Continuam pendentes painel de trilhas, pausa/retomada editável, undo/redo, exclusão de keyframes, curvas, persistência da tag no catálogo e geração por IA. O projeto Lazarus `.lpi` continua pendente; a compilação verificada usa `scripts/build_presentations.py --target motion-editor`. Não considerar o protótipo um editor completo. Evidências e limites constam no [relatório](VALIDACAO_2026-10-24.md).
 
 ## Plano de implementação para o Work
 1. Sincronizar repositório local em C:\\projetos\\maurinsoft\\Assistente e conferir branch, working tree e documentação existente; preservar alterações locais.

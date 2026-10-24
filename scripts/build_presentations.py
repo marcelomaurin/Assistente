@@ -8,17 +8,21 @@ def main():
     p.add_argument('--base',type=Path,help='Existing project root when validating staged sources')
     p.add_argument('--out',type=Path)
     p.add_argument('--lazarus',type=Path,default=Path(r'C:\lazarus'))
-    p.add_argument('--compiler',type=Path,default=Path(r'C:\FPC\3.2.2\bin\i386-Win32\fpc.exe'))
+    p.add_argument('--compiler',type=Path,help='Free Pascal i386 compiler; defaults to the Lazarus installation')
     p.add_argument('--castle',type=Path)
     p.add_argument('--release',action='store_true',help='Strip executable debug symbols for distribution')
-    p.add_argument('--target',default='all',choices=['all','editor','assistant','tool','tests'])
+    p.add_argument('--test',action='append',help='Build only these named tests with --target tests')
+    p.add_argument('--target',default='all',choices=['all','editor','assistant','tool','tests','motion-editor'])
     a=p.parse_args();root=a.root.resolve();base=(a.base or root).resolve()
     out=(a.out or base/'build/presentations').resolve();units=out/'units';units.mkdir(parents=True,exist_ok=True)
     platform='i386-win32';laz=a.lazarus
+    if a.compiler is None:
+        a.compiler=laz/'fpc/3.2.2/bin/i386-win32/fpc.exe'
+        if not a.compiler.exists():a.compiler=Path('C:/FPC/3.2.2/bin/i386-Win32/fpc.exe')
     args=[str(a.compiler),'-MObjFPC','-Scghi','-O1','-gl','-dLCL','-dLCLwin32','-dCASTLE_ENGINE_LAZARUS_PACKAGE','-FU'+str(units),'-FE'+str(out)]
     if a.release:
         args.remove('-gl');args.append('-Xs')
-    paths=[root/'src',root/'vendor/chatgpt-voice',base/'src',base/'vendor/chatgpt-voice',base/'build/professor/units'/platform]
+    paths=[root/'src',root/'vendor/multisuite',root/'vendor/chatgpt-voice',base/'src',base/'vendor/chatgpt-voice',base/'build/professor/units'/platform]
     for rel in [f'lcl/units/{platform}/win32',f'lcl/units/{platform}',f'components/lazutils/lib/{platform}',
                 f'packager/units/{platform}',f'components/synedit/units/{platform}/win32',f'components/lazcontrols/lib/{platform}/win32',
                 f'components/ideintf/units/{platform}/win32',f'components/buildintf/units/{platform}','components/opengl']:
@@ -41,17 +45,21 @@ def main():
     for d in paths:args.append('-Fu'+str(d))
     args+=['-Fi'+str(base/'src'),'-Fi'+str(base/'vendor/chatgpt-voice')]
     targets={'tool':root/'tools/pva_tool.lpr','editor':root/'src/presentation_editor.lpr',
-             'assistant':root/'src/assistente.lpr'}
+             'assistant':root/'src/assistente.lpr','motion-editor':root/'tools/motion_editor/motion_editor.lpr'}
     if a.target=='tests':
         targets={n:base/'tests'/f'{n}.lpr' for n in ['professor_commands_tests','professor_speech_commands_tests','professor_state_tests','professor_movement_sequence_tests','presentation_youtube_tests']}
         targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests','presentation_flow_tests','presentation_flow_editor_tests','assistant_documents_tests','presentation_flow_native_tests','presentation_flow_speech_tests','presentation_youtube_editor_tests']})
+        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['audio_path_tests','movement_animation_tests','external_movement_view_tests','movement_catalog_tests','movement_timeline_tests','movement_completion_probe','movement_scene_tests','movement_native_completion','professor_gesture_tests','professor_catalog_tests','professor_model_tests','professor_remote_speech_tests','professor_audio_smoke','professor_commands_tests','professor_state_tests','remote_stt_tests','modern_ui_tests','assistant_layout_tests','presentation_webview_tests','wave_finalize_tests']})
     elif a.target!='all':targets={a.target:targets[a.target]}
+    if a.test:
+        if a.target!='tests' or any(n not in targets for n in a.test):p.error('--test requires known test names and --target tests')
+        targets={n:targets[n] for n in a.test}
     for name,source in targets.items():
-        cmd=args+(['-WG'] if name in ['editor','assistant'] else [])+[str(source)]
+        cmd=args+(['-WG'] if name in ['editor','assistant','motion-editor'] else [])+[str(source)]
         proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         (out/f'{name}-build.log').write_bytes(proc.stdout);print(proc.stdout.decode(errors='replace'),flush=True)
         if proc.returncode:raise SystemExit(proc.returncode)
-    if 'assistant' in targets:
+    if any(n in targets for n in ['assistant','motion-editor']):
         shutil.copytree(base/'AVATARES',out/'AVATARES',dirs_exist_ok=True)
     if any(n in targets for n in ['assistant','editor']):
         for name in ['libeay32.dll','ssleay32.dll','libcrypto-1_1.dll','libssl-1_1.dll']:

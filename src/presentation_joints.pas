@@ -12,11 +12,9 @@ type
   private
     FMotions: array of TJointMotion;
     FMovement:TMovementRuntime;FMovementNodes:array of TTransformNode;
-    FAnimation: TMotionAnimation;
-    FAnimationStart: QWord;
-    FAnimationActive: Boolean;
     FJaw: TTransformNode;FJawRest: TVector4;FVoicePhase: Double;FSpeaking: Boolean;
     FGestureMouth: Boolean;
+    FEditing:Boolean;
     FPaused: Boolean; FPausedAt: QWord;
     function ReadMovementPose:TMPoseArray;
     procedure WriteMovementPose;
@@ -25,13 +23,17 @@ type
   public
     procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
     procedure ExecuteJoint(const ATag: TJointTag);
-    procedure ExecuteAnimation(const FileName: string);
+    procedure ExecuteAnimation(const AFileName: string);
     procedure ResetJoints;
     procedure PrepareSpeechMouth;
     procedure ForgetRig;
     procedure PrepareMovementRig(const ModelFile,CollisionFile:string;AHeight:Double);
     procedure ExecuteTimeline(const Timeline:TMovementTimeline);
     procedure ClearTimeline;
+    procedure BeginEditing;
+    function EditorApply(const Candidate:TMPoseArray):Boolean;
+    function EditorPose:TMPoseArray;
+    function EditorRig:TMovementRuntime;
     function TimelineHasPose:Boolean;
     function MovementBlocked:string;
     function MovementClearance:Double;
@@ -54,7 +56,7 @@ begin
   Result:=UTF8Encode(W);
 end;
 procedure TPresentationScene.ForgetRig;
-begin ResetJoints;FreeAndNil(FMovement);SetLength(FMovementNodes,0);FJaw:=nil;FSpeaking:=False;FGestureMouth:=False;end;
+begin FEditing:=False;ResetJoints;FreeAndNil(FMovement);SetLength(FMovementNodes,0);FJaw:=nil;FSpeaking:=False;FGestureMouth:=False;end;
 destructor TPresentationScene.Destroy;
 begin ForgetRig;inherited;end;
 procedure TPresentationScene.PrepareMovementRig(const ModelFile,CollisionFile:string;AHeight:Double);
@@ -110,12 +112,27 @@ begin
     N:=FMovement.NodeIndex(Timeline.Tracks[I].Bone);
     if (N<0) or (FMovementNodes[N]=nil) then raise Exception.Create('Membro ausente: '+Timeline.Tracks[I].Bone);
   end;
-  FMovement.Guard(ReadMovementPose);WriteMovementPose;StopAnimation;FMovement.Start(Timeline);
+  FEditing:=False;FMovement.Guard(ReadMovementPose);WriteMovementPose;StopAnimation;FMovement.Start(Timeline);
 end;
+procedure TPresentationScene.BeginEditing;
+begin
+  if FMovement=nil then raise Exception.Create('Esqueleto indisponivel');
+  StopAnimation;ResetJoints;FMovement.Clear;FEditing:=True;
+  FSpeaking:=False;FGestureMouth:=False;
+end;
+function TPresentationScene.EditorApply(const Candidate:TMPoseArray):Boolean;
+begin
+  if not FEditing then BeginEditing;
+  Result:=FMovement.Guard(Candidate);WriteMovementPose;
+end;
+function TPresentationScene.EditorPose:TMPoseArray;
+begin Result:=Copy(FMovement.Pose);end;
+function TPresentationScene.EditorRig:TMovementRuntime;
+begin Result:=FMovement;end;
 procedure TPresentationScene.ClearTimeline;
 begin if FMovement<>nil then FMovement.Clear;end;
 function TPresentationScene.TimelineHasPose:Boolean;
-begin Result:=(FMovement<>nil) and FMovement.HasPose;end;
+begin Result:=(FMovement<>nil) and (FEditing or FMovement.HasPose);end;
 function TPresentationScene.SafetyReady:Boolean;
 begin Result:=FMovement<>nil;end;
 function TPresentationScene.MovementBlocked:string;
@@ -127,10 +144,11 @@ begin
   Remaining:=Max(SecondsPassed,0.0);
   repeat
     Step:=Min(Remaining,0.01);
-    inherited Update(Step,RemoveMe);
+    if not FEditing then inherited Update(Step,RemoveMe);
     UpdateJoints;
     if FMovement<>nil then begin
-      if FMovement.HasPose then begin if TimePlaying then FMovement.Advance(Step*1000*TimePlayingSpeed);end
+      if FEditing then begin { Keep the collision-checked editor pose static. } end
+      else if FMovement.HasPose then begin if TimePlaying then FMovement.Advance(Step*1000*TimePlayingSpeed);end
       else FMovement.Guard(ReadMovementPose);
       WriteMovementPose;
     end;
@@ -173,37 +191,24 @@ begin
     Axis:=ATag.Axis;StartAngle:=Angle;Target:=ATag.Angle;Duration:=ATag.Duration;Smooth:=ATag.Smooth;Started:=GetTickCount64;
   end;
 end;
-procedure TPresentationScene.ExecuteAnimation(const FileName: string);
-var A: TMotionAnimation; I: Integer; N: TX3DNode; T: TJointTag;
+procedure TPresentationScene.ExecuteAnimation(const AFileName: string);
+var Timeline: TMovementTimeline;
 begin
-  A:=LoadMotionAnimation(FileName);
-  if RootNode=nil then raise Exception.Create('Avatar sem esqueleto');
-  for I:=0 to High(A.Tracks) do begin
-    N:=RootNode.FindNodeByName(TTransformNode,A.Tracks[I].Bone,False);
-    if not (N is TTransformNode) then raise Exception.Create('Osso ausente: '+A.Tracks[I].Bone);
-  end;
-  ResetJoints;
-  for I:=0 to High(A.Tracks) do begin
-    T:=Default(TJointTag);
-    T.Bone:=A.Tracks[I].Bone;T.Axis:=A.Tracks[I].Axis;
-    T.Angle:=A.Tracks[I].Keys[0].Angle;T.Duration:=A.DurationMS;T.Smooth:=A.Smooth;
-    ExecuteJoint(T);
-  end;
-  FAnimation:=A;FAnimationStart:=GetTickCount64;FAnimationActive:=True;
+  Timeline:=MotionTimeline(LoadMotionAnimation(AFileName));
+  ExecuteTimeline(Timeline);
 end;
 procedure TPresentationScene.ResetJoints;
 var I: Integer;
 begin
   for I:=0 to High(FMotions) do FMotions[I].Node.Rotation:=FMotions[I].Base;
-  SetLength(FMotions,0);FAnimationActive:=False;FPaused:=False;
+  SetLength(FMotions,0);FPaused:=False;
 end;
 procedure TPresentationScene.PauseJoints(Value: Boolean);
 var I: Integer; Delta: QWord;
 begin
   if Value=FPaused then Exit;
   if Value then FPausedAt:=GetTickCount64
-  else begin Delta:=GetTickCount64-FPausedAt;for I:=0 to High(FMotions) do Inc(FMotions[I].Started,Delta);
-    if FAnimationActive then Inc(FAnimationStart,Delta);end;
+  else begin Delta:=GetTickCount64-FPausedAt;for I:=0 to High(FMotions) do Inc(FMotions[I].Started,Delta);end;
   FPaused:=Value;
 end;
 procedure TPresentationScene.UpdateSpeechMouth(Step:Double);
@@ -220,20 +225,9 @@ var I: Integer; T,A,H,S,C,BH,BS,BC,Norm: Double; Q: array[0..3] of Double;
   V: TVector4; NowTick: QWord;
 begin
   if FPaused then NowTick:=FPausedAt else NowTick:=GetTickCount64;
-  if FAnimationActive then begin
-    if FAnimation.DurationMS>0 then begin
-      for I:=0 to High(FMotions) do begin
-        if FAnimation.Looping then
-          FMotions[I].Angle:=MotionAngleAt(FAnimation.Tracks[I],Integer((NowTick-FAnimationStart) mod QWord(FAnimation.DurationMS)),FAnimation.Smooth)
-        else FMotions[I].Angle:=MotionAngleAt(FAnimation.Tracks[I],Integer(Min(QWord(FAnimation.DurationMS),NowTick-FAnimationStart)),FAnimation.Smooth);
-      end;
-    end;
-  end;
   for I:=0 to High(FMotions) do with FMotions[I] do begin
-    if not FAnimationActive then begin
-      T:=Min(1,Max(0,(Int64(NowTick)-Int64(Started))/Max(1,Duration)));if Smooth then T:=T*T*(3-2*T);
-      Angle:=StartAngle+(Target-StartAngle)*T;
-    end;
+    T:=Min(1,Max(0,(Int64(NowTick)-Int64(Started))/Max(1,Duration)));if Smooth then T:=T*T*(3-2*T);
+    Angle:=StartAngle+(Target-StartAngle)*T;
     A:=DegToRad(Angle);
     // Compose the rig's rest quaternion with a local-axis offset.
     H:=A/2;S:=Sin(H);C:=Cos(H);BH:=Base.W/2;BS:=Sin(BH);BC:=Cos(BH);

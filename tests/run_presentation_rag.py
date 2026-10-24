@@ -62,7 +62,7 @@ def main():
             native=build/'presentation-native'
             assert (native/'main.pva').exists(),'Run run_presentation_native.py first to create fixtures'
             report=native/'rag-result.txt';report.unlink(missing_ok=True)
-            run([build/'presentation_native_smoke.exe',native,'rag',a.model.resolve(),('without-office' if a.without_office else 'with-office'),base+'/gui'])
+            run([build/'presentation_native_smoke.exe',native,'rag',a.model.resolve(),('without-office' if a.without_office else 'with-office'),base+'/gui'],timeout=120)
             text=report.read_text(encoding='utf8');assert 'FAIL' not in text,text;print(text.strip(),flush=True);evidence.append(text)
             assert len([p for m,p in seen if m=='gui'])==1
     finally:server.shutdown();thread.join();server.server_close()

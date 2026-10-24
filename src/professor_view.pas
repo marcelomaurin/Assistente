@@ -5,15 +5,20 @@ unit professor_view;
 interface
 
 uses Classes, SysUtils, Controls, ExtCtrls, StdCtrls, IniFiles,
-  CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
+  CastleProjection,CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
   CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints, movement_catalog, movement_timeline, X3DNodes;
 
 type
+  TAvatarCameraView=(acFront,acBack,acLeft,acRight,acTop,acBottom,acIsometric);
   TProfessorZoomEvent = procedure(Steps: Single) of object;
   TProfessorControl = class(TCastleControl)
   public
     OnZoom: TProfessorZoomEvent;
     procedure CloseContext;
+  published
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
   protected
     function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean; override;
   end;
@@ -30,6 +35,8 @@ type
     FAnimations: array[TProfessorState] of string;
     FAutoIdle: Boolean;
     FZoom, FModelHeight: Single;
+    FOrbitYaw,FOrbitPitch,FCameraRoll:Single;
+    FCameraPan:TVector3;FOrthographic,FEditorNavigation:Boolean;
     FSmile, FRightHandUp: Boolean;
     FRenderingActive: Boolean;
     FRenderingPausedAt: QWord;
@@ -55,6 +62,17 @@ type
     function ExecuteMovement(const ID: string): Boolean;
     procedure ResetCommands;
     procedure SetRenderingActive(Active: Boolean);
+    procedure OrbitBy(DX,DY:Single);
+    procedure PanBy(DX,DY:Single);
+    procedure RollBy(Degrees:Single);
+    procedure SetCameraView(Value:TAvatarCameraView);
+    procedure SetOrthographic(Value:Boolean);
+    procedure FitCamera;
+    property EditorNavigation:Boolean read FEditorNavigation write FEditorNavigation;
+    property Orthographic:Boolean read FOrthographic;
+    property Control:TProfessorControl read FControl;
+    property Viewport:TCastleViewport read FViewport;
+    property ModelHeight:Single read FModelHeight;
     property Zoom: Single read FZoom;
     property Diagnostic: string read FDiagnostic;
     property Scene: TCastleScene read FScene;
@@ -237,7 +255,7 @@ begin
 end;
 
 function TProfessorView.ExecuteMovement(const ID: string): Boolean;
-var M: TMovementDefinition; Clip,Expected,AnimationPath: string; I: Integer;Timeline:TMovementTimeline;
+var M: TMovementDefinition; Clip,Expected: string; I: Integer;Timeline:TMovementTimeline;
 begin
   Result:=False;
   if not FindMovement(ID,M) then Exit;
@@ -251,23 +269,6 @@ begin
   end;
   TPresentationScene(FScene).ClearTimeline;
   Clip:=M.Clip;
-  if M.AnimationFile<>'' then begin
-    AnimationPath:=IncludeTrailingPathDelimiter(ExtractFilePath(MovementCatalogFile))+
-      'movimentos'+PathDelim+M.AnimationFile;
-    try
-      TPresentationScene(FScene).ExecuteAnimation(AnimationPath);
-      FMovementJoints:=True;
-      FDirectiveGesture:='';FDirectiveUntil:=GetTickCount64+QWord(M.Duration);
-      FDirectiveMouth:=M.SpeechMouth;
-      TPresentationScene(FScene).GestureMouth:=FDirectiveMouth;
-      Exit(True);
-    except
-      on E: Exception do begin
-        FNotice.Caption:='Falha na animacao '+M.Tag+': '+E.Message;
-        FNotice.Visible:=True;Exit(False);
-      end;
-    end;
-  end;
   if (FMachine.State=psSpeaking) and (M.TalkingClip<>'') and
     (FScene.AnimationsList.IndexOf(M.TalkingClip)>=0) then Clip:=M.TalkingClip;
   if (Clip<>'') and (FScene.AnimationsList.IndexOf(Clip)<0) then begin
@@ -380,17 +381,64 @@ begin
 end;
 
 procedure TProfessorView.FrameCamera;
-var Focus: Single;
+var Focus,D:Single;Offset,Right,Up:TVector3;
 begin
-  Focus:=0.52+0.24*(1-Min(1,FZoom))/0.6;
-  FViewport.Camera.SetWorldView(Vector3(0,FModelHeight*Focus,FModelHeight*2.1*FZoom),
-    Vector3(0,0,-1),Vector3(0,1,0));
+  Focus:=0.52+0.24*(1-Min(1,FZoom))/0.6;if FEditorNavigation then Focus:=0.52;D:=FModelHeight*2.1*FZoom;
+  Offset:=Vector3(Sin(FOrbitYaw)*Cos(FOrbitPitch)*D,Sin(FOrbitPitch)*D,Cos(FOrbitYaw)*Cos(FOrbitPitch)*D);
+  Right:=Vector3(Cos(FOrbitYaw),0,-Sin(FOrbitYaw));
+  Up:=Vector3(-Sin(FOrbitYaw)*Sin(FOrbitPitch),Cos(FOrbitPitch),-Cos(FOrbitYaw)*Sin(FOrbitPitch));
+  Up:=Up*Cos(FCameraRoll)+Right*Sin(FCameraRoll);
+  if FOrthographic then begin
+    FViewport.Camera.ProjectionType:=ptOrthographic;
+    FViewport.Camera.Orthographic.Height:=FModelHeight*1.45*FZoom;
+    FViewport.Camera.Orthographic.Width:=0;
+    FViewport.Camera.Orthographic.Origin:=Vector2(0.5,0.5);
+  end else FViewport.Camera.ProjectionType:=ptPerspective;
+  FViewport.Camera.SetWorldView(Vector3(0,FModelHeight*Focus,0)+FCameraPan+Offset,-Offset,Up);
 end;
-procedure TProfessorView.ZoomBy(Steps: Single);
+procedure TProfessorView.OrbitBy(DX,DY:Single);
 begin
-  if FModelFile = '' then Exit;
-  FZoom := EnsureRange(FZoom * Power(0.88,Steps), 0.4, 2.5);
-  FrameCamera;
+  FOrbitYaw:=FOrbitYaw-DegToRad(DX*0.6);
+  FOrbitPitch:=EnsureRange(FOrbitPitch+DegToRad(DY*0.6),-Pi/2,Pi/2);FrameCamera;
+end;
+procedure TProfessorView.PanBy(DX,DY:Single);
+var Right,Up,RolledRight,RolledUp:TVector3;S:Single;
+begin
+  Right:=Vector3(Cos(FOrbitYaw),0,-Sin(FOrbitYaw));
+  Up:=Vector3(-Sin(FOrbitYaw)*Sin(FOrbitPitch),Cos(FOrbitPitch),-Cos(FOrbitYaw)*Sin(FOrbitPitch));
+  RolledRight:=Right*Cos(FCameraRoll)-Up*Sin(FCameraRoll);
+  RolledUp:=Up*Cos(FCameraRoll)+Right*Sin(FCameraRoll);
+  if FOrthographic then S:=FModelHeight*1.45*FZoom
+  else S:=2*FModelHeight*2.1*FZoom*Tan(FViewport.Camera.Perspective.FieldOfView/2);
+  S:=S/Max(1,FControl.Height);
+  FCameraPan:=FCameraPan+RolledRight*(-DX*S)+RolledUp*(DY*S);FrameCamera;
+end;
+procedure TProfessorView.RollBy(Degrees:Single);
+begin FCameraRoll:=FCameraRoll+DegToRad(Degrees);FrameCamera;end;
+procedure TProfessorView.SetCameraView(Value:TAvatarCameraView);
+begin
+  FCameraRoll:=0;FOrbitYaw:=0;FOrbitPitch:=0;
+  case Value of
+    acBack:FOrbitYaw:=Pi;
+    acLeft:FOrbitYaw:=-Pi/2;
+    acRight:FOrbitYaw:=Pi/2;
+    acTop:FOrbitPitch:=Pi/2;
+    acBottom:FOrbitPitch:=-Pi/2;
+    acIsometric:begin FOrbitYaw:=Pi/4;FOrbitPitch:=ArcTan(1/Sqrt(2));end;
+  end;
+  FCameraPan:=Vector3(0,0,0);FrameCamera;
+end;
+procedure TProfessorView.SetOrthographic(Value:Boolean);
+begin FOrthographic:=Value;FrameCamera;end;
+procedure TProfessorView.FitCamera;
+begin FCameraPan:=Vector3(0,0,0);FZoom:=1;FrameCamera;end;
+procedure TProfessorView.ZoomBy(Steps:Single);
+var Factor:Single;
+begin
+  if FModelFile='' then Exit;
+  if FEditorNavigation then Factor:=1/1.12 else Factor:=0.88;
+  if FEditorNavigation then FZoom:=EnsureRange(FZoom*Power(Factor,Steps),0.1,8.0)
+  else FZoom:=EnsureRange(FZoom*Power(Factor,Steps),0.4,2.5);FrameCamera;
 end;
 function TProfessorControl.DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean;
 begin
@@ -402,6 +450,6 @@ begin
   if HandleAllocated then DestroyHandle;
 end;
 procedure TProfessorView.ResetView(Sender: TObject);
-begin FZoom := 1; FrameCamera; end;
+begin FZoom:=1;FOrbitYaw:=0;FOrbitPitch:=0;FCameraRoll:=0;FCameraPan:=Vector3(0,0,0);FrameCamera;end;
 
 end.

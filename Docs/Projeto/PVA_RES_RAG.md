@@ -6,6 +6,8 @@
 **Repositório:** [marcelomaurin/Assistente](https://github.com/marcelomaurin/Assistente)  
 **Escopo:** aprimorar o fluxo existente; não criar outro formato de apresentação nem outro programa.
 
+Atualização de validação em 24/10/2026: o digest agora identifica o PVA completo, inclusive mídias; a atualização confere esse digest mesmo quando tamanho e timestamp não mudam. Erros retiram a entrada afetada do catálogo sem apagar arquivos do usuário. Há regressões para corrupção com metadados preservados e alteração apenas de mídia. A proposta de experiência do editor e a serialização transacional do par continuam sendo objetivos de projeto. Veja o [relatório](../VALIDACAO_2026-10-24.md).
+
 ## 1. Objetivo
 
 Estabelecer uma regra de arquitetura obrigatória:

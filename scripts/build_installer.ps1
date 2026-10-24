@@ -1,10 +1,11 @@
 param(
-    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.213',
-    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0213',
+    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.214',
+    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0214',
     [string]$Compiler = 'C:\Program Files\Inno Setup 7\ISCC.exe',
     [string]$Executable = '',
     [string]$Editor = '',
     [string]$Tool = '',
+    [string]$MotionEditor = '',
     [string]$CastleLicenses = '',
     [string]$Castle = $env:CASTLE_ENGINE_PATH,
     [string]$ChatGPT = ''
@@ -14,6 +15,7 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Executable) { $Executable = Join-Path $root ('build\presentations-' + $BuildCode + '\assistente.exe') }
 if (-not $Editor) { $Editor = Join-Path $root ('build\presentations-' + $BuildCode + '\presentation_editor.exe') }
 if (-not $Tool) { $Tool = Join-Path $root ('build\presentations-' + $BuildCode + '\pva_tool.exe') }
+if (-not $MotionEditor) { $MotionEditor = Join-Path $root ('build\presentations-' + $BuildCode + '\motion_editor.exe') }
 if (-not $ChatGPT) {
     $ChatGPT = Join-Path $root '.deps\chatgpt-integration-baseline'
     if (-not (Test-Path -LiteralPath $ChatGPT)) { $ChatGPT = Join-Path $root '..\CHATGPT' }
@@ -32,7 +34,7 @@ if (-not (Test-Path -LiteralPath $Compiler)) {
     }
 }
 if (-not (Test-Path -LiteralPath $Compiler)) { throw "Inno Setup ausente: $Compiler" }
-foreach ($binary in @($Executable,$Editor,$Tool)) {
+foreach ($binary in @($Executable,$Editor,$Tool,$MotionEditor)) {
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Compile primeiro: python scripts/build_presentations.py --release --out build/presentations-$BuildCode (ausente: $binary)" }
 }
 $work = Join-Path $root (('build\installer_' + $BuildCode + '\stage-') + [guid]::NewGuid())
@@ -41,6 +43,7 @@ New-Item -ItemType Directory -Force -Path $payload,(Join-Path $payload 'docs'),(
 Copy-Item -LiteralPath $Executable -Destination (Join-Path $payload 'assistente.exe')
 Copy-Item -LiteralPath $Editor -Destination (Join-Path $payload 'presentation_editor.exe')
 Copy-Item -LiteralPath $Tool -Destination (Join-Path $payload 'pva_tool.exe')
+Copy-Item -LiteralPath $MotionEditor -Destination (Join-Path $payload 'motion_editor.exe')
 Copy-Item -LiteralPath (Join-Path $root 'AVATARES') -Destination $payload -Recurse
 Copy-Item -LiteralPath (Join-Path $root 'runtime\WebView2\1.0.4314.35\x86\WebView2Loader.dll') -Destination $payload
 Copy-Item -LiteralPath (Join-Path $root 'runtime\WebView2\1.0.4314.35\LICENSE.txt') -Destination (Join-Path $payload 'LICENSES\WebView2.txt')
@@ -78,6 +81,12 @@ $info = [ordered]@{
     executable_sha256 = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash.ToLowerInvariant()
     editor_sha256 = (Get-FileHash -LiteralPath $Editor -Algorithm SHA256).Hash.ToLowerInvariant()
     tool_sha256 = (Get-FileHash -LiteralPath $Tool -Algorithm SHA256).Hash.ToLowerInvariant()
+    motion_editor_sha256 = (Get-FileHash -LiteralPath $MotionEditor -Algorithm SHA256).Hash.ToLowerInvariant()
+    tag_editor_required = $true
+    tag_editor_executable = 'presentation_editor.exe'
+    motion_editor_stage = 'preview'
+    motion_format_versions = @(1,2)
+    motion_editor_theme = 'MultiCNC/MultiSuite'
     source_url = 'https://github.com/marcelomaurin/Assistente'
     chatgpt_source = 'https://github.com/marcelomaurin/CHATGPT/tree/3c845b998c7c631c0608c12b766a04b39da13be1'
     castle_source = 'https://github.com/castle-engine/castle-engine/tree/6a433378a8cc7117f5deccbec2fb70a42fdb98f3'
@@ -93,10 +102,13 @@ foreach ($file in Get-ChildItem -LiteralPath $payload -File -Recurse | Sort-Obje
     $records += [ordered]@{path=$relative; size=$file.Length; sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
 }
 $log = Join-Path $root ('build\installer_' + $BuildCode + '\compile.log')
-& $Compiler ('/DMyAppVersion=' + $Version) ('/DSetupCode=' + $BuildCode) ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
+$compileOutput = Join-Path $work 'output'
+New-Item -ItemType Directory -Path $compileOutput | Out-Null
+& $Compiler ('/O' + $compileOutput) ('/DMyAppVersion=' + $Version) ('/DSetupCode=' + $BuildCode) ('/DPackageDir=' + $payload) ('/DRepositoryDir=' + $root) (Join-Path $root 'src\assistente.iss') 2>&1 | Tee-Object -FilePath $log
 if ($LASTEXITCODE -ne 0) { throw "Falha no Inno Setup. Consulte $log" }
 $setupName = 'setup_assistente_' + $BuildCode
 $setup = Join-Path $root ('bin\' + $setupName + '.exe')
+Move-Item -LiteralPath (Join-Path $compileOutput ($setupName + '.exe')) -Destination $setup -Force
 $manifest = [ordered]@{schema=1; version=$Version; source_commit=$revision; platform='i386-win32'
     installer=[ordered]@{file=($setupName + '.exe');size=(Get-Item -LiteralPath $setup).Length;sha256=(Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant()}
     files=$records}

@@ -7,7 +7,7 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
 | [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
-| [Instalador 0.200](INSTALACAO_0200.md) | Assistente e editor, instalação e validação do pacote atual |
+| [Instalador 0.214](INSTALACAO_0214.md) | Assistente, apresentações e prévia do Editor de Movimentos |
 | [Guia de comandos](guia-comandos-assistente.md) | Blocos, eventos futuros, avatar, voz, mídias e comandos de entrada |
 | [Manual do usuário](ManualUsuario/README.md) | Instalação, primeiro uso, conversa, voz, avatar, vídeo e integração |
 
@@ -35,3 +35,9 @@ As versões são independentes: versão do instalador, versão artística do ava
 Editor Lazarus independente, pacote único com roteiro e mídias, geração de gestos por IA e execução no Assistente com pausa/retomada.
 
 Consulte o [manual do editor](editor-apresentacoes.md), o [catálogo de tags](tags-apresentacoes.md), o [formato PVA](formato-pva.md) e o [status de conclusão](plano-conclusao-editor-apresentacoes.md).
+
+A revisão pós-integração, os programas recompilados e os limites dos testes estão no [relatório de 24/10/2026](VALIDACAO_2026-10-24.md).
+
+Consulte o [guia do Editor de Movimentos (prévia)](editor-movimentos.md).
+
+A revisão com poses XYZ, vistas CAD e padrão visual MultiCNC está descrita na [validação do editor 3D](VALIDACAO_EDITOR_3D_2026-10-24.md).

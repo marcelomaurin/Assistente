@@ -3,7 +3,7 @@ program presentation_rag_tests;
 uses Classes, SysUtils, Windows, presentation_rag, presentation_package;
 var Root,Published,Response,Path,Digest,Prompt,Old: string;
   Index: TPresentationRAG; Monitor: TPresentationRAGMonitor; P: TPVAPackage;
-  Stream: TMemoryStream; Started: QWord;
+  Stream,OriginalBytes:TMemoryStream; Started: QWord;Stamp:TFileTime;Handle:THandle;
 procedure Check(B: Boolean; const E: string);
 begin if not B then raise Exception.Create(E);end;
 procedure Rejected(const Value: string);
@@ -58,9 +58,32 @@ begin
       except on E: Exception do Check(Pos('mudou',E.Message)>0,'stale package guard');end;
       Index.Refresh;Check(ReadUTF8(ChangeFileExt(Published,'.res'))='Conteudo atualizado','replacement not reindexed');
       Check(PublishPresentation(Published)=Published,'publish in place');
+      // Same-size corruption with the exact timestamp must invalidate the cached entry.
+      Handle:=CreateFileW(PWideChar(UTF8Decode(Published)),FILE_READ_ATTRIBUTES,FILE_SHARE_READ,nil,OPEN_EXISTING,0,0);
+      Check(Handle<>INVALID_HANDLE_VALUE,'Cannot read timestamp');
+      try Check(GetFileTime(Handle,nil,nil,@Stamp),'Cannot get timestamp');finally CloseHandle(Handle);end;
+      OriginalBytes:=TMemoryStream.Create;Stream:=TMemoryStream.Create;
+      try
+        OriginalBytes.LoadFromFile(Published);Stream.Size:=OriginalBytes.Size;FillChar(Stream.Memory^,Stream.Size,0);Stream.SaveToFile(Published);
+        Handle:=CreateFileW(PWideChar(UTF8Decode(Published)),FILE_WRITE_ATTRIBUTES,FILE_SHARE_READ,nil,OPEN_EXISTING,0,0);
+        Check(Handle<>INVALID_HANDLE_VALUE,'Cannot restore timestamp');
+        try Check(SetFileTime(Handle,nil,nil,@Stamp),'Cannot set timestamp');finally CloseHandle(Handle);end;
+        Index.Refresh;Check(Index.Count=1,'Same-size same-timestamp corrupt package stayed eligible');
+        OriginalBytes.SaveToFile(Published);Index.Refresh;Check(Index.Count=2,'Repaired package was not recovered');
+      finally Stream.Free;OriginalBytes.Free;end;
+      // Changing only media preserves the script but must invalidate the selection digest.
+      ForceDirectories(Root+PathDelim+'assets');WriteUTF8(Root+PathDelim+'assets/check.png','IMAGE-A');
+      P:=TPVAPackage.Create;
+      try P.ExportFile(Published,'[abrir arquivo=assets/check.png]Conteudo atualizado',Root);finally P.Free;end;
+      Index.Refresh;Prompt:=Index.SelectionPrompt('energia solar','');Check(Index.Resolve('{"presentation":"1"}',Path,Digest),'Cannot resolve media fixture');Old:=Digest;
+      WriteUTF8(Root+PathDelim+'assets/check.png','IMAGE-B');P:=TPVAPackage.Create;
+      try P.ExportFile(Published,'[abrir arquivo=assets/check.png]Conteudo atualizado',Root);finally P.Free;end;
+      try ValidateRAGPlayback(Published,Old);raise Exception.Create('media-only replacement accepted');
+      except on E:Exception do Check(Pos('mudou',E.Message)>0,'Media change bypassed package integrity');end;
+      Index.Refresh;Check(ReadUTF8(ChangeFileExt(Published,'.res'))='Conteudo atualizado','Media-only replacement changed RES text');
       SysUtils.DeleteFile(Published);Index.Refresh;Check(Index.Count=1,'removed package still eligible');
       Check(FileExists(ChangeFileExt(Published,'.res')),'unpaired res unexpectedly deleted');
     finally Index.Free;end;
-    WriteLn('PASS: RAG publish/plain UTF8 res, external copy monitor, invalid/orphan packages, strict selection, replacement/removal and stale content guard');
+    WriteLn('PASS: RAG publish/plain UTF8 res, external copy monitor, invalid/orphan packages, strict selection, replacement/removal, same-size timestamp corruption and full-package media integrity');
   except on E: Exception do begin WriteLn(StdErr,E.Message);Halt(1);end;end;
 end.

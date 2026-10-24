@@ -4,6 +4,8 @@
 **Projeto:** Assistente / Editor de Apresentações (Lazarus/Free Pascal + Castle Game Engine).  
 **Objetivo:** permitir que a IA crie animações reutilizáveis, externas ao executável, disparadas pelas **mesmas tags** do sistema atual, sem Blender e sem recompilação.
 
+Este documento registra a proposta anterior à integração. O contrato executável atual está em [Movimentos JSON](movimentos-json.md#integração-de-animações-externas-validada-em-24102026): `animation_file` usa somente o nome do arquivo e receitas internas calibradas têm prioridade. Exemplos de caminhos e estado do repositório abaixo são históricos.
+
 ## 1. Decisões e invariantes
 
 1. **A tag continua sendo o gatilho.** Ex.: `[aceno]` é reconhecida pelo parser atual, consultada no catálogo e executada pelo avatar. Não exigir uma nova sintaxe `[movimento=...]`.
@@ -179,3 +181,7 @@ Fluxo: texto/roteiro → parser de tags existente → `FindMovement` → `animat
 - **JSON externo de quadros-chave:** escolhido para geração por IA, revisão humana, versionamento, validação, hot reload e integração mínima com a arquitetura atual.
 
 **Resultado esperado:** a tag dispara; `AVATARES/movimentos.json` identifica; o arquivo externo descreve os quadros-chave; o player esquelético executa. Nenhuma ferramenta Blender é necessária.
+
+## Revisão XYZ e câmera CAD — 24/10/2026
+
+O parser e o player agora leem `assistente-motion` v1 e v2. A versão 2 acrescenta `axis: "xyz"` e `rotation_deg: [x,y,z]`, com composição `Qz * Qy * Qx` relativa ao repouso e interpolação por quaternions. A versão 1 preserva sua trajetória escalar. O novo editor usa seleção por pontos do rig, anéis de rotação, scrub e o mesmo guard de colisão. Navegação e apresentação visual seguem o projeto MultiCNC, com vistas CAD independentes da pose. Consulte o [guia do editor](editor-movimentos.md) para o contrato e os limites atuais.

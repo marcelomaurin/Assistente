@@ -1,0 +1,29 @@
+{
+  "version": "0.214",
+  "installer_sha256": "99b2671b95abb618d266a3c39012e570a1d1782da3d202ba941cb80de6858c2d",
+  "result": "PASS",
+  "payload_files": 242,
+  "profiles": 11,
+  "checks": [
+    "PASS: official pinned WebView2 Win32 loader and redistribution license packaged",
+    "PASS: required tag editor and tag guide installed without optional tasks; dedicated Start Menu alias retained alongside the presentation editor",
+    "PASS: upgrade replaces the unchanged original catalog with corrected arm aliases",
+    "PASS: unchanged 0.211 catalog upgraded to JSON member trajectories",
+    "PASS: both unchanged 0.212 movement and collision JSON files upgraded to the calibrated paths",
+    "PASS: actual 0.213-to-0.214 upgrade; installed preview passed real avatar selection, XYZ pose, gizmo drag, save/load, scrub, protected playback and CAD camera views",
+    "PASS: all eleven installed avatars are current (Zé Gotinha v5, others v4) and match the validated source models byte for byte",
+    "PASS: actual installer extracted 242 files; all SHA-256 hashes match; eleven avatars; no personal configuration",
+    "PASS: packaged Win32 SSL runtime: OpenSSL 1.1.1j  16 Feb 2021",
+    "PASS: actual installed JSON/rig/profile completed all 53 Ze Gotinha movements independently and in sequence with collision protection active",
+    "SKIP: interactive application-window checks disabled (--no-ui); packaged files and console tools are still verified",
+    "PASS: mixed parser, traversal, joints, AI preservation, SHA256",
+    "PASS: exported",
+    "PASS: valid PVA, 2 files",
+    "PASS: installed PVA tool selftest and block/event example pack/verify",
+    "PASS: reinstall preserved edited external animations and new user-created motion JSON",
+    "PASS: required tag/presentation editor remains installed after upgrade and reinstall",
+    "PASS: reinstall preserved user configuration/history, custom shared JSON movements and application registration",
+    "PASS: uninstall preserved external motion JSON edited or created with the preview editor",
+    "PASS: uninstaller removed application binaries, preserved user files and JSON movements, and did not change registration"
+  ]
+}

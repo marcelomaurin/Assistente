@@ -28,7 +28,7 @@ type
     FProcess: TProcess;
     FLastError: string;
     FPlaying: Boolean;
-    {$IFDEF MSWINDOWS}FDeviceID: MCIDEVICEID;{$ENDIF}
+    {$IFDEF MSWINDOWS}FDeviceID: MCIDEVICEID;FPlaybackCopy:UnicodeString;{$ENDIF}
     FOnPlaybackBuffer: TAIPlaybackBufferEvent;
     FOnPlaybackStart: TAIPlaybackFileEvent;
     FOnPlaybackStop: TNotifyEvent;
@@ -173,6 +173,7 @@ var
   PlayParams: TMCI_PLAY_PARMS;
   FileNameW, DeviceTypeW: UnicodeString;
   Ret: MCIERROR;
+  ShortName:UnicodeString;N:DWORD;TempPath,TempName:array[0..MAX_PATH] of WideChar;
   {$ENDIF}
 begin
   Result := False;
@@ -192,6 +193,19 @@ begin
   { Each player owns its device. No shared alias or process-wide
     sndPlaySound: status queries observe actual completion of this file. }
   FileNameW := UTF8Decode(ExpandFileName(AFileName));
+  // MCI drivers can reject paths longer than 127 characters with error 304.
+  SetLength(ShortName,32768);N:=GetShortPathNameW(PWideChar(FileNameW),PWideChar(ShortName),Length(ShortName));
+  if (N>0) and (N<DWORD(Length(ShortName))) then begin SetLength(ShortName,N);FileNameW:=ShortName;end;
+  if Length(FileNameW)>127 then begin
+    if (GetTempPathW(MAX_PATH,@TempPath[0])=0) or (GetTempFileNameW(@TempPath[0],'asp',0,@TempName[0])=0) then begin
+      FLastError:='Falha ao criar copia temporaria para audio: '+SysErrorMessage(GetLastError);Exit;
+    end;
+    FPlaybackCopy:=PWideChar(@TempName[0]);
+    if not CopyFileW(PWideChar(FileNameW),PWideChar(FPlaybackCopy),False) then begin
+      FLastError:='Falha ao preparar audio: '+SysErrorMessage(GetLastError);Stop;Exit;
+    end;
+    FileNameW:=FPlaybackCopy;
+  end;
   if Ext = '.mp3' then DeviceTypeW := 'mpegvideo'
   else DeviceTypeW := 'waveaudio';
   FillChar(OpenParams, SizeOf(OpenParams), 0);
@@ -207,8 +221,9 @@ begin
     Result := Ret = 0;
     if not Result then Stop;
   end;
-  if not Result then
-    FLastError := Format('Falha ao reproduzir audio via MCI (Erro %d)', [Ret]);
+  if not Result then begin
+    Stop;FLastError := Format('Falha ao reproduzir audio via MCI (Erro %d)', [Ret]);
+  end;
   {$ELSE}
   FProcess := TProcess.Create(nil);
   if Ext = '.mp3' then
@@ -287,6 +302,7 @@ begin
     mciSendCommandW(FDeviceID, MCI_CLOSE, MCI_WAIT, 0);
     FDeviceID := 0;
   end;
+  if FPlaybackCopy<>'' then begin DeleteFileW(PWideChar(FPlaybackCopy));FPlaybackCopy:='';end;
   {$ELSE}
   if Assigned(FProcess) then
   begin

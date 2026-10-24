@@ -1,7 +1,7 @@
 program professor_audio_smoke;
 {$mode objfpc}{$H+}
 uses Interfaces, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType,
-  main, setmain, professor_view;
+  main, setmain, professor_view, professor_state, presentation_joints;
 type
   TRunner=class(TComponent)
   public
@@ -40,8 +40,8 @@ var Key: Word;
 begin
   try
     Check(GetTickCount64-Started<10000,'UI audio test stalled');
-    SawTalking:=SawTalking or (Pos('talking',View.CurrentAnimation)=1);
-    SawThinking:=SawThinking or (Pos('thinking',View.CurrentAnimation)=1);
+    SawTalking:=SawTalking or ((View.State=psSpeaking) and TPresentationScene(View.Scene).Speaking);
+    SawThinking:=SawThinking or (View.State=psThinking);
     if frmmain.ApresentandoResposta then
     begin
       Check(not frmmain.edPergunta.Enabled,'Input enabled during speech');
@@ -53,11 +53,11 @@ begin
       Exit;
     end;
     Check(frmmain.edPergunta.Enabled and frmmain.btConfig.Enabled,'Input did not recover');
-    Check(Pos('talking',View.CurrentAnimation)<>1,'Avatar kept talking after job completion');
+    Check(not TPresentationScene(View.Scene).Speaking,'Avatar kept talking after job completion');
     case Stage of
       0: begin
-        Check(SawTalking and SawThinking,'Missing preparation or talking animation');
-        WriteLn('PASS: remote TTS drives actual thinking/talking clips and input recovers');
+        Check(SawTalking and SawThinking,'Missing preparation state or speech mouth activity');
+        WriteLn('PASS: remote TTS drives preparation and speech mouth without replacing a JSON gesture; input recovers');
         BeginStage(1,'[sorriso] fail');
       end;
       1: begin
@@ -67,7 +67,7 @@ begin
         BeginStage(2,'[levantar mao direita] cancel');
       end;
       3: begin
-        Check(Pos('right_hand_up',View.CurrentAnimation)=0,'Cancel left hand raised');
+        Check(not TPresentationScene(View.Scene).TimelineHasPose,'Cancel left a JSON pose active');
         WriteLn('PASS: Escape during remote playback clears pose and restores input');
         Timer.Enabled:=False;Application.Terminate;
       end;

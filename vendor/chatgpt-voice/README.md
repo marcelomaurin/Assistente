@@ -40,3 +40,7 @@ são regravados. Arquivos truncados ou inválidos são rejeitados.
 Regressões: `tests/run_wave_finalize_checks.py` e
 `tests/run_remote_speech_checks.py`, incluindo reprodução de fixture silenciosa,
 sincronização dos gestos, cancelamento e limpeza dos arquivos temporários.
+
+## Caminhos longos no Windows
+
+O driver MCI pode rejeitar caminhos acima de 127 caracteres com erro 304. O adaptador tenta o nome curto do Windows; se o caminho continuar longo, cria uma cópia temporária própria e a libera ao terminar, cancelar, destruir o player ou falhar a abertura. O arquivo original é preservado. `tests/run_audio_path_checks.py` valida um WAV silencioso com caminho acima de 200 caracteres. Essa adaptação permanece nesta cópia local da dependência.

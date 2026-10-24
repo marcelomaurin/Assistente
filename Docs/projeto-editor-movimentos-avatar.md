@@ -1,7 +1,7 @@
 # Editor de Movimentos do Avatar — projeto de implementação
 
 ## Objetivo
-Criar aplicativo desktop independente em Lazarus/Free Pascal para abrir o mesmo avatar 3D do Professor Virtual, manipular articulações com mouse e controles numéricos, construir uma linha do tempo de quadros-chave e salvar animações no formato `assistente-motion` versão 1, sem recompilar o Assistente.
+Criar aplicativo desktop independente em Lazarus/Free Pascal para abrir o mesmo avatar 3D do Professor Virtual, manipular articulações com mouse e controles numéricos, construir uma linha do tempo de quadros-chave e salvar animações no formato `assistente-motion` versões 1 e 2, sem recompilar o Assistente.
 
 ## Integração com o repositório
 - Projeto: `tools/motion_editor/motion_editor.lpi` e `motion_editor.lpr`.
@@ -69,4 +69,10 @@ Criar aplicativo desktop independente em Lazarus/Free Pascal para abrir o mesmo 
 - O aplicativo deve funcionar sem Blender e sem recompilação para adicionar animações.
 
 ## Estado
-Esta especificação inicia o projeto; **a interface 3D, compilação e testes ainda não estão implementados**. A branch de desenvolvimento não altera a main.
+Esta especificação descreve o objetivo completo. Em 24/10/2026 o protótipo integrado compila e oferece prévia pelo motor compartilhado e gravação validada com backup. A revisão 3D acrescenta manipulação direta dos membros, poses XYZ e scrub. Timeline com trilhas/curvas, IK e undo/redo continuam pendentes. Consulte o [estado atualizado](EDITOR_MOVIMENTOS_AVATAR_WORK.md) e o [relatório de validação](VALIDACAO_2026-10-24.md).
+
+## Revisão 3D de 24/10/2026
+
+Implementados seleção por pontos projetados no avatar e pela lista de membros do rig, manipulação com `TCastleTransformManipulate` em rotação, câmera orbital, campos XYZ simultâneos e scrub visual com proteção de colisão. `src/motion_editor_view.pas` adapta os controles ao esqueleto carregado, convertendo rotação mundial para rotação local relativa ao repouso; os filhos acompanham a hierarquia original. O modo de edição mantém a pose estática e impede animação de repouso de sobrescrevê-la.
+
+O contrato v1 permanece compatível. O contrato v2 usa `axis: "xyz"` e `rotation_deg: [x,y,z]`; veja o [guia atualizado](editor-movimentos.md). Esta é edição FK por rotação. IK, picker corporal desenhado, undo/redo, exclusão de quadros e cadastro de tags continuam pendentes. A lista inclui os dedos suportados pelo rig; os pontos do viewport mostram os membros principais para reduzir sobreposição.

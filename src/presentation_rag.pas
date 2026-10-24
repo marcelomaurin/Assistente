@@ -45,22 +45,34 @@ begin
   end;
   Result:=IncludeTrailingPathDelimiter(ExpandFileName(Result))+'RAG';
 end;
-function TextDigest(const Text: string): string;
-var M: TMemoryStream;
+function StreamDigest(Source:TStream):string;
+var Memory:TMemoryStream;
 begin
-  M:=TMemoryStream.Create;
+  Memory:=TMemoryStream.Create;
+  try Source.Position:=0;Memory.CopyFrom(Source,0);Result:=PresentationSHA256(Memory);
+  finally Memory.Free;end;
+end;
+function PackageDigest(const FileName:string):string;
+var Source:TFileStream;
+begin
+  Source:=TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
   try
-    if Text<>'' then M.WriteBuffer(Text[1],Length(Text));
-    Result:=PresentationSHA256(M);
-  finally M.Free;end;
+    if Source.Size>PVAMaxTotal then raise Exception.Create('Pacote excede o limite de tamanho');
+    Result:=StreamDigest(Source);
+  finally Source.Free;end;
 end;
 function PlainPackage(const FileName: string; out Digest: string): string;
-var P: TPVAPackage; S: TAvatarScript; Flow: TFlowProgram;
+var P: TPVAPackage; S: TAvatarScript; Flow: TFlowProgram;Source:TFileStream;
 begin
-  P:=TPVAPackage.Create;
-  try P.Load(FileName);Digest:=TextDigest(P.Script);Flow:=TFlowProgram.Create(P.Script);
-    try S:=ParseAvatarScript(Flow.WithoutFlowTags,4096);Result:=S.PlainText;finally Flow.Free;end;
-  finally P.Free;end;
+  Source:=TFileStream.Create(FileName,fmOpenRead or fmShareDenyWrite);
+  try
+    if Source.Size>PVAMaxTotal then raise Exception.Create('Pacote excede o limite de tamanho');
+    P:=TPVAPackage.Create;
+    try
+      P.Load(FileName);Digest:=StreamDigest(Source);Flow:=TFlowProgram.Create(P.Script);
+      try S:=ParseAvatarScript(Flow.WithoutFlowTags,4096);Result:=S.PlainText;finally Flow.Free;end;
+    finally P.Free;end;
+  finally Source.Free;end;
 end;
 function TemporarySibling(const FileName: string): string;
 var G: TGUID;
@@ -148,10 +160,10 @@ begin
       try
         if FindFirst(P,faAnyFile,R)<>0 then Continue;
         SysUtils.FindClose(R);
-        Stamp:=FileTimestamp(P);
+        Stamp:=FileTimestamp(P);Digest:=PackageDigest(P);
         if J>=0 then begin
           E:=TPresentationRAGEntry(FEntries.Objects[J]);
-          if (E.Age=Stamp) and (E.Size=R.Size) then begin
+          if (E.Age=Stamp) and (E.Size=R.Size) and (E.Digest=Digest) then begin
             WriteIndex(ChangeFileExt(P,'.res'),E.Text);Continue;
           end;
           E.Free;FEntries.Delete(J);E:=nil;
@@ -164,7 +176,11 @@ begin
         E.Digest:=Digest;E.Age:=Stamp;E.Size:=R.Size;
         FEntries.AddObject(Names[I],E);E:=nil;
       except
-        on Error: Exception do FErrors.Add(Names[I]+': '+Error.Message);
+        on Error: Exception do begin
+          J:=FEntries.IndexOf(Names[I]);
+          if J>=0 then begin FEntries.Objects[J].Free;FEntries.Delete(J);end;
+          FErrors.Add(Names[I]+': '+Error.Message);
+        end;
       end;
     end;
     FEntries.Sort;

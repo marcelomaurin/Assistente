@@ -17,8 +17,8 @@ import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--build-code',default='0213')
-parser.add_argument('--version',default='0.213')
+parser.add_argument('--build-code',default='0214')
+parser.add_argument('--version',default='0.214')
 parser.add_argument('--no-ui',action='store_true',help='Validate extraction, binaries, configuration preservation and uninstall without opening application windows')
 OPTIONS=parser.parse_args()
 assert len(OPTIONS.build_code)==4 and OPTIONS.build_code.isdigit()
@@ -65,6 +65,17 @@ def main():
         assert hashlib.sha256((INSTALL/'WebView2Loader.dll').read_bytes()).hexdigest()==webview_lock['files']['x86/WebView2Loader.dll'],'Incorrect WebView2 loader'
         assert (INSTALL/'LICENSES/WebView2.txt').is_file(),'WebView2 license missing'
         REPORT.append('PASS: official pinned WebView2 Win32 loader and redistribution license packaged')
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 214):
+        info=json.loads((INSTALL/'package-info.json').read_text(encoding='utf-8-sig'))
+        assert info['tag_editor_required'] is True and info['tag_editor_executable']=='presentation_editor.exe'
+        tag_editor=INSTALL/info['tag_editor_executable']
+        assert tag_editor.is_file(),'Required tag editor missing with no optional tasks selected'
+        assert hashlib.sha256(tag_editor.read_bytes()).hexdigest()==info['editor_sha256'],'Required tag editor differs from validated build'
+        assert (INSTALL/'docs/tags-apresentacoes.md').is_file()
+        recipe=(ROOT/'src/assistente.iss').read_text(encoding='utf-8')
+        tag_alias=next(line for line in recipe.splitlines() if line.startswith('Name: "{autoprograms}\\Editor de Tags do Assistente";'))
+        assert 'presentation_editor.exe' in tag_alias and 'Tasks:' not in tag_alias and 'Components:' not in tag_alias
+        REPORT.append('PASS: required tag editor and tag guide installed without optional tasks; dedicated Start Menu alias retained alongside the presentation editor')
     catalog=json.loads((INSTALL/'AVATARES/movimentos.json').read_text(encoding='utf-8-sig'))
     # An unchanged catalog from the first 0.210 package must receive fixed aliases.
     catalog_path=INSTALL/'AVATARES/movimentos.json'
@@ -86,6 +97,28 @@ def main():
         assert catalog_path.read_bytes()==(ROOT/'AVATARES/movimentos.json').read_bytes(),'0.212 movement catalog did not upgrade'
         assert collision_path.read_bytes()==(ROOT/'AVATARES/colisoes.json').read_bytes(),'0.212 collision profile did not upgrade'
         REPORT.append('PASS: both unchanged 0.212 movement and collision JSON files upgraded to the calibrated paths')
+
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 214):
+        previous_setup=ROOT/'bin/setup_assistente_0213.exe'
+        previous_manifest=json.loads((ROOT/'bin/setup_assistente_0213.manifest.json').read_text(encoding='utf-8-sig'))
+        assert hashlib.sha256(previous_setup.read_bytes()).hexdigest()==previous_manifest['installer']['sha256']
+        # Test the real previous installer, not a synthetic default fixture.
+        catalog_path.unlink();(INSTALL/'AVATARES/colisoes.json').unlink()
+        run([previous_setup,*args[1:-1],f'/LOG={TEST / "upgrade-from-0213.log"}'])
+        previous_hash=next(r['sha256'] for r in previous_manifest['files'] if r['path']=='AVATARES/movimentos.json')
+        assert hashlib.sha256(catalog_path.read_bytes()).hexdigest()==previous_hash
+        run(args)
+        assert catalog_path.read_bytes()==(ROOT/'AVATARES/movimentos.json').read_bytes(),'0.213 default catalog did not upgrade'
+        info=json.loads((INSTALL/'package-info.json').read_text(encoding='utf-8-sig'))
+        assert info['version']==OPTIONS.version and info['motion_editor_stage']=='preview'
+        assert hashlib.sha256((INSTALL/'motion_editor.exe').read_bytes()).hexdigest()==info['motion_editor_sha256']
+        assert (INSTALL/'docs/editor-movimentos.md').is_file()
+        assert info['motion_format_versions']==[1,2] and info['motion_editor_theme']=='MultiCNC/MultiSuite'
+        # Preview exercises the installed executable, installed rig and installed JSON.
+        preview_env=dict(os.environ,ASSISTENTE_CONFIG_DIR=str(TEST/'motion-editor-config'),ASSISTENTE_MOVEMENTS_FILE=str(INSTALL/'AVATARES/movimentos.json'))
+        run([INSTALL/'motion_editor.exe','--smoke-test'],cwd=INSTALL,env=preview_env,timeout=120)
+        assert (INSTALL/'motion-editor-smoke-result.txt').read_text(encoding='utf-8').startswith('PASS:')
+        REPORT.append('PASS: actual 0.213-to-0.214 upgrade; installed preview passed real avatar selection, XYZ pose, gizmo drag, save/load, scrub, protected playback and CAD camera views')
 
     models=list((INSTALL/'AVATARES').glob('*/modelo.gltf'))
     assert len(models)==11,'Missing bundled models'
@@ -185,11 +218,24 @@ def main():
     collision_path=INSTALL/'AVATARES/colisoes.json'
     collision_text=collision_path.read_text(encoding='utf-8')+'\n'
     collision_path.write_text(collision_text,encoding='utf-8')
+    external_path=INSTALL/'AVATARES/movimentos/aceno.json'
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 214):
+        external=json.loads(external_path.read_text(encoding='utf-8'));external['name']='Aceno personalizado do usuario'
+        external_text=json.dumps(external,ensure_ascii=False,indent=2)+'\n';external_path.write_text(external_text,encoding='utf-8')
+        new_external=external_path.parent/'gesto-pessoal.json';new_external.write_text(external_text,encoding='utf-8')
     run(args)
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 214):
+        assert external_path.read_text(encoding='utf-8')==external_text,'Reinstall overwrote edited external motion'
+        assert new_external.read_text(encoding='utf-8')==external_text,'Reinstall overwrote a new external motion'
+        REPORT.append('PASS: reinstall preserved edited external animations and new user-created motion JSON')
     assert collision_path.read_text(encoding='utf-8')==collision_text,'Reinstall overwrote collision configuration'
     assert catalog_path.read_text(encoding='utf-8')==catalog_text,'Reinstall overwrote custom JSON movements'
     for name,text in sentinels.items():assert (INSTALL/name).read_text(encoding='utf-8')==text,name
     assert registry_state()==before
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 214):
+        assert (INSTALL/'presentation_editor.exe').is_file(),'Reinstall removed required tag editor'
+        assert hashlib.sha256((INSTALL/'presentation_editor.exe').read_bytes()).hexdigest()==info['editor_sha256']
+        REPORT.append('PASS: required tag/presentation editor remains installed after upgrade and reinstall')
     REPORT.append('PASS: reinstall preserved user configuration/history, custom shared JSON movements and application registration')
 
     uninstallers=list(INSTALL.glob('unins*.exe'))
@@ -198,9 +244,14 @@ def main():
     deadline=time.monotonic()+15
     while (INSTALL/'assistente.exe').exists() and time.monotonic()<deadline:time.sleep(.2)
     for record in manifest['files']:
-        if record['path'] not in ['AVATARES/movimentos.json','AVATARES/colisoes.json']:assert not (INSTALL/record['path']).exists(),record['path']
+        preserved=record['path'] in ['AVATARES/movimentos.json','AVATARES/colisoes.json'] or (tuple(map(int, OPTIONS.version.split('.'))) >= (0,214) and record['path'].startswith('AVATARES/movimentos/'))
+        if not preserved:assert not (INSTALL/record['path']).exists(),record['path']
     assert catalog_path.read_text(encoding='utf-8')==catalog_text,'Uninstall deleted custom movements'
     for name,text in sentinels.items():assert (INSTALL/name).read_text(encoding='utf-8')==text,name
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0,214):
+        assert external_path.read_text(encoding='utf-8')==external_text,'Uninstall deleted edited external animation'
+        assert new_external.read_text(encoding='utf-8')==external_text,'Uninstall deleted new user animation'
+        REPORT.append('PASS: uninstall preserved external motion JSON edited or created with the preview editor')
     assert registry_state()==before
     REPORT.append('PASS: uninstaller removed application binaries, preserved user files and JSON movements, and did not change registration')
     result={'version':OPTIONS.version,'installer_sha256':manifest['installer']['sha256'],'result':'PASS',

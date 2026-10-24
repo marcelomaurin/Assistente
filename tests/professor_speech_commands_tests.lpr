@@ -1,12 +1,20 @@
 program professor_speech_commands_tests;
 {$mode objfpc}{$H+}
-uses Classes, SysUtils, reception_core, professor_commands;
+uses Classes, SysUtils, reception_core, professor_commands, movement_catalog;
 const Expected: array[0..3] of TAvatarCommand = (acSmile,acApplause,acRaiseRightHand,acLowerRightHand);
 var Config: TReceptionConfig; Job: TReceptionJob; Command: TAvatarCommand;
-  StartTime,LastTime: QWord; Count: Integer;
+  StartTime,LastTime,Budget: QWord; Count,I: Integer;M:TMovementDefinition;
 procedure Check(Condition: Boolean; const Message: string);
 begin if not Condition then raise Exception.Create(Message);end;
 begin
+  Budget:=5000; // Silent text segments and scheduler overhead, plus actual catalog movements below.
+  for I:=Low(Expected) to High(Expected) do begin
+    Check(FindMovement(AvatarCommandName(Expected[I]),M),'Missing command movement');
+    if Length(M.Timeline.Tracks)>0 then begin
+      Inc(Budget,M.Timeline.DurationMS+M.Timeline.TransitionMS);
+      if M.Timeline.ReturnToStart then Inc(Budget,M.Timeline.ReturnMS);
+    end else if M.Mode='gesture' then Inc(Budget,M.Duration) else Inc(Budget,M.Transition);
+  end;
   Config:=Default(TReceptionConfig);Config.EnableAvatarCommands:=True;Config.SilentPresentation:=True;
   Job:=TReceptionJob.Create(rjSpeak,Config,'[sorriso] Oi [aplausos] Obrigado '+
     '[levantar mão direita] Pergunte [abaixe mao direita]','','test');
@@ -14,7 +22,7 @@ begin
   try
     while not Job.Done do
     begin
-      Check(GetTickCount64-StartTime<6000,'Script stalled');
+      Check(GetTickCount64-StartTime<Budget,'Script stalled');
       Check(not Job.PlaybackActive,'Silent test attempted audio');
       if Job.TakeAvatarCommand(Command) then
       begin

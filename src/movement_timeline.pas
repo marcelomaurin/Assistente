@@ -7,11 +7,11 @@ type
   TMQuaternion=array[0..3] of Double;
   TMPose=record Rotation:TMQuaternion;Position,Scale:TMVector;end;
   TMPoseArray=array of TMPose;
-  TMKey=record TimeMS:Integer;Rotation:TMQuaternion;Position,Scale:TMVector;end;
+  TMKey=record TimeMS:Integer;Angle:Double;Rotation:TMQuaternion;Position,Scale:TMVector;end;
   TMKeys=array of TMKey;
-  TMTrack=record Bone:string;StartMS,DurationMS:Integer;Keys:TMKeys;HasRotation,HasPosition,HasScale,CurrentRotation,CurrentPosition,CurrentScale:Boolean;end;
+  TMTrack=record Bone:string;ScalarAxis:Char;StartMS,DurationMS:Integer;Keys:TMKeys;HasRotation,HasPosition,HasScale,CurrentRotation,CurrentPosition,CurrentScale:Boolean;end;
   TMTracks=array of TMTrack;
-  TMovementTimeline=record Tracks:TMTracks;DurationMS,TransitionMS,ReturnMS:Integer;Smooth,ReturnToStart:Boolean;end;
+  TMovementTimeline=record Tracks:TMTracks;DurationMS,TransitionMS,ReturnMS:Integer;Smooth,ReturnToStart,Looping:Boolean;end;
   TMRigNode=record Name:string;Parent:Integer;Rest:TMPose;end;
   TMRigNodes=array of TMRigNode;
   TMCapsule=record ID,StartBone,EndBone:string;A,B:Integer;Radius,StartFraction,EndFraction:Double;StartOffset,EndOffset:TMVector;end;
@@ -24,7 +24,7 @@ type
     FTimeline:TMovementTimeline;FIndexes:array of Integer;
     FElapsed:Double;FHasPose,FRunning:Boolean;FHeight,FMargin:Double;
     FBlocked:string;FBlocks:Integer;FIgnore,FTranslations:TStringList;
-    function Worlds(const Pose:TMPoseArray):TMWorldArray;
+
     procedure Capsule(const C:TMCapsule;const W:TMWorldArray;out A,B:TMVector);
     function Clearance(const Pose:TMPoseArray;out Pair:string):Double;
     function MotionBound(const A,B:TMPoseArray;Index:Integer;Offset:Double=0):Double;
@@ -37,6 +37,8 @@ type
     constructor Create;
     destructor Destroy;override;
     procedure LoadRig(const FileName,CollisionFile:string;Height:Double);
+    function Worlds(const Pose:TMPoseArray):TMWorldArray;
+    function NodeParent(Index:Integer):Integer;
     function NodeIndex(const Name:string):Integer;
     function NodeCount:Integer;
     function NodeName(Index:Integer):string;
@@ -61,7 +63,35 @@ procedure MToAxisAngle(const Q:TMQuaternion;out X,Y,Z,Angle:Double);
 function MInterpolate(const A,B:TMQuaternion;T:Double):TMQuaternion;
 function MVector(X,Y,Z:Double):TMVector;
 function MSegmentDistance(const P1,Q1,P2,Q2:TMVector):Double;
+function QMul(const A,B:TMQuaternion):TMQuaternion;
+function MInverse(const Q:TMQuaternion):TMQuaternion;
+function MEuler(const Q:TMQuaternion):TMVector;
 implementation
+function MInverse(const Q:TMQuaternion):TMQuaternion;
+var I:Integer;N:Double;
+begin N:=0;for I:=0 to 3 do N:=N+Sqr(Q[I]);
+  if N<1E-15 then Exit(MQuaternion(0,0,0));
+  for I:=0 to 2 do Result[I]:=-Q[I]/N;Result[3]:=Q[3]/N;end;
+function MEuler(const Q:TMQuaternion):TMVector;
+var S:Double;V:TMVector;I:Integer;
+  function Wrap(A:Double):Double;
+  begin Result:=A;while Result>180 do Result:=Result-360;while Result< -180 do Result:=Result+360;end;
+begin
+  S:=EnsureRange(2*(Q[3]*Q[1]-Q[2]*Q[0]),-1.0,1.0);
+  Result[1]:=RadToDeg(ArcSin(S));
+  if Abs(S)>0.99999999 then begin
+    Result[0]:=Wrap(RadToDeg(2*ArcTan2(Q[0],Q[3])))/2;
+    if S>0 then Result[2]:=-Result[0] else Result[2]:=Result[0];
+  end else begin
+    Result[0]:=RadToDeg(ArcTan2(2*(Q[3]*Q[0]+Q[1]*Q[2]),1-2*(Sqr(Q[0])+Sqr(Q[1]))));
+    Result[2]:=RadToDeg(ArcTan2(2*(Q[3]*Q[2]+Q[0]*Q[1]),1-2*(Sqr(Q[1])+Sqr(Q[2]))));
+  end;
+  V:=MVector(Wrap(Result[0]+180),Wrap(180-Result[1]),Wrap(Result[2]+180));
+  if Sqr(V[0])+Sqr(V[1])+Sqr(V[2])+1E-8<Sqr(Result[0])+Sqr(Result[1])+Sqr(Result[2]) then Result:=V;
+  for I:=0 to 2 do if Abs(Result[I])<1E-10 then Result[I]:=0;
+end;
+function TMovementRuntime.NodeParent(Index:Integer):Integer;
+begin Result:=FNodes[Index].Parent;end;
 function MVector(X,Y,Z:Double):TMVector;
 begin Result[0]:=X;Result[1]:=Y;Result[2]:=Z;end;
 function Add(const A,B:TMVector):TMVector;
@@ -427,7 +457,14 @@ begin
     if FTimeline.Smooth then Local:=Local*Local*(3-2*Local);
     N:=FIndexes[I];EntryT:=1;if TimeMS<FTimeline.TransitionMS then EntryT:=TimeMS/FTimeline.TransitionMS;
     if Track.HasRotation then begin
-      Q:=MInterpolate(Track.Keys[J].Rotation,Track.Keys[J+1].Rotation,Local);Q:=QMul(FNodes[N].Rest.Rotation,Q);
+      if Track.ScalarAxis in ['x','y','z'] then begin
+        EntryT:=Track.Keys[J].Angle+(Track.Keys[J+1].Angle-Track.Keys[J].Angle)*Local;
+        case Track.ScalarAxis of
+          'x':Q:=MQuaternion(EntryT,0,0);'y':Q:=MQuaternion(0,EntryT,0);'z':Q:=MQuaternion(0,0,EntryT);
+        end;
+        EntryT:=1;if TimeMS<FTimeline.TransitionMS then EntryT:=TimeMS/FTimeline.TransitionMS;
+      end else Q:=MInterpolate(Track.Keys[J].Rotation,Track.Keys[J+1].Rotation,Local);
+      Q:=QMul(FNodes[N].Rest.Rotation,Q);
       Q:=MInterpolate(FIncoming[N].Rotation,Q,EntryT);
       if FTimeline.ReturnToStart and (ReturnT>0) then Q:=MInterpolate(Q,FIncoming[N].Rotation,ReturnT);Result[N].Rotation:=Q;
     end;
@@ -463,11 +500,13 @@ begin
   Result:=SafeTimelineInterval(A,(A+B)/2,Depth+1,Pair) and SafeTimelineInterval((A+B)/2,B,Depth+1,Pair);
 end;
 procedure TMovementRuntime.Advance(Milliseconds:Double);
-var Limit,Next,Total,Lo,Hi,Mid:Double;Candidate:TMPoseArray;Pair:string;I:Integer;
+var Limit,Next,Total,Lo,Hi,Mid,Remaining:Double;Candidate:TMPoseArray;Pair:string;I:Integer;
 begin
   if not FRunning or (Milliseconds<=0) then Exit;
   Total:=FTimeline.DurationMS+FTimeline.TransitionMS;if FTimeline.ReturnToStart then Total:=Total+FTimeline.ReturnMS;
-  Limit:=Min(Total,FElapsed+Milliseconds);
+  Remaining:=Milliseconds;
+  repeat
+  Limit:=Min(Total,FElapsed+Remaining);Remaining:=Max(0,Remaining-(Limit-FElapsed));
   while FElapsed<Limit-1E-7 do begin
     Next:=NextBoundary(FElapsed,Min(Limit,FElapsed+10));Candidate:=Evaluate(Next);
     if not SafeTimelineInterval(FElapsed,Next,0,Pair) then begin
@@ -477,7 +516,13 @@ begin
     end;
     FCurrent:=Candidate;FElapsed:=Next;
   end;
-  if FElapsed>=Total-1E-7 then FRunning:=False;
+  if FElapsed>=Total-1E-7 then begin
+    if FTimeline.Looping then begin
+      FElapsed:=0;
+      if not Guard(Evaluate(0)) then begin FRunning:=False;Exit;end;
+    end else FRunning:=False;
+  end;
+  until (Remaining<1E-7) or not FRunning;
 end;
 procedure TMovementRuntime.Clear;
 begin FHasPose:=False;FRunning:=False;FElapsed:=0;FBlocked:='';FBlocks:=0;FTimeline:=Default(TMovementTimeline);end;

@@ -1,6 +1,6 @@
 program modern_ui_tests;
 {$mode objfpc}{$H+}{$codepage utf8}
-uses Interfaces, Forms, Classes, SysUtils, Windows, ExtCtrls, Graphics, Controls, StdCtrls,
+uses Interfaces, Forms, FileUtil, Classes, SysUtils, Windows, ExtCtrls, Graphics, Controls, StdCtrls,
   Buttons, SynEdit, Types, fpjson, jsonparser, presentation_editor_ui, professor_view,
   professor_state, professor_commands, movement_catalog, reception_core, X3DNodes, presentation_joints;
 type TRunner=class(TComponent)
@@ -21,7 +21,7 @@ constructor TRunner.Create(AOwner:TComponent);
 var I,FlowButtons:Integer;Edit:TSynEdit;Initial:string;Step:TAvatarScriptStep;
 begin
   inherited;OutDir:=IncludeTrailingPathDelimiter(ExpandFileName(ParamStr(1)));ForceDirectories(OutDir);
-  Original:=MovementCatalogFile;ReloadMovementCatalog(OutDir+'movement-custom.json');
+  Original:=MovementCatalogFile;Check(FileUtil.CopyFile(ExtractFilePath(Original)+'colisoes.json',OutDir+'colisoes.json'),'Cannot copy isolated collision profile');ReloadMovementCatalog(OutDir+'movement-custom.json');
   Editor:=TPresentationEditor.Create(nil);Editor.Show;Edit:=nil;FlowButtons:=0;
   for I:=0 to Editor.ComponentCount-1 do begin
     if Editor.Components[I] is TSynEdit then Edit:=TSynEdit(Editor.Components[I]);
@@ -72,5 +72,6 @@ begin
   except on E:Exception do begin WriteLn('FAIL: '+E.Message);ExitCode:=1;Timer.Enabled:=False;Application.Terminate;end;end;
 end;
 begin
-  Application.Initialize;Runner:=TRunner.Create(nil);Application.Run;Runner.Free;
+  try Application.Initialize;Runner:=TRunner.Create(nil);Application.Run;Runner.Free;
+  except on E:Exception do begin WriteLn(StdErr,'FAIL: '+E.Message);Halt(1);end;end;
 end.

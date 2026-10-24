@@ -93,5 +93,5 @@ def validate(path):
     print('PASS:',path.parent.name,f'{len(GESTURE_CLIPS)} clips; complete catalog, crossed arms, handedness, head, waist, foot, fists, thumb, yawn and eyelids',flush=True)
 
 if __name__=='__main__':
-    profiles=sys.argv[1:] or sorted(p.name for p in (ROOT/'AVATARES').iterdir() if p.is_dir())
+    profiles=sys.argv[1:] or sorted(p.parent.name for p in (ROOT/'AVATARES').glob('*/modelo.gltf'))
     for profile in profiles:validate(ROOT/'AVATARES'/profile/'modelo.gltf')

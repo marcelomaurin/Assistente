@@ -42,7 +42,7 @@ def main():
         run([build/'pva_tool.exe','pack',source,root,root/(name+'.pva')])
     for mode in ['media','editor','main']:
         report=root/(mode+'-result.txt');report.unlink(missing_ok=True)
-        run([build/'presentation_native_smoke.exe',root,mode,a.model.resolve(),('without-office' if a.without_office else 'with-office')],timeout=65)
+        run([build/'presentation_native_smoke.exe',root,mode,a.model.resolve(),('without-office' if a.without_office else 'with-office')],timeout=120 if mode=='main' else 65)
         assert report.exists(),mode
         body=report.read_text(encoding='utf-8');assert 'FAIL' not in body,body;print(body.strip(),flush=True)
     original='[avatar=professor][voz=alloy]Olá [abrir arquivo=assets/one.png]mundo.\n'

@@ -24,7 +24,7 @@ function MovementAt(Index: Integer): TMovementDefinition;
 function FindMovement(const Value: string; out Movement: TMovementDefinition): Boolean;
 function MovementInstructions: string;
 implementation
-uses fpjson, jsonparser, Math, presentation_tags;
+uses fpjson, jsonparser, Math, presentation_tags, movement_animation;
 type TMovementDefinitions = array of TMovementDefinition;
 var Items: TMovementDefinitions; LoadedFile: string; LoadedAge: Int64 = -1;
   CatalogLock: TRTLCriticalSection;
@@ -135,6 +135,11 @@ begin
       end;
       M.Duration:=NumberField(O,'duration_ms',2400);M.Transition:=NumberField(O,'transition_ms',320);
       if (M.Duration<50) or (M.Transition>5000) then raise EConvertError.Create('Duracao ou transicao invalida: '+M.ID);
+      // Calibrated v2 members take precedence over optional legacy references.
+      if (Length(M.Timeline.Tracks)=0) and (M.AnimationFile<>'') then begin
+        M.Timeline:=MotionTimeline(LoadMotionAnimation(ExtractFilePath(FileName)+'movimentos'+PathDelim+M.AnimationFile),M.Transition);
+        M.Duration:=M.Timeline.DurationMS;
+      end;
       if (M.Mode<>'gesture') and (M.Mode<>'pose') and (M.Mode<>'reset') and (M.Mode<>'smile') and
         (M.Mode<>'raise_right') and (M.Mode<>'lower_right') and (M.Mode<>'clear_pose') and
         (M.Mode<>'lower_both') and (M.Mode<>'stop') then raise EConvertError.Create('Modo invalido: '+M.Mode);

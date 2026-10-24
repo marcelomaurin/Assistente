@@ -1,8 +1,9 @@
 """Check Markdown file links and heading anchors, including filename case for GitHub."""
-import json,re,unicodedata
+import json,re,unicodedata,subprocess
 from pathlib import Path
 from urllib.parse import unquote
 ROOT=Path(__file__).resolve().parents[1]
+TRACKED={name.casefold():name for name in subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode('utf-8').split('\0') if name}
 
 def heading_ids(path):
     ids=set();seen={};fence=False
@@ -18,6 +19,8 @@ def heading_ids(path):
 
 def exact_case(path):
     relative=path.relative_to(ROOT);current=ROOT
+    expected=TRACKED.get(relative.as_posix().casefold())
+    assert expected is None or relative.as_posix()==expected,f'Git filename case mismatch: {relative} versus {expected}'
     for part in relative.parts:
         assert part in [p.name for p in current.iterdir()],f'Filename case mismatch: {path}'
         current=current/part

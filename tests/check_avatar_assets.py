@@ -26,9 +26,10 @@ for profile in profiles:
     expected={base+smile+raised for base in clips for smile in ('','_smile') for raised in ('','_right_hand_up')}
     expected|={base+smile for base in ('applause','applause_talking') for smile in ('','_smile')}
     expected |= {'nao_com_o_dedo', 'abrir_olhos', 'olhar_para_tras_esquerda', 'olhar_para_tras_direita', 'gesticular_ok', 'piscar', 'concordar', 'fechar_mao_direita', 'bocejar', 'levantar_ambas_maos', 'levantar_mao_esquerda', 'negar', 'abrir_mao_esquerda', 'fechar_mao_esquerda', 'levantar_pe_direito', 'coracao_com_as_maos', 'abrir_mao_direita', 'positivo', 'fechar_olhos'}
+    expected |= {'explicar','apontar_direita','apontar_esquerda','olhar_esquerda','olhar_direita','surpresa','triste','serio','rir','comemorar','cumprimentar','negativo','abrir_bracos','cruzar_bracos','sentar','passo_atras','passo_frente','dancar'}
     catalog=json.loads((root/'AVATARES/movimentos.json').read_text(encoding='utf-8'))
     expected|={m['clip'] for m in catalog['movements'] if m.get('clip')}
-    assert {a['name'] for a in asset['animations']} == expected
+    assert {a['name'] for a in asset['animations']} == expected, (profile, 'missing', expected-{a['name'] for a in asset['animations']}, 'unexpected', {a['name'] for a in asset['animations']}-expected)
     binary = base64.b64decode(asset['buffers'][0]['uri'].split(',')[1])
     assert len(binary) == asset['buffers'][0]['byteLength']
     for view in asset['bufferViews']:

@@ -1,6 +1,6 @@
 program presentation_native_smoke;
 {$mode objfpc}{$H+}
-uses Interfaces, Controls, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType, Graphics, StdCtrls, Types,
+uses Interfaces, Controls, Forms, Classes, SysUtils, Windows, ExtCtrls, LCLType, Graphics, StdCtrls, Buttons, Types,
   main, presentation_media, presentation_tags, presentation_package, presentation_editor_ui, presentation_rag, agent_manager, SynEdit,
   CastleControl, CastleImages, CastleURIUtils, professor_view, presentation_joints, presentation_joint_tags, X3DNodes, CastleVectors;
 type
@@ -18,7 +18,7 @@ type
   end;
 var Root,Mode,ConfigDir: string; Media: TPresentationMedia; Tag: TPresentationTag;
   Config,Report: TStringList; Runner: TRunner; Editor: TPresentationEditor;
-  I: Integer; Edit: TSynEdit; B: TButton; Bone: TX3DNode;
+  I: Integer; Edit: TSynEdit; B: TBitBtn; Bone: TX3DNode;
 procedure Check(OK: Boolean; const Error: string);
 begin if not OK then raise Exception.Create(Error);end;
 procedure TRunner.CaptureLayout;
@@ -43,6 +43,7 @@ procedure TRunner.Tick(Sender: TObject);
 var Elapsed: QWord; Key: Word; Active: string; Panel: TPanel; AvatarRight: Integer;
 begin
   try
+    if not PauseSent then begin WriteLn('TRACE tick before image: ',frmmain.ActivePresentationMedia);Flush(Output);end;
     Elapsed:=GetTickCount64-Started;Check(Elapsed<40000,'main presentation stalled');
     if WaitingRAG then begin
       if (frmmain.AssistantManager.SelectedPresentation<>'') and frmmain.ApresentandoResposta then begin
@@ -93,7 +94,7 @@ begin
       Check(frmmain.ApresentandoResposta,'paused job finished');
       Check(frmmain.ActivePresentationMedia='assets/one.png','media advanced during pause');
       if GetTickCount64-PausedAt>650 then begin
-        CaptureLayout;Key:=Ord('P');frmmain.OnKeyDown(frmmain,Key,[]);ResumeSent:=True;
+        WriteLn('TRACE capture paused layout');Flush(Output);CaptureLayout;WriteLn('TRACE resume');Flush(Output);Key:=Ord('P');frmmain.OnKeyDown(frmmain,Key,[]);ResumeSent:=True;
       end;
     end;
     if not frmmain.ApresentandoResposta then begin
@@ -181,8 +182,8 @@ begin
     for I:=0 to Editor.ComponentCount-1 do if Editor.Components[I] is TSynEdit then Edit:=TSynEdit(Editor.Components[I]);
     Check(Edit<>nil,'editor missing');Edit.Text:='Ola mundo';Edit.CaretXY:=Point(5,1);
     Original:=Edit.Text;
-    for I:=0 to Editor.ComponentCount-1 do if Editor.Components[I] is TButton then begin
-      B:=TButton(Editor.Components[I]);if B.Tag=6 then B.Click;
+    for I:=0 to Editor.ComponentCount-1 do if Editor.Components[I] is TBitBtn then begin
+      B:=TBitBtn(Editor.Components[I]);if B.Tag=6 then B.Click;
     end;
     After:=Edit.Text;Check(Pos('[fechar arquivo]',After)>0,'cursor media insertion failed');
     Edit.Undo;Check(Edit.Text=Original,'undo insertion failed');Edit.Redo;Check(Edit.Text=After,'redo insertion failed');
@@ -212,7 +213,7 @@ begin
     if Mode='media' then begin MediaTest;Report.SaveToFile(Root+PathDelim+'media-result.txt');end
     else if Mode='editor' then begin EditorTest;Report.SaveToFile(Root+PathDelim+'editor-result.txt');end
     else begin
-      Application.CreateForm(Tfrmmain,frmmain);frmmain.Show;
+      WriteLn('TRACE creating main');Flush(Output);Application.CreateForm(Tfrmmain,frmmain);frmmain.Show;WriteLn('TRACE main ready');Flush(Output);
       Runner:=TRunner.Create(frmmain);
       for I:=0 to frmmain.ComponentCount-1 do if frmmain.Components[I] is TProfessorView then Runner.View:=TProfessorView(frmmain.Components[I]);
       Runner.Report:=Report;Runner.Started:=GetTickCount64;
@@ -225,7 +226,7 @@ begin
         frmmain.AssistantManager.ChatGPT.Timeout:=5000;
         Runner.WaitingRAG:=True;frmmain.edPergunta.Text:='Mostre a apresentação principal com imagens e slides';
         frmmain.btEnviarClick(nil);frmmain.edPergunta.Text:='Rascunho preservado';
-      end else frmmain.StartPresentation(Root+PathDelim+'main.pva');
+      end else begin WriteLn('TRACE start presentation');Flush(Output);frmmain.StartPresentation(Root+PathDelim+'main.pva');WriteLn('TRACE presentation started');Flush(Output);end;
       Runner.Timer:=TTimer.Create(Runner);Runner.Timer.Interval:=50;Runner.Timer.OnTimer:=@Runner.Tick;
       Application.Run;frmmain.Free;
     end;
