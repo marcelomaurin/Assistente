@@ -83,7 +83,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "wave"
+      "animation_file": "aceno.json"
     },
     {
       "id": "caminhar",
