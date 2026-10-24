@@ -98,7 +98,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "walk"
+      "animation_file": "caminhar.json"
     },
     {
       "id": "piscar",
@@ -323,7 +323,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "rir"
+      "animation_file": "rir.json"
     },
     {
       "id": "comemorar",
@@ -446,7 +446,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "sentar"
+      "animation_file": "sentar.json"
     },
     {
       "id": "levantar",
@@ -469,7 +469,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "passo_atras"
+      "animation_file": "passo_atras.json"
     },
     {
       "id": "passo_frente",
@@ -481,7 +481,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "passo_frente"
+      "animation_file": "passo_frente.json"
     },
     {
       "id": "dancar",
@@ -493,7 +493,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "dancar"
+      "animation_file": "dancar.json"
     },
     {
       "id": "parar_gesto",
@@ -603,7 +603,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "levantar_pe_direito"
+      "animation_file": "levantar_pe_direito.json"
     },
     {
       "id": "fechar_mao_esquerda",
@@ -617,7 +617,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "fechar_mao_esquerda"
+      "animation_file": "fechar_mao_esquerda.json"
     },
     {
       "id": "abrir_mao_esquerda",
@@ -631,7 +631,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "abrir_mao_esquerda"
+      "animation_file": "abrir_mao_esquerda.json"
     },
     {
       "id": "fechar_mao_direita",
@@ -645,7 +645,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "fechar_mao_direita"
+      "animation_file": "fechar_mao_direita.json"
     },
     {
       "id": "abrir_mao_direita",
@@ -673,8 +673,8 @@
       "mode": "gesture",
       "duration_ms": 4000,
       "transition_ms": 320,
-      "clip": "bocejar",
-      "speech_mouth": true
+      "speech_mouth": true,
+      "animation_file": "bocejar.json"
     },
     {
       "id": "abrir_olhos",
