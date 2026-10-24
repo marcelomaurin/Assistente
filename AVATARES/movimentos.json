@@ -53,7 +53,8 @@
       ],
       "mode": "raise_right",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "levantar_mao_direita.json"
     },
     {
       "id": "abaixar_mao_direita",
@@ -67,7 +68,8 @@
       ],
       "mode": "lower_right",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "abaixar_mao_direita.json"
     },
     {
       "id": "aceno",
@@ -125,7 +127,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "concordar"
+      "animation_file": "concordar.json"
     },
     {
       "id": "negar",
@@ -140,7 +142,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "negar"
+      "animation_file": "negar.json"
     },
     {
       "id": "pensar",
@@ -202,7 +204,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 600,
-      "clip": "levantar_mao_esquerda"
+      "animation_file": "levantar_mao_esquerda.json"
     },
     {
       "id": "abaixar_mao_esquerda",
@@ -213,7 +215,8 @@
       "aliases": [],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "abaixar_mao_esquerda.json"
     },
     {
       "id": "levantar_ambas_maos",
@@ -225,7 +228,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "levantar_ambas_maos"
+      "animation_file": "levantar_ambas_maos.json"
     },
     {
       "id": "abaixar_ambas_maos",
@@ -236,7 +239,8 @@
       "aliases": [],
       "mode": "lower_both",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "abaixar_ambas_maos.json"
     },
     {
       "id": "olhar_esquerda",
@@ -248,7 +252,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_esquerda"
+      "animation_file": "olhar_esquerda.json"
     },
     {
       "id": "olhar_direita",
@@ -260,7 +264,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_direita"
+      "animation_file": "olhar_direita.json"
     },
     {
       "id": "olhar_frente",
@@ -271,7 +275,8 @@
       "aliases": [],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "olhar_frente.json"
     },
     {
       "id": "surpresa",
@@ -399,7 +404,8 @@
       ],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "fechar_bracos.json"
     },
     {
       "id": "cruzar_bracos",
@@ -414,7 +420,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "cruzar_bracos"
+      "animation_file": "cruzar_bracos.json"
     },
     {
       "id": "descruzar_bracos",
@@ -428,7 +434,8 @@
       ],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "descruzar_bracos.json"
     },
     {
       "id": "sentar",
