@@ -1,0 +1,37 @@
+{
+  "format": "assistente-motion",
+  "version": 1,
+  "name": "olhar_para_tras_direita",
+  "duration_ms": 2400,
+  "loop": false,
+  "return_to_base": true,
+  "interpolation": "smoothstep",
+  "tracks": [
+    {
+      "bone": "head",
+      "axis": "y",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 500,
+          "angle": 24
+        },
+        {
+          "time_ms": 1250,
+          "angle": 18
+        },
+        {
+          "time_ms": 1800,
+          "angle": 24
+        },
+        {
+          "time_ms": 2400,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}
