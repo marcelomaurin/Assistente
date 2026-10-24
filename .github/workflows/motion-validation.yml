@@ -14,7 +14,7 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, math, pathlib
+          import json, math, pathlib, re
           base=pathlib.Path('AVATARES')
           catalog=json.loads((base/'movimentos.json').read_text(encoding='utf-8'))
           assert catalog['version']==1
@@ -42,6 +42,11 @@ jobs:
                   if bone.startswith('upperarm01.') or bone.startswith('lowerarm01.'): limit=90
                   elif bone.startswith('wrist.'): limit=35
                   elif bone.startswith('clavicle.') or bone.startswith('shoulder01.'): limit=35
+                  elif re.fullmatch(r'finger[1-5]-[1-3]\\.[LR]',bone): limit=100
+                  elif bone in ('spine01','spine02','spine03','spine04','spine05'): limit=15
+                  elif bone.startswith('upperleg01.'): limit=60
+                  elif bone.startswith('lowerleg01.'): limit=100
+                  elif bone.startswith('foot.'): limit=45
                   else: limit=limits.get(bone,0)
                   assert limit>0, bone
                   times=[k['time_ms'] for k in track['keyframes']]
