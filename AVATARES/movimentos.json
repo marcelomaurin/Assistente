@@ -164,7 +164,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "explicar"
+      "animation_file": "explicar.json"
     },
     {
       "id": "apontar_direita",
