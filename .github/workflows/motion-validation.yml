@@ -1,0 +1,58 @@
+name: Motion JSON validation
+on:
+  push:
+    branches: [feature/external-motion-keyframes]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  motion-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate catalog and external animation files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, math, pathlib, re
+          base=pathlib.Path('AVATARES')
+          catalog=json.loads((base/'movimentos.json').read_text(encoding='utf-8'))
+          assert catalog['version'] in (1,2)
+          tags=set()
+          limits={'head':25,'neck01':25,'neck02':25,'neck03':25}
+          for entry in catalog['movements']:
+              tag=entry['tag']
+              assert tag not in tags, f'duplicate tag {tag}'
+              tags.add(tag)
+              if 'animation_file' not in entry:
+                  continue
+              name=entry['animation_file']
+              assert pathlib.Path(name).name==name and name.endswith('.json'), name
+              data=json.loads((base/'movimentos'/name).read_text(encoding='utf-8'))
+              assert data['format']=='assistente-motion' and data['version']==1
+              duration=data['duration_ms']
+              assert 50<=duration<=60000
+              assert len(data['tracks']) in range(1,65)
+              bones=set()
+              for track in data['tracks']:
+                  bone=track['bone']
+                  assert bone not in bones, bone
+                  bones.add(bone)
+                  assert track['axis'] in ('x','y','z')
+                  if bone.startswith('upperarm01.') or bone.startswith('lowerarm01.'): limit=90
+                  elif bone.startswith('wrist.'): limit=35
+                  elif bone.startswith('clavicle.') or bone.startswith('shoulder01.'): limit=35
+                  elif re.fullmatch(r'finger[1-5]-[1-3]\.[LR]',bone): limit=100
+                  elif bone in ('spine01','spine02','spine03','spine04','spine05'): limit=15
+                  elif bone.startswith('upperleg01.'): limit=60
+                  elif bone.startswith('lowerleg01.'): limit=100
+                  elif bone.startswith('foot.'): limit=45
+                  else: limit=limits.get(bone,0)
+                  assert limit>0, bone
+                  times=[k['time_ms'] for k in track['keyframes']]
+                  assert 2<=len(times)<=256
+                  assert times==sorted(set(times)) and 0<=times[0] and times[-1]<=duration
+                  assert all(math.isfinite(k['angle']) and abs(k['angle'])<=limit for k in track['keyframes'])
+              print(f"validated [{tag}] with {len(data['tracks'])} tracks")
+          print(f'Catalog contains {len(tags)} unique tags')
+          PY

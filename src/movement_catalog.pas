@@ -6,7 +6,7 @@ type
   TMovementJoints = array of TJointTag;
   TMovementVariant=record Avatar:string;Timeline:TMovementTimeline;end;
   TMovementDefinition = record
-    ID, Tag, Title, Category, Description, Clip, TalkingClip, Mode: string;
+    ID, Tag, Title, Category, Description, Clip, TalkingClip, Mode, AnimationFile: string;
     Aliases: array of string;
     Duration, Transition: Integer;
     SpeechMouth: Boolean;
@@ -114,6 +114,14 @@ begin
       M.ID:=TextField(O,'id','');M.Tag:=TextField(O,'tag',M.ID);
       M.Title:=TextField(O,'title',M.Tag);M.Description:=TextField(O,'description','');
       M.Category:=TextField(O,'category','Geral');M.Clip:=TextField(O,'clip','');
+      M.AnimationFile:=TextField(O,'animation_file','');
+      if M.AnimationFile<>'' then begin
+        if (ExtractFileName(M.AnimationFile)<>M.AnimationFile) or
+           (ExtractFileExt(M.AnimationFile)<>'.json') or
+           (Pos('..',M.AnimationFile)>0) or (Pos(':',M.AnimationFile)>0) then
+          raise EConvertError.Create('Nome de animacao externa invalido: '+M.AnimationFile);
+        if M.Clip<>'' then raise EConvertError.Create('Nao misture clip e animation_file: '+M.ID);
+      end;
       M.TalkingClip:=TextField(O,'talking_clip','');M.Mode:=TextField(O,'mode','gesture');
       M.Timeline:=ParseMovementTimeline(O);
       Profiles:=O.Find('profiles');if Profiles<>nil then begin
@@ -165,7 +173,7 @@ begin
         end;
       end;
       if (M.Mode='gesture') or (M.Mode='pose') then
-        if (M.Clip='') and (Length(M.Joints)=0) and (Length(M.Timeline.Tracks)=0) then raise EConvertError.Create('Movimento sem clip ou joints: '+M.ID);
+        if (M.Clip='') and (Length(M.Joints)=0) and (Length(M.Timeline.Tracks)=0) and (M.AnimationFile='') then raise EConvertError.Create('Movimento sem clip ou joints: '+M.ID);
       Next[I]:=M;
     end;
     Items:=Next;LoadedFile:=ExpandFileName(FileName);LoadedAge:=FileAge(LoadedFile);

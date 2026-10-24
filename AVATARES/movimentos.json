@@ -1600,6 +1600,7 @@
     },
     {
       "id": "aplausos",
+      "animation_file": "aplausos.json",
       "tag": "aplausos",
       "title": "Aplausos",
       "category": "Mãos",
@@ -2310,6 +2311,7 @@
     },
     {
       "id": "levantar_mao_direita",
+      "animation_file": "levantar_mao_direita.json",
       "tag": "levantar mao direita",
       "title": "Levantar mão direita",
       "category": "Mãos",
@@ -3020,6 +3022,7 @@
     },
     {
       "id": "abaixar_mao_direita",
+      "animation_file": "abaixar_mao_direita.json",
       "tag": "abaixar mao direita",
       "title": "Abaixar mão direita",
       "category": "Mãos",
@@ -3730,6 +3733,7 @@
     },
     {
       "id": "aceno",
+      "animation_file": "aceno.json",
       "tag": "aceno",
       "title": "Dar tchau",
       "category": "Mãos",
@@ -4440,6 +4444,7 @@
     },
     {
       "id": "caminhar",
+      "animation_file": "caminhar.json",
       "tag": "caminhar",
       "title": "Caminhar",
       "category": "Corpo",
@@ -6240,6 +6245,7 @@
     },
     {
       "id": "concordar",
+      "animation_file": "concordar.json",
       "tag": "concordar",
       "title": "Cabeça: sim",
       "category": "Cabeça e olhar",
@@ -6950,6 +6956,7 @@
     },
     {
       "id": "negar",
+      "animation_file": "negar.json",
       "tag": "negar",
       "title": "Cabeça: não",
       "category": "Cabeça e olhar",
@@ -7660,6 +7667,7 @@
     },
     {
       "id": "pensar",
+      "animation_file": "pensar.json",
       "tag": "pensar",
       "title": "Pensar",
       "category": "Corpo",
@@ -8370,6 +8378,7 @@
     },
     {
       "id": "explicar",
+      "animation_file": "explicar.json",
       "tag": "explicar",
       "title": "Explicar",
       "category": "Corpo",
@@ -9080,6 +9089,7 @@
     },
     {
       "id": "apontar_direita",
+      "animation_file": "apontar_direita.json",
       "tag": "apontar direita",
       "title": "Apontar direita",
       "category": "Corpo",
@@ -9790,6 +9800,7 @@
     },
     {
       "id": "apontar_esquerda",
+      "animation_file": "apontar_esquerda.json",
       "tag": "apontar esquerda",
       "title": "Apontar esquerda",
       "category": "Corpo",
@@ -10500,6 +10511,7 @@
     },
     {
       "id": "levantar_mao_esquerda",
+      "animation_file": "levantar_mao_esquerda.json",
       "tag": "levantar mao esquerda",
       "title": "Levantar mão esquerda",
       "category": "Mãos",
@@ -11210,6 +11222,7 @@
     },
     {
       "id": "abaixar_mao_esquerda",
+      "animation_file": "abaixar_mao_esquerda.json",
       "tag": "abaixar mao esquerda",
       "title": "Abaixar mão esquerda",
       "category": "Mãos",
@@ -11920,6 +11933,7 @@
     },
     {
       "id": "levantar_ambas_maos",
+      "animation_file": "levantar_ambas_maos.json",
       "tag": "levantar ambas maos",
       "title": "Levantar ambas mãos",
       "category": "Mãos",
@@ -12630,6 +12644,7 @@
     },
     {
       "id": "abaixar_ambas_maos",
+      "animation_file": "abaixar_ambas_maos.json",
       "tag": "abaixar ambas maos",
       "title": "Abaixar ambas mãos",
       "category": "Mãos",
@@ -13340,6 +13355,7 @@
     },
     {
       "id": "olhar_esquerda",
+      "animation_file": "olhar_esquerda.json",
       "tag": "olhar esquerda",
       "title": "Olhar esquerda",
       "category": "Cabeça e olhar",
@@ -14050,6 +14066,7 @@
     },
     {
       "id": "olhar_direita",
+      "animation_file": "olhar_direita.json",
       "tag": "olhar direita",
       "title": "Olhar direita",
       "category": "Cabeça e olhar",
@@ -14760,6 +14777,7 @@
     },
     {
       "id": "olhar_frente",
+      "animation_file": "olhar_frente.json",
       "tag": "olhar frente",
       "title": "Olhar frente",
       "category": "Cabeça e olhar",
@@ -18371,6 +18389,7 @@
     },
     {
       "id": "rir",
+      "animation_file": "rir.json",
       "tag": "rir",
       "title": "Rir",
       "category": "Expressões",
@@ -19472,6 +19491,7 @@
     },
     {
       "id": "comemorar",
+      "animation_file": "comemorar.json",
       "tag": "comemorar",
       "title": "Comemorar",
       "category": "Corpo",
@@ -20182,6 +20202,7 @@
     },
     {
       "id": "cumprimentar",
+      "animation_file": "cumprimentar.json",
       "tag": "cumprimentar",
       "title": "Cumprimentar",
       "category": "Corpo",
@@ -20892,6 +20913,7 @@
     },
     {
       "id": "positivo",
+      "animation_file": "positivo.json",
       "tag": "positivo",
       "title": "Joia / positivo",
       "category": "Mãos",
@@ -21602,6 +21624,7 @@
     },
     {
       "id": "negativo",
+      "animation_file": "negativo.json",
       "tag": "negativo",
       "title": "Negativo",
       "category": "Mãos",
@@ -22312,6 +22335,7 @@
     },
     {
       "id": "abrir_bracos",
+      "animation_file": "abrir_bracos.json",
       "tag": "abrir bracos",
       "title": "Abrir braços",
       "category": "Expressões",
@@ -23022,6 +23046,7 @@
     },
     {
       "id": "fechar_bracos",
+      "animation_file": "fechar_bracos.json",
       "tag": "fechar bracos",
       "title": "Fechar braços",
       "category": "Corpo",
@@ -23732,6 +23757,7 @@
     },
     {
       "id": "cruzar_bracos",
+      "animation_file": "cruzar_bracos.json",
       "tag": "cruzar bracos",
       "title": "Cruzar braços",
       "category": "Corpo",
@@ -24442,6 +24468,7 @@
     },
     {
       "id": "descruzar_bracos",
+      "animation_file": "descruzar_bracos.json",
       "tag": "descruzar bracos",
       "title": "Descruzar braços",
       "category": "Corpo",
@@ -25152,6 +25179,7 @@
     },
     {
       "id": "sentar",
+      "animation_file": "sentar.json",
       "tag": "sentar",
       "title": "Sentar",
       "category": "Corpo",
@@ -26572,6 +26600,7 @@
     },
     {
       "id": "passo_atras",
+      "animation_file": "passo_atras.json",
       "tag": "passo atras",
       "title": "Passo atras",
       "category": "Corpo",
@@ -27282,6 +27311,7 @@
     },
     {
       "id": "passo_frente",
+      "animation_file": "passo_frente.json",
       "tag": "passo frente",
       "title": "Passo frente",
       "category": "Corpo",
@@ -27992,6 +28022,7 @@
     },
     {
       "id": "dancar",
+      "animation_file": "dancar.json",
       "tag": "dancar",
       "title": "Dancar",
       "category": "Corpo",
@@ -30122,6 +30153,7 @@
     },
     {
       "id": "gesticular_ok",
+      "animation_file": "gesticular_ok.json",
       "tag": "gesticular ok",
       "title": "Gesticular OK",
       "category": "Mãos",
@@ -30832,6 +30864,7 @@
     },
     {
       "id": "coracao_com_as_maos",
+      "animation_file": "coracao_com_as_maos.json",
       "tag": "coracao com as maos",
       "title": "Coração com as mãos",
       "category": "Mãos",
@@ -31542,6 +31575,7 @@
     },
     {
       "id": "olhar_para_tras_direita",
+      "animation_file": "olhar_para_tras_direita.json",
       "tag": "olhar para tras direita",
       "title": "Olhar para trás pela direita",
       "category": "Cabeça e olhar",
@@ -32252,6 +32286,7 @@
     },
     {
       "id": "olhar_para_tras_esquerda",
+      "animation_file": "olhar_para_tras_esquerda.json",
       "tag": "olhar para tras esquerda",
       "title": "Olhar para trás pela esquerda",
       "category": "Cabeça e olhar",
@@ -32962,6 +32997,7 @@
     },
     {
       "id": "nao_com_o_dedo",
+      "animation_file": "nao_com_o_dedo.json",
       "tag": "nao com o dedo",
       "title": "Não com o indicador",
       "category": "Mãos",
@@ -33672,6 +33708,7 @@
     },
     {
       "id": "levantar_pe_direito",
+      "animation_file": "levantar_pe_direito.json",
       "tag": "levantar pe direito",
       "title": "Levantar pé direito",
       "category": "Corpo",
@@ -34382,6 +34419,7 @@
     },
     {
       "id": "fechar_mao_esquerda",
+      "animation_file": "fechar_mao_esquerda.json",
       "tag": "fechar mao esquerda",
       "title": "Fechar mão esquerda",
       "category": "Mãos",
@@ -35092,6 +35130,7 @@
     },
     {
       "id": "abrir_mao_esquerda",
+      "animation_file": "abrir_mao_esquerda.json",
       "tag": "abrir mao esquerda",
       "title": "Abrir mão esquerda",
       "category": "Mãos",
@@ -35802,6 +35841,7 @@
     },
     {
       "id": "fechar_mao_direita",
+      "animation_file": "fechar_mao_direita.json",
       "tag": "fechar mao direita",
       "title": "Fechar mão direita",
       "category": "Mãos",
@@ -37222,6 +37262,7 @@
     },
     {
       "id": "bocejar",
+      "animation_file": "bocejar.json",
       "tag": "bocejar",
       "title": "Bocejar",
       "category": "Expressões",

@@ -1,0 +1,55 @@
+{
+  "format": "assistente-motion",
+  "version": 1,
+  "name": "apontar_esquerda",
+  "duration_ms": 2400,
+  "loop": false,
+  "return_to_base": true,
+  "interpolation": "smoothstep",
+  "tracks": [
+    {
+      "bone": "upperarm01.L",
+      "axis": "z",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 450,
+          "angle": -42
+        },
+        {
+          "time_ms": 1800,
+          "angle": -42
+        },
+        {
+          "time_ms": 2400,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "bone": "lowerarm01.L",
+      "axis": "x",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 450,
+          "angle": 12
+        },
+        {
+          "time_ms": 1800,
+          "angle": 12
+        },
+        {
+          "time_ms": 2400,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}
