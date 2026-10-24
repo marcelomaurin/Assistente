@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "margin_height": 0.001,
+  "bodies": [
+    {
+      "id": "tronco",
+      "start_bone": "spine05",
+      "end_bone": "neck01",
+      "radius_height": 0.065
+    },
+    {
+      "id": "cabeca",
+      "start_bone": "head",
+      "end_bone": "head",
+      "radius_height": 0.048,
+      "start_offset_height": [
+        0,
+        0.015,
+        0
+      ],
+      "end_offset_height": [
+        0,
+        0.055,
+        0
+      ]
+    },
+    {
+      "id": "braco_esquerdo",
+      "start_bone": "upperarm01.L",
+      "end_bone": "lowerarm01.L",
+      "radius_height": 0.024,
+      "start_fraction": 0.25
+    },
+    {
+      "id": "antebraco_esquerdo",
+      "start_bone": "lowerarm01.L",
+      "end_bone": "wrist.L",
+      "radius_height": 0.021,
+      "start_fraction": 0
+    },
+    {
+      "id": "mao_esquerdo",
+      "start_bone": "wrist.L",
+      "end_bone": "finger3-1.L",
+      "radius_height": 0.017,
+      "start_fraction": 0
+    },
+    {
+      "id": "coxa_esquerdo",
+      "start_bone": "upperleg01.L",
+      "end_bone": "lowerleg01.L",
+      "radius_height": 0.036,
+      "start_fraction": 0.5
+    },
+    {
+      "id": "perna_esquerdo",
+      "start_bone": "lowerleg01.L",
+      "end_bone": "foot.L",
+      "radius_height": 0.024,
+      "start_fraction": 0
+    },
+    {
+      "id": "braco_direito",
+      "start_bone": "upperarm01.R",
+      "end_bone": "lowerarm01.R",
+      "radius_height": 0.024,
+      "start_fraction": 0.25
+    },
+    {
+      "id": "antebraco_direito",
+      "start_bone": "lowerarm01.R",
+      "end_bone": "wrist.R",
+      "radius_height": 0.021,
+      "start_fraction": 0
+    },
+    {
+      "id": "mao_direito",
+      "start_bone": "wrist.R",
+      "end_bone": "finger3-1.R",
+      "radius_height": 0.017,
+      "start_fraction": 0
+    },
+    {
+      "id": "coxa_direito",
+      "start_bone": "upperleg01.R",
+      "end_bone": "lowerleg01.R",
+      "radius_height": 0.036,
+      "start_fraction": 0.5
+    },
+    {
+      "id": "perna_direito",
+      "start_bone": "lowerleg01.R",
+      "end_bone": "foot.R",
+      "radius_height": 0.024,
+      "start_fraction": 0
+    }
+  ],
+  "ignored_pairs": [
+    [
+      "tronco",
+      "cabeca"
+    ],
+    [
+      "braco_esquerdo",
+      "antebraco_esquerdo"
+    ],
+    [
+      "antebraco_esquerdo",
+      "mao_esquerdo"
+    ],
+    [
+      "coxa_esquerdo",
+      "perna_esquerdo"
+    ],
+    [
+      "braco_direito",
+      "antebraco_direito"
+    ],
+    [
+      "antebraco_direito",
+      "mao_direito"
+    ],
+    [
+      "coxa_direito",
+      "perna_direito"
+    ]
+  ],
+  "translatable_members": [
+    "levator02.L",
+    "levator02.R",
+    "levator03.L",
+    "levator03.R",
+    "levator04.L",
+    "levator04.R",
+    "levator05.L",
+    "levator05.R",
+    "levator06.L",
+    "levator06.R",
+    "oculi01.L",
+    "oculi01.R",
+    "oculi02.L",
+    "oculi02.R",
+    "orbicularis03.L",
+    "orbicularis03.R",
+    "orbicularis04.L",
+    "orbicularis04.R",
+    "oris01",
+    "oris02",
+    "oris03.L",
+    "oris03.R",
+    "oris04.L",
+    "oris04.R",
+    "oris05",
+    "oris06",
+    "oris06.L",
+    "oris06.R",
+    "oris07.L",
+    "oris07.R",
+    "risorius02.L",
+    "risorius02.R",
+    "risorius03.L",
+    "risorius03.R",
+    "root",
+    "temporalis01.L",
+    "temporalis01.R",
+    "temporalis02.L",
+    "temporalis02.R"
+  ],
+  "reference_heights": {
+    "bebe": 0.638580497354269,
+    "crianca": 1.3769668666645885,
+    "dona_de_casa": 1.7058286936953664,
+    "empresario": 1.778807426802814,
+    "engenheiro": 1.8476037560030818,
+    "medico": 1.8162164464592934,
+    "padre": 1.7688644230365753,
+    "professor": 1.778807426802814,
+    "programador": 1.8658092971891165,
+    "robo": 1.7203871756792068,
+    "ze_gotinha": 1.3708040416240692
+  }
+}

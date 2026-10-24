@@ -245,6 +245,10 @@ var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
       DeliverCommand(Pending[K]);
       if (Pending[K].MovementID<>'') and FindMovement(Pending[K].MovementID,M) then begin
         if M.Mode='gesture' then Duration:=M.Duration else Duration:=M.Transition;
+        if Length(M.Timeline.Tracks)>0 then begin
+          Duration:=M.Timeline.TransitionMS+M.Timeline.DurationMS;
+          if M.Timeline.ReturnToStart then Inc(Duration,M.Timeline.ReturnMS);
+        end;
         for L:=0 to High(M.Joints) do
           if M.Joints[L].Duration>Duration then Duration:=M.Joints[L].Duration;
         MovementUntil:=ActiveTick+QWord(Duration);

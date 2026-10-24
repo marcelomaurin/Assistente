@@ -6,7 +6,7 @@ interface
 
 uses Classes, SysUtils, Controls, ExtCtrls, StdCtrls, IniFiles,
   CastleControl, CastleViewport, CastleScene, CastleCameras, CastleVectors, CastleTransform,
-  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints, movement_catalog, X3DNodes;
+  CastleURIUtils, LazFileUtils, professor_state, professor_catalog, Math, professor_commands, presentation_joints, movement_catalog, movement_timeline, X3DNodes;
 
 type
   TProfessorZoomEvent = procedure(Steps: Single) of object;
@@ -185,6 +185,8 @@ begin
     FViewport.AssignDefaultCamera;
     { glTF convention: Y up, character faces +Z. Frame using model bounds. }
     FModelHeight := Max(0.1, FScene.BoundingBox.Size.Y);
+    try TPresentationScene(FScene).PrepareMovementRig(FModelFile,MovementCollisionFile,FModelHeight);
+    except on E:Exception do FDiagnostic:=FDiagnostic+' | '+E.Message;end;
     FZoom := 1;
     FrameCamera;
   end;
@@ -198,6 +200,7 @@ procedure TProfessorView.ApplyAnimation;
 var Clip, Base, Requested: string;
 begin
   if FModelFile = '' then Exit;
+  if TPresentationScene(FScene).TimelineHasPose then Exit;
   Clip := FAnimations[FMachine.State];
   if FDirectiveGesture<>'' then Clip:=FDirectiveGesture
   else if FExtraPose<>'' then Clip:=FExtraPose;
@@ -224,6 +227,7 @@ begin
   if (Clip <> '') and (FScene.AnimationsList.IndexOf(Clip) >= 0) then
     FScene.PlayAnimation(Clip, True)
   else FScene.StopAnimation;
+  TPresentationScene(FScene).GuardAnimation;
 end;
 
 function TProfessorView.ExecuteCommand(Command: TAvatarCommand): Boolean;
@@ -233,10 +237,19 @@ begin
 end;
 
 function TProfessorView.ExecuteMovement(const ID: string): Boolean;
-var M: TMovementDefinition; Clip,Expected: string; I: Integer;
+var M: TMovementDefinition; Clip,Expected: string; I: Integer;Timeline:TMovementTimeline;
 begin
   Result:=False;
   if not FindMovement(ID,M) then Exit;
+  if not TPresentationScene(FScene).SafetyReady then begin FNotice.Caption:='Protecao de movimentos indisponivel. Confira o perfil de colisao.';FNotice.Visible:=True;Exit;end;
+  Timeline:=MovementTimelineFor(M,ExtractFileName(ExtractFileDir(FModelFile)));
+  if Length(Timeline.Tracks)>0 then begin
+    FDirectiveUntil:=0;FDirectiveGesture:='';FMovementJoints:=False;
+    TPresentationScene(FScene).ResetJoints;TPresentationScene(FScene).ExecuteTimeline(Timeline);
+    FDirectiveMouth:=M.SpeechMouth;TPresentationScene(FScene).GestureMouth:=FDirectiveMouth;
+    FLastAnimation:='json:'+M.ID;FNotice.Caption:=FDiagnostic;FNotice.Visible:=FDiagnostic<>'';Exit(True);
+  end;
+  TPresentationScene(FScene).ClearTimeline;
   Clip:=M.Clip;
   if (FMachine.State=psSpeaking) and (M.TalkingClip<>'') and
     (FScene.AnimationsList.IndexOf(M.TalkingClip)>=0) then Clip:=M.TalkingClip;
@@ -277,7 +290,7 @@ procedure TProfessorView.ResetCommands;
 begin
   FDirectiveMouth:=False;FMovementJoints:=False;
   TPresentationScene(FScene).GestureMouth:=False;
-  TPresentationScene(FScene).ResetJoints;
+  TPresentationScene(FScene).ResetJoints;TPresentationScene(FScene).ClearTimeline;
   FSmile:=False;FRightHandUp:=False;FDirectiveGesture:='';FDirectiveUntil:=0;FExtraPose:='';
   ApplyAnimation;
 end;
@@ -307,12 +320,16 @@ end;
 
 procedure TProfessorView.Gesture(AState: TProfessorState);
 begin
-  FMachine.Gesture(AState, GetTickCount64);
-  ApplyAnimation;
+  if AState=psWave then ExecuteCommand(acWave)
+  else if AState=psWalk then ExecuteCommand(acWalk)
+  else begin FMachine.Gesture(AState,GetTickCount64);ApplyAnimation;end;
 end;
 
 procedure TProfessorView.TimerTick(Sender: TObject);
+var Blocked:string;
 begin
+  Blocked:=TPresentationScene(FScene).MovementBlocked;
+  if Blocked<>'' then begin FNotice.Caption:='Movimento limitado para evitar colisao: '+Blocked;FNotice.Visible:=True;end;
   if (FDirectiveUntil<>0) and (GetTickCount64>=FDirectiveUntil) then
   begin
     FDirectiveUntil:=0;FDirectiveGesture:='';FDirectiveMouth:=False;

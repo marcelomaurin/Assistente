@@ -1,7 +1,7 @@
 unit presentation_rag;
 {$mode objfpc}{$H+}
 interface
-uses Classes, SysUtils, fpjson, jsonparser, Windows, LazUTF8,
+uses Classes, SysUtils, fpjson, jsonparser, jsonscanner, Windows, LazUTF8,
   presentation_package, professor_commands, presentation_flow;
 type
   TPresentationRAGEntry = class
@@ -229,10 +229,30 @@ begin
       'Dados em JSON: '+O.AsJSON;
   finally Words.Free;A.Free;O.Free;end;
 end;
-function TPresentationRAG.Resolve(const Response: string; out FileName,Digest: string): Boolean;
-var J,V: TJSONData; ID: string; I: Integer; E: TPresentationRAGEntry;
+function SelectionJSON(const Response: string): string;
+var P: Integer; Header: string;
 begin
-  Result:=False;FileName:='';Digest:='';J:=GetJSON(Trim(Response));
+  Result:=Trim(Response);
+  if Copy(Result,1,3)=#$EF#$BB#$BF then Result:=Trim(Copy(Result,4,MaxInt));
+  // Some providers wrap even JSON-only replies in one Markdown code fence.
+  // Accept that envelope only; never extract an object from arbitrary prose.
+  if Copy(Result,1,3)<>'```' then Exit;
+  P:=Pos(#10,Result);
+  if P=0 then raise Exception.Create('Bloco JSON da selecao RAG incompleto');
+  Header:=LowerCase(Trim(Copy(Result,1,P-1)));
+  if (Header<>'```json') and (Header<>'```') then
+    raise Exception.Create('Formato inesperado na selecao RAG');
+  Result:=Trim(Copy(Result,P+1,MaxInt));
+  if (Length(Result)<4) or (Copy(Result,Length(Result)-2,3)<>'```') or
+    not (Result[Length(Result)-3] in [#10,#13]) then
+    raise Exception.Create('Bloco JSON da selecao RAG incompleto');
+  Result:=Trim(Copy(Result,1,Length(Result)-3));
+end;
+function TPresentationRAG.Resolve(const Response: string; out FileName,Digest: string): Boolean;
+var Parser:TJSONParser; J,V: TJSONData; ID: string; I: Integer; E: TPresentationRAGEntry;
+begin
+  Result:=False;FileName:='';Digest:='';Parser:=TJSONParser.Create(SelectionJSON(Response),[joUTF8,joStrict]);
+  try J:=Parser.Parse;finally Parser.Free;end;
   try
     if not (J is TJSONObject) then raise Exception.Create('Selecao RAG deve ser JSON');
     V:=J.FindPath('presentation');

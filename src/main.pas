@@ -310,6 +310,8 @@ begin
     for I:=0 to MovementCount-1 do begin M:=MovementAt(I);FMovementCombo.Items.Add(M.Title);FMovementIDs.Add(M.ID);end;
     if FMovementCombo.Items.Count>0 then FMovementCombo.ItemIndex:=0;
     FMovementCombo.Hint:=MovementCatalogFile;FMovementCombo.ShowHint:=True;
+    if (Sender<>nil) and (FProfessor<>nil) and (FProfessor.ModelFile<>'') then
+      FProfessor.LoadModel(FProfessor.ModelFile,True);
   except on E:Exception do lblStatus.Caption:=E.Message;end;
 end;
 procedure Tfrmmain.RunMovement(Sender:TObject);

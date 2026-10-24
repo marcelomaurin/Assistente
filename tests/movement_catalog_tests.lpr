@@ -8,7 +8,7 @@ procedure Check(Condition:Boolean;const Message:string);
 begin if not Condition then raise Exception.Create(Message);end;
 procedure WriteJSON(const FileName:string;Data:TJSONData);
 var T:TStringList;
-begin T:=TStringList.Create;try T.Text:=Data.FormatJSON;T.SaveToFile(FileName);finally T.Free;end;end;
+begin T:=TStringList.Create;try T.Text:=Data.AsJSON;T.SaveToFile(FileName);finally T.Free;end;end;
 procedure Reject(const Message:string);
 begin
   WriteJSON(BadFile,Bad);Rejected:=False;
@@ -39,7 +39,7 @@ begin
     S:=ParseAvatarScript('`[novo gesto]` [novo gesto](https://example.test) \[novo gesto]');
     Check(S.CommandCount=0,'Custom commands bypassed literal protections');
     Check(FindMovement('pulso_json',M) and (Length(M.Joints)=2),'Joint resource did not load');
-    Bad:=TJSONObject(J.Clone);try Bad.Integers['version']:=2;Reject('Unsupported schema accepted');finally Bad.Free;end;
+    Bad:=TJSONObject(J.Clone);try Bad.Integers['version']:=3;Reject('Unsupported schema accepted');finally Bad.Free;end;
     Bad:=TJSONObject(J.Clone);try
       Bad.Arrays['movements'].Add(TJSONObject.Create(['id','duplicado','tag','novo gesto','mode','pose','clip','idle']));
       Reject('Alias collision accepted');

@@ -1,19 +1,24 @@
 unit movement_catalog;
 {$mode objfpc}{$H+}{$codepage utf8}
 interface
-uses Classes, SysUtils, presentation_joint_tags;
+uses Classes, SysUtils, presentation_joint_tags, movement_timeline;
 type
   TMovementJoints = array of TJointTag;
+  TMovementVariant=record Avatar:string;Timeline:TMovementTimeline;end;
   TMovementDefinition = record
     ID, Tag, Title, Category, Description, Clip, TalkingClip, Mode: string;
     Aliases: array of string;
     Duration, Transition: Integer;
     SpeechMouth: Boolean;
     Joints: TMovementJoints;
+    Timeline:TMovementTimeline;
+    Variants:array of TMovementVariant;
   end;
 function NormalizeMovementTag(const Value: string): string;
 function MovementCatalogFile: string;
 procedure ReloadMovementCatalog(const FileName: string = '');
+function MovementTimelineFor(const M:TMovementDefinition;const Avatar:string):TMovementTimeline;
+function MovementCollisionFile:string;
 function MovementCount: Integer;
 function MovementAt(Index: Integer): TMovementDefinition;
 function FindMovement(const Value: string; out Movement: TMovementDefinition): Boolean;
@@ -73,6 +78,7 @@ end;
 
 procedure LoadLocked(const FileName: string);
 var Text: TStringList; Root,D,A,J: TJSONData; O,JO: TJSONObject;
+  Profiles:TJSONData;V:Integer;
   Next: TMovementDefinitions; Seen: TStringList; I,K,N: Integer;
   Axis: string; M: TMovementDefinition; T: TJointTag;
   procedure RegisterToken(const Value: string);
@@ -94,11 +100,11 @@ begin
   Text:=TStringList.Create;Seen:=TStringList.Create;Root:=nil;
   try
     Text.LoadFromFile(FileName);
-    if Length(Text.Text)>1024*1024 then raise EConvertError.Create('Catalogo de movimentos excede 1 MiB');
+    if Length(Text.Text)>32*1024*1024 then raise EConvertError.Create('Catalogo de movimentos excede 32 MiB');
     Root:=GetJSON(Text.Text);
     if not (Root is TJSONObject) then raise EConvertError.Create('Catalogo deve ser um objeto JSON');
     O:=TJSONObject(Root);
-    if NumberField(O,'version',0)<>1 then raise EConvertError.Create('Versao do catalogo nao suportada');
+    if not (NumberField(O,'version',0) in [1,2]) then raise EConvertError.Create('Versao do catalogo nao suportada');
     A:=O.Find('movements');
     if not (A is TJSONArray) or (A.Count=0) or (A.Count>512) then raise EConvertError.Create('Use de 1 a 512 movimentos');
     SetLength(Next,A.Count);
@@ -109,6 +115,16 @@ begin
       M.Title:=TextField(O,'title',M.Tag);M.Description:=TextField(O,'description','');
       M.Category:=TextField(O,'category','Geral');M.Clip:=TextField(O,'clip','');
       M.TalkingClip:=TextField(O,'talking_clip','');M.Mode:=TextField(O,'mode','gesture');
+      M.Timeline:=ParseMovementTimeline(O);
+      Profiles:=O.Find('profiles');if Profiles<>nil then begin
+        if not (Profiles is TJSONObject) or (Profiles.Count>32) then raise EConvertError.Create('profiles deve conter ate 32 variantes');
+        SetLength(M.Variants,Profiles.Count);
+        for V:=0 to Profiles.Count-1 do begin
+          if not (Profiles.Items[V] is TJSONObject) then raise EConvertError.Create('Variante invalida');
+          M.Variants[V].Avatar:=TJSONObject(Profiles).Names[V];M.Variants[V].Timeline:=ParseMovementTimeline(TJSONObject(Profiles.Items[V]));
+          if (M.Variants[V].Timeline.DurationMS<>M.Timeline.DurationMS) or (M.Variants[V].Timeline.TransitionMS<>M.Timeline.TransitionMS) or (M.Variants[V].Timeline.ReturnMS<>M.Timeline.ReturnMS) or (M.Variants[V].Timeline.ReturnToStart<>M.Timeline.ReturnToStart) then raise EConvertError.Create('Variante deve conservar os tempos do movimento');
+        end;
+      end;
       M.Duration:=NumberField(O,'duration_ms',2400);M.Transition:=NumberField(O,'transition_ms',320);
       if (M.Duration<50) or (M.Transition>5000) then raise EConvertError.Create('Duracao ou transicao invalida: '+M.ID);
       if (M.Mode<>'gesture') and (M.Mode<>'pose') and (M.Mode<>'reset') and (M.Mode<>'smile') and
@@ -149,7 +165,7 @@ begin
         end;
       end;
       if (M.Mode='gesture') or (M.Mode='pose') then
-        if (M.Clip='') and (Length(M.Joints)=0) then raise EConvertError.Create('Movimento sem clip ou joints: '+M.ID);
+        if (M.Clip='') and (Length(M.Joints)=0) and (Length(M.Timeline.Tracks)=0) then raise EConvertError.Create('Movimento sem clip ou joints: '+M.ID);
       Next[I]:=M;
     end;
     Items:=Next;LoadedFile:=ExpandFileName(FileName);LoadedAge:=FileAge(LoadedFile);
@@ -177,6 +193,11 @@ begin
     LoadLocked(Target);
   finally LeaveCriticalSection(CatalogLock);end;
 end;
+function MovementTimelineFor(const M:TMovementDefinition;const Avatar:string):TMovementTimeline;
+var I:Integer;
+begin for I:=0 to High(M.Variants) do if M.Variants[I].Avatar=Avatar then Exit(M.Variants[I].Timeline);Result:=M.Timeline;end;
+function MovementCollisionFile:string;
+begin Result:=ExtractFilePath(MovementCatalogFile)+'colisoes.json';end;
 function MovementCount: Integer;
 begin
   EnterCriticalSection(CatalogLock);

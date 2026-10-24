@@ -17,8 +17,8 @@ import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--build-code',default='0211')
-parser.add_argument('--version',default='0.211')
+parser.add_argument('--build-code',default='0213')
+parser.add_argument('--version',default='0.213')
 parser.add_argument('--no-ui',action='store_true',help='Validate extraction, binaries, configuration preservation and uninstall without opening application windows')
 OPTIONS=parser.parse_args()
 assert len(OPTIONS.build_code)==4 and OPTIONS.build_code.isdigit()
@@ -72,6 +72,21 @@ def main():
     run(args)
     assert catalog_path.read_bytes()==(ROOT/'AVATARES/movimentos.json').read_bytes(),'Original default catalog did not upgrade'
     REPORT.append('PASS: upgrade replaces the unchanged original catalog with corrected arm aliases')
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 212):
+        catalog_path.write_bytes((ROOT/'tests/fixtures/movimentos-0211.json').read_bytes())
+        run(args)
+        assert catalog_path.read_bytes()==(ROOT/'AVATARES/movimentos.json').read_bytes(),'0.211 default catalog did not upgrade'
+        REPORT.append('PASS: unchanged 0.211 catalog upgraded to JSON member trajectories')
+
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 213):
+        catalog_path.write_bytes((ROOT/'tests/fixtures/movimentos-0212.json').read_bytes())
+        collision_path=INSTALL/'AVATARES/colisoes.json'
+        collision_path.write_bytes((ROOT/'tests/fixtures/colisoes-0212.json').read_bytes())
+        run(args)
+        assert catalog_path.read_bytes()==(ROOT/'AVATARES/movimentos.json').read_bytes(),'0.212 movement catalog did not upgrade'
+        assert collision_path.read_bytes()==(ROOT/'AVATARES/colisoes.json').read_bytes(),'0.212 collision profile did not upgrade'
+        REPORT.append('PASS: both unchanged 0.212 movement and collision JSON files upgraded to the calibrated paths')
+
     models=list((INSTALL/'AVATARES').glob('*/modelo.gltf'))
     assert len(models)==11,'Missing bundled models'
     for model in models:
@@ -95,6 +110,15 @@ def main():
     run([fpc_path,'-MObjFPC','-Scghi',f'-FU{TEST}',f'-FE{TEST}','-Fu'+str(ROOT/'src'),
          '-ossl_runtime_probe.exe',ROOT/'tests/installer_ssl_check.lpr'],record_output=False)
     run([TEST/'ssl_runtime_probe.exe',INSTALL],cwd=INSTALL)
+    if tuple(map(int, OPTIONS.version.split('.'))) >= (0, 213):
+        run([fpc_path,'-MObjFPC','-Scghi',f'-FU{TEST}',f'-FE{TEST}','-Fu'+str(ROOT/'src'),
+             ROOT/'tests/movement_completion_probe.lpr'],record_output=False)
+        movement_env=dict(os.environ,ASSISTENTE_MOVEMENTS_FILE=str(INSTALL/'AVATARES/movimentos.json'))
+        for mode in ['fresh','sequence']:
+            text=run([TEST/'movement_completion_probe.exe','ze_gotinha','1.3708040416240692',mode],cwd=INSTALL,env=movement_env,timeout=240,record_output=False)
+            assert 'PROFILE ze_gotinha incomplete=0' in text,'Installed movements did not complete: '+mode
+        REPORT.append('PASS: actual installed JSON/rig/profile completed all 53 Ze Gotinha movements independently and in sequence with collision protection active')
+
 
     if not OPTIONS.no_ui:
         config=TEST/'isolated-config';config.mkdir()
@@ -158,7 +182,11 @@ def main():
     catalog=json.loads(catalog_path.read_text(encoding='utf-8'))
     catalog['movements'].append({'id':'instalador_preservar','tag':'gesto personalizado do usuario','title':'Movimento do usuario','mode':'pose','clip':'idle'})
     catalog_text=json.dumps(catalog,ensure_ascii=False,indent=2)+'\n';catalog_path.write_text(catalog_text,encoding='utf-8')
+    collision_path=INSTALL/'AVATARES/colisoes.json'
+    collision_text=collision_path.read_text(encoding='utf-8')+'\n'
+    collision_path.write_text(collision_text,encoding='utf-8')
     run(args)
+    assert collision_path.read_text(encoding='utf-8')==collision_text,'Reinstall overwrote collision configuration'
     assert catalog_path.read_text(encoding='utf-8')==catalog_text,'Reinstall overwrote custom JSON movements'
     for name,text in sentinels.items():assert (INSTALL/name).read_text(encoding='utf-8')==text,name
     assert registry_state()==before
@@ -170,7 +198,7 @@ def main():
     deadline=time.monotonic()+15
     while (INSTALL/'assistente.exe').exists() and time.monotonic()<deadline:time.sleep(.2)
     for record in manifest['files']:
-        if record['path']!='AVATARES/movimentos.json':assert not (INSTALL/record['path']).exists(),record['path']
+        if record['path'] not in ['AVATARES/movimentos.json','AVATARES/colisoes.json']:assert not (INSTALL/record['path']).exists(),record['path']
     assert catalog_path.read_text(encoding='utf-8')==catalog_text,'Uninstall deleted custom movements'
     for name,text in sentinels.items():assert (INSTALL/name).read_text(encoding='utf-8')==text,name
     assert registry_state()==before

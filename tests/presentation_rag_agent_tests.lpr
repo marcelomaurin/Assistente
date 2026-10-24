@@ -41,7 +41,7 @@ begin
         while not Observer.Done do begin Check(GetTickCount64-Started<15000,'second request timeout');CheckSynchronize(10);end;
         Check(Observer.Success and (Manager.SelectedPresentation=''),'normal answer after presentation');
       end else if Mode='none' then
-        Check(Observer.Success and (Manager.SelectedPresentation='') and (Pos('Resposta comum',Observer.Text)>0),'no-match did not answer normally')
+        Check(Observer.Success and (Manager.SelectedPresentation='') and (Pos('Resposta comum',Observer.Text)>0),'no-match did not answer normally: '+Observer.Text)
       else Check(not Observer.Success and (Manager.SelectedPresentation=''),'invalid/cancelled selection executed');
       WriteLn('PASS: real agent RAG ',Mode);
     finally Manager.Free;Observer.Free;end;

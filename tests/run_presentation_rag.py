@@ -37,12 +37,15 @@ def main():
                     wanted='main.res' if mode=='gui' else 'energia solar.res'
                     doc=next(d for d in data['documents'] if d['document']==wanted)
                     value=json.dumps({'presentation':doc['id']})
-                elif mode=='none':value='{"presentation":null}'
+                elif mode in ['none','fenced-none','fenced-selected']:value='{"presentation":null}'
                 elif mode=='invalid':value='{"presentation":"../../outside.pva"}'
                 elif mode=='cancel':time.sleep(.6);value='{"presentation":"1"}'
                 else:raise AssertionError(mode)
             elif prompt.startswith('Avalie a tarefa'):value='{"subtasks":[]}'
             else:value='Resposta comum com acentuação.'
+            if mode.startswith('fenced-') and prompt.startswith('Selecione uma apresentacao'):
+                if mode=='fenced-selected':value='{"presentation":"1"}'
+                value='\n```json\n'+value+'\n```\n'
             result=json.dumps({'choices':[{'message':{'content':value}}]},ensure_ascii=False).encode()
             try:
                 self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(result)));self.end_headers();self.wfile.write(result)
@@ -52,8 +55,8 @@ def main():
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
     base=f'http://127.0.0.1:{server.server_port}'
     try:
-        for mode in ['selected','none','invalid','cancel']:
-            evidence.append(run([build/'presentation_rag_agent_tests.exe',root,base+'/'+mode,mode,base+'/none']))
+        for mode in ['selected','none','fenced-none','fenced-selected','invalid','cancel']:
+            evidence.append(run([build/'presentation_rag_agent_tests.exe',root,base+'/'+mode,mode.removeprefix('fenced-'),base+'/none']))
         assert len([p for m,p in seen if m=='selected'])==1,'selected package entered normal synthesis/planner'
         if a.model:
             native=build/'presentation-native'

@@ -7,10 +7,10 @@
 #endif
 #define MyAppName "Assistente"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.211"
+  #define MyAppVersion "0.213"
 #endif
 #ifndef SetupCode
-  #define SetupCode "0211"
+  #define SetupCode "0213"
 #endif
 #define MyAppPublisher "MAURINSOFT"
 #define MyAppExeName "assistente.exe"
@@ -49,7 +49,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "editordesktopicon"; Description: "Criar atalho do Editor de Apresentacoes na area de trabalho"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#PackageDir}\*"; DestDir: "{app}"; Excludes: "AVATARES\movimentos.json"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PackageDir}\*"; DestDir: "{app}"; Excludes: "AVATARES\movimentos.json,AVATARES\colisoes.json"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PackageDir}\AVATARES\colisoes.json"; DestDir: "{app}\AVATARES"; Flags: ignoreversion uninsneveruninstall; Check: UpdateCollisionProfile
 ; The shared catalog is editable user configuration: preserve custom movements.
 Source: "{#PackageDir}\AVATARES\movimentos.json"; DestDir: "{app}\AVATARES"; Flags: ignoreversion uninsneveruninstall; Check: UpdateMovementCatalog
 
@@ -72,7 +73,18 @@ begin
   Result := not FileExists(CatalogPath);
   { Upgrade the unchanged original 0.210 catalog, preserving edited catalogs. }
   if not Result then
-    Result := CompareText(GetSHA256OfFile(CatalogPath), '477ab2a3e080459f98ce1debd4a79f5538a2c1eb7a69d123179fb00869252460') = 0;
+    Result := (CompareText(GetSHA256OfFile(CatalogPath), '477ab2a3e080459f98ce1debd4a79f5538a2c1eb7a69d123179fb00869252460') = 0) or
+      (CompareText(GetSHA256OfFile(CatalogPath), '2b20ed43d91fd9f81b9f6e75d32c3f39c5f18a694b4d23405e4fb75a37a9cc0e') = 0) or
+      (CompareText(GetSHA256OfFile(CatalogPath), 'e09c3c4a86b90f8e6289a84f3699d62954e7a0bad021962c0ab2c3a166ae0c0d') = 0);
+end;
+
+function UpdateCollisionProfile: Boolean;
+var ProfilePath: String;
+begin
+  ProfilePath := ExpandConstant('{app}\AVATARES\colisoes.json');
+  Result := not FileExists(ProfilePath);
+  if not Result then
+    Result := CompareText(GetSHA256OfFile(ProfilePath), '0964bef4455d8f15740acb6a1ec388a0655e45a2f4127aa42fb2d388c78d72f6') = 0;
 end;
 
 function VerificationMode: Boolean;

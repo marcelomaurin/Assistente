@@ -20,6 +20,7 @@ type
     procedure MovementSelected(Sender:TObject);
     procedure MovementInsert(Sender:TObject);
     procedure ReloadMovements(Sender:TObject);
+    procedure PreviewMovement(Sender:TObject);
     procedure AssistantChanged(Sender:TObject);
   private
     FSettings: TPresentationAIConfig;FJob: TPresentationAIJob;
@@ -51,6 +52,7 @@ type
     function CompiledScript(const EntryBlock: string = ''): string;
   end;
 implementation
+uses movement_preview;
 function NewPrivateDirectory: string;
 var G: TGUID;
 begin CreateGUID(G);Result:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-editor-'+GUIDToString(G);end;
@@ -139,9 +141,10 @@ begin
   Detail:=Pane(Tab,alBottom,142,clWhite);
   FMovementDetail:=TLabel.Create(Self);FMovementDetail.Parent:=Detail;FMovementDetail.Align:=alClient;
   FMovementDetail.BorderSpacing.Around:=10;FMovementDetail.WordWrap:=True;FMovementDetail.Font.Size:=9;
-  P:=Pane(Detail,alBottom,40,clWhite);
+  P:=Pane(Detail,alBottom,78,clWhite);
   B:=TButton.Create(Self);B.Parent:=P;B.Caption:='Inserir tag';B.SetBounds(8,3,156,32);B.OnClick:=@MovementInsert;
   B:=TButton.Create(Self);B.Parent:=P;B.Caption:='Recarregar';B.SetBounds(170,3,112,32);B.OnClick:=@ReloadMovements;
+  B:=TButton.Create(Self);B.Parent:=P;B.Caption:='Testar movimento';B.SetBounds(8,40,274,32);B.OnClick:=@PreviewMovement;
   FMovements:=TListBox.Create(Self);FMovements.Name:='MovementLibrary';FMovements.Parent:=Tab;FMovements.Align:=alClient;
   FMovements.BorderStyle:=bsNone;FMovements.Style:=lbOwnerDrawFixed;FMovements.ItemHeight:=30;FMovements.OnDrawItem:=@DrawMovement;FMovements.OnClick:=@MovementSelected;FMovements.OnDblClick:=@MovementInsert;
   Tab:=TTabSheet.Create(Self);Tab.PageControl:=Pages;Tab.Caption:='Mídias importadas';
@@ -235,6 +238,7 @@ var M:TMovementDefinition;
 begin
   if (FMovements.ItemIndex<0) or not FindMovement(FMovementIDs[FMovements.ItemIndex],M) then begin FMovementDetail.Caption:='Nenhum movimento encontrado.';Exit;end;
   FMovementDetail.Caption:='['+M.Tag+']'+LineEnding+M.Description+LineEnding+M.Category;
+  if Length(M.Timeline.Tracks)>0 then FMovementDetail.Caption:=FMovementDetail.Caption+LineEnding+IntToStr(Length(M.Timeline.Tracks))+' membros / '+IntToStr(M.Timeline.DurationMS)+' ms / protecao ativa';
 end;
 procedure TPresentationEditor.InsertMovement(const ID:string);
 var M:TMovementDefinition;
@@ -247,6 +251,11 @@ procedure TPresentationEditor.MovementInsert(Sender:TObject);
 begin
   if FMovements.ItemIndex>=0 then
     try InsertMovement(FMovementIDs[FMovements.ItemIndex]);except on E:Exception do FStatus.Caption:=E.Message;end;
+end;
+procedure TPresentationEditor.PreviewMovement(Sender:TObject);
+begin
+  if FMovements.ItemIndex<0 then Exit;
+  try ShowMovementPreview(FAssistant.Text,FMovementIDs[FMovements.ItemIndex]);except on E:Exception do MessageDlg(E.Message,mtError,[mbOK],0);end;
 end;
 procedure TPresentationEditor.ReloadMovements(Sender:TObject);
 var Candidate:string;

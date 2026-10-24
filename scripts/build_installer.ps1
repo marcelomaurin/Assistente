@@ -1,6 +1,6 @@
 param(
-    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.211',
-    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0211',
+    [ValidatePattern('^[0-9]+\.[0-9]{3}$')][string]$Version = '0.213',
+    [ValidatePattern('^[0-9]{4}$')][string]$BuildCode = '0213',
     [string]$Compiler = 'C:\Program Files\Inno Setup 7\ISCC.exe',
     [string]$Executable = '',
     [string]$Editor = '',
@@ -59,7 +59,7 @@ Copy-Item -LiteralPath (Join-Path $ChatGPT 'OpenSSL License.txt') -Destination (
 Copy-Item -LiteralPath $CastleLicenses -Destination (Join-Path $payload 'LICENSES\Castle') -Recurse
 $movementCatalogPath = Join-Path $payload 'AVATARES\movimentos.json'
 $movementCatalog = Get-Content -LiteralPath $movementCatalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($movementCatalog.version -ne 1 -or $movementCatalog.movements.Count -eq 0) { throw 'Catalogo de movimentos invalido.' }
+if (($movementCatalog.version -notin @(1,2)) -or $movementCatalog.movements.Count -eq 0) { throw 'Catalogo de movimentos invalido.' }
 foreach ($movementModel in Get-ChildItem -LiteralPath (Join-Path $payload 'AVATARES') -Filter 'modelo.gltf' -File -Recurse) {
     $modelClips = (Get-Content -LiteralPath $movementModel.FullName -Raw -Encoding UTF8 | ConvertFrom-Json).animations.name
     foreach ($movementDefinition in $movementCatalog.movements) {

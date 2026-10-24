@@ -2,7 +2,7 @@ unit presentation_joints;
 {$mode objfpc}{$H+}
 interface
 uses Classes, SysUtils, Math, CastleScene, CastleTransform, CastleVectors, X3DNodes,
-  presentation_joint_tags;
+  presentation_joint_tags, movement_timeline;
 type
   TJointMotion = record
     Node: TTransformNode; Base: TVector4;
@@ -11,22 +11,129 @@ type
   TPresentationScene = class(TCastleScene)
   private
     FMotions: array of TJointMotion;
+    FMovement:TMovementRuntime;FMovementNodes:array of TTransformNode;
     FJaw: TTransformNode;FJawRest: TVector4;FVoicePhase: Double;FSpeaking: Boolean;
     FGestureMouth: Boolean;
     FPaused: Boolean; FPausedAt: QWord;
+    function ReadMovementPose:TMPoseArray;
+    procedure WriteMovementPose;
+    procedure UpdateJoints;
+    procedure UpdateSpeechMouth(Step:Double);
   public
     procedure Update(const SecondsPassed: Single; var RemoveMe: TRemoveType); override;
     procedure ExecuteJoint(const ATag: TJointTag);
     procedure ResetJoints;
     procedure PrepareSpeechMouth;
     procedure ForgetRig;
+    procedure PrepareMovementRig(const ModelFile,CollisionFile:string;AHeight:Double);
+    procedure ExecuteTimeline(const Timeline:TMovementTimeline);
+    procedure ClearTimeline;
+    function TimelineHasPose:Boolean;
+    function MovementBlocked:string;
+    function MovementClearance:Double;
+    function MovementElapsed:Double;
+    function MovementRunning:Boolean;
+    procedure GuardAnimation;
+    function SafetyReady:Boolean;
+    destructor Destroy;override;
     property GestureMouth: Boolean read FGestureMouth write FGestureMouth;
     property Speaking: Boolean read FSpeaking write FSpeaking;
     procedure PauseJoints(Value: Boolean);
   end;
 implementation
+function ImportedGLTFName(const Name:string):string;
+var W:UnicodeString;I:Integer;
+begin
+  // The pinned glTF importer encodes UTF-8 name bytes as Latin-1 once more.
+  // Try its spelling only after an exact lookup; JSON keeps the proper name.
+  SetLength(W,Length(Name));for I:=1 to Length(Name) do W[I]:=WideChar(Ord(Name[I]));
+  Result:=UTF8Encode(W);
+end;
 procedure TPresentationScene.ForgetRig;
-begin ResetJoints;FJaw:=nil;FSpeaking:=False;FGestureMouth:=False;end;
+begin ResetJoints;FreeAndNil(FMovement);SetLength(FMovementNodes,0);FJaw:=nil;FSpeaking:=False;FGestureMouth:=False;end;
+destructor TPresentationScene.Destroy;
+begin ForgetRig;inherited;end;
+procedure TPresentationScene.PrepareMovementRig(const ModelFile,CollisionFile:string;AHeight:Double);
+var I:Integer;N:TX3DNode;
+begin
+  FreeAndNil(FMovement);FMovement:=TMovementRuntime.Create;
+  try
+    FMovement.LoadRig(ModelFile,CollisionFile,AHeight);SetLength(FMovementNodes,FMovement.NodeCount);
+    for I:=0 to FMovement.NodeCount-1 do begin
+      N:=RootNode.TryFindNodeByName(TTransformNode,FMovement.NodeName(I),False);
+      if N=nil then N:=RootNode.TryFindNodeByName(TTransformNode,ImportedGLTFName(FMovement.NodeName(I)),False);
+      if N is TTransformNode then FMovementNodes[I]:=TTransformNode(N) else FMovementNodes[I]:=nil;
+    end;
+  except FreeAndNil(FMovement);SetLength(FMovementNodes,0);raise;end;
+end;
+function TPresentationScene.ReadMovementPose:TMPoseArray;
+var I:Integer;V:TVector4;
+begin
+  Result:=FMovement.RestPose;
+  for I:=0 to High(FMovementNodes) do if FMovementNodes[I]<>nil then begin
+    V:=FMovementNodes[I].Rotation;Result[I].Rotation:=MAxisAngle(V.X,V.Y,V.Z,V.W);
+    Result[I].Position:=MVector(FMovementNodes[I].Translation.X,FMovementNodes[I].Translation.Y,FMovementNodes[I].Translation.Z);
+    Result[I].Scale:=MVector(FMovementNodes[I].Scale.X,FMovementNodes[I].Scale.Y,FMovementNodes[I].Scale.Z);
+  end;
+end;
+procedure TPresentationScene.WriteMovementPose;
+var I:Integer;X,Y,Z,A:Double;P:TMPoseArray;
+begin
+  P:=FMovement.Pose;
+  for I:=0 to High(FMovementNodes) do if FMovementNodes[I]<>nil then begin
+    MToAxisAngle(P[I].Rotation,X,Y,Z,A);FMovementNodes[I].Rotation:=Vector4(X,Y,Z,A);
+    FMovementNodes[I].Translation:=Vector3(P[I].Position[0],P[I].Position[1],P[I].Position[2]);
+    FMovementNodes[I].Scale:=Vector3(P[I].Scale[0],P[I].Scale[1],P[I].Scale[2]);
+  end;
+end;
+function TPresentationScene.MovementClearance:Double;
+begin
+  if FMovement=nil then Exit(-1);Result:=FMovement.MinimumClearance;
+end;
+function TPresentationScene.MovementElapsed:Double;
+begin if FMovement=nil then Exit(0);Result:=FMovement.ElapsedMS;end;
+function TPresentationScene.MovementRunning:Boolean;
+begin Result:=(FMovement<>nil) and FMovement.Running;end;
+procedure TPresentationScene.GuardAnimation;
+begin
+  if FMovement=nil then Exit;FMovement.Guard(ReadMovementPose);WriteMovementPose;
+end;
+procedure TPresentationScene.ExecuteTimeline(const Timeline:TMovementTimeline);
+var I,N:Integer;
+begin
+  if FMovement=nil then raise Exception.Create('Protecao de movimentos indisponivel para este avatar');
+  for I:=0 to High(Timeline.Tracks) do begin
+    N:=FMovement.NodeIndex(Timeline.Tracks[I].Bone);
+    if (N<0) or (FMovementNodes[N]=nil) then raise Exception.Create('Membro ausente: '+Timeline.Tracks[I].Bone);
+  end;
+  FMovement.Guard(ReadMovementPose);WriteMovementPose;StopAnimation;FMovement.Start(Timeline);
+end;
+procedure TPresentationScene.ClearTimeline;
+begin if FMovement<>nil then FMovement.Clear;end;
+function TPresentationScene.TimelineHasPose:Boolean;
+begin Result:=(FMovement<>nil) and FMovement.HasPose;end;
+function TPresentationScene.SafetyReady:Boolean;
+begin Result:=FMovement<>nil;end;
+function TPresentationScene.MovementBlocked:string;
+begin if FMovement=nil then Result:='' else Result:=FMovement.BlockedPair;end;
+procedure TPresentationScene.Update(const SecondsPassed: Single;var RemoveMe:TRemoveType);
+var Remaining,Step:Double;
+begin
+  if FPaused then Exit;
+  Remaining:=Max(SecondsPassed,0.0);
+  repeat
+    Step:=Min(Remaining,0.01);
+    inherited Update(Step,RemoveMe);
+    UpdateJoints;
+    if FMovement<>nil then begin
+      if FMovement.HasPose then begin if TimePlaying then FMovement.Advance(Step*1000*TimePlayingSpeed);end
+      else FMovement.Guard(ReadMovementPose);
+      WriteMovementPose;
+    end;
+    UpdateSpeechMouth(Step);
+    Remaining:=Remaining-Step;
+  until Remaining<1E-8;
+end;
 function SpeechJawRotation(const Base: TVector4; Angle: Double): TVector4;
 var X,Y,Z,W,S,C,B,N: Double;
 begin
@@ -76,16 +183,19 @@ begin
   else begin Delta:=GetTickCount64-FPausedAt;for I:=0 to High(FMotions) do Inc(FMotions[I].Started,Delta);end;
   FPaused:=Value;
 end;
-procedure TPresentationScene.Update(const SecondsPassed: Single; var RemoveMe: TRemoveType);
-var I: Integer; T,A,H,S,C,BH,BS,BC,Norm: Double; Q: array[0..3] of Double;
-  V: TVector4; NowTick: QWord;
+procedure TPresentationScene.UpdateSpeechMouth(Step:Double);
 begin
-  inherited Update(SecondsPassed,RemoveMe);
+  if (FMovement<>nil) and FMovement.HasPose and not FMovement.Running then FGestureMouth:=False;
   if (FJaw<>nil) and not FGestureMouth then begin
-    if FSpeaking and not FPaused then FVoicePhase:=FVoicePhase+SecondsPassed;
+    if FSpeaking and not FPaused then FVoicePhase:=FVoicePhase+Step;
     if FSpeaking then FJaw.Rotation:=SpeechJawRotation(FJawRest,0.09*(1+Sin(FVoicePhase*18)))
     else FJaw.Rotation:=FJawRest;
   end;
+end;
+procedure TPresentationScene.UpdateJoints;
+var I: Integer; T,A,H,S,C,BH,BS,BC,Norm: Double; Q: array[0..3] of Double;
+  V: TVector4; NowTick: QWord;
+begin
   if FPaused then NowTick:=FPausedAt else NowTick:=GetTickCount64;
   for I:=0 to High(FMotions) do with FMotions[I] do begin
     T:=Min(1,Max(0,(Int64(NowTick)-Int64(Started))/Duration));if Smooth then T:=T*T*(3-2*T);

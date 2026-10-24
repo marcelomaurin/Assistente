@@ -25,6 +25,13 @@ begin
       Check((Pos('geração',Prompt)>0) and (Pos('[avatar=',Prompt)=0),'selection content');
       Check(Index.Resolve('{"presentation":"1"}',Path,Digest) and (Path=Published),'selected package mapping');
       Check(not Index.Resolve('{"presentation":null}',Path,Digest),'null selected a package');
+      Check(not Index.Resolve(#10+'```json'+#10+'{"presentation":null}'+#10+'```'+#10,Path,Digest),'fenced null selected package');
+      Check(Index.Resolve('```'+#13#10+'{"presentation":"1"}'+#13#10+'```',Path,Digest) and (Path=Published),'fenced selection failed');
+      Rejected('```json'+#10+'{"presentation":null}');
+      Rejected('```json'+#10+'{"presentation":null}'+#10+'``` extra');
+      Rejected('```python'+#10+'{"presentation":null}'+#10+'```');
+      Rejected('Texto antes '+#10+'```json'+#10+'{"presentation":null}'+#10+'```');
+      Rejected('```json'+#10+'{"presentation":"../../outside.pva"}'+#10+'```');
       Rejected('{"presentation":"../../outside.pva"}');Rejected('{"presentation":2}');
       Rejected('{"presentation":"99"}');Rejected('{"presentation":"01"}');Rejected('{"other":"1"}');
       WriteUTF8(ChangeFileExt(Published,'.res'),'texto manual incorreto');Index.Refresh;
