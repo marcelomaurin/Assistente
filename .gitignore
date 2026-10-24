@@ -36,3 +36,6 @@ tests/*.txt
 
 # Local conversation data
 conversation-history.json
+
+# Partes temporarias do instalador (use bin/juntar_setup_*.bat)
+bin/partes_*/

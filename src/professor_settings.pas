@@ -8,6 +8,7 @@ implementation
 procedure LoadProfessorSettings(F: TfrmConfig; C: TSetMain);
 begin
   F.IntegrationUI.Load(C.Integration);
+  F.RAGUI.UseInAnswers.Checked := C.RAGInAnswers;
   F.edAvatarModel.Text := C.Avatar3DModel;
   F.chkAvatarAutoIdle.Checked := C.Avatar3DAutoIdle;
   { These legacy options need phonemes / blend-shapes on the selected model.
@@ -37,6 +38,10 @@ begin
   F.tbSynthRate.Position := C.SynthRate;
   F.chkSynthAsync.Checked := C.SynthAsync;
   F.cbRecogEngine.ItemIndex := C.RecogEngine;
+  F.cbRecogEngine.ShowHint := True;
+  F.cbRecogEngine.Hint := 'Chrome: clique em Iniciar escuta no navegador. OpenAI: usa STT_TOKEN ou o token da IA/ChatGPT.';
+  F.gbCaptacao.ShowHint := True;
+  F.gbCaptacao.Hint := 'Filtro de voz 100 a 7000 Hz e detector de silencio ativos. No Chrome, selecione o microfone no navegador.';
   F.edRecogLanguage.Text := C.RecogLanguage;
   F.chkContinuousListening.Checked := C.ContinuousListening;
   F.EnumerateAudioDevices(C.AudioDeviceIndex);
@@ -62,6 +67,7 @@ var Integration:TIntegrationConfig;Error:string;
 begin
   if not F.IntegrationUI.Read(Integration,Error) then raise Exception.Create(Error);
   C.Integration:=Integration;
+  C.RAGInAnswers := F.RAGUI.UseInAnswers.Checked;
   if (Trim(F.edAvatarModel.Text) <> '') and
     (Trim(F.edAvatarModel.Text) <> C.Avatar3DModel) then C.Avatar3DProfile := 'custom';
   C.Avatar3DModel := Trim(F.edAvatarModel.Text);

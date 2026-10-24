@@ -4,7 +4,7 @@ interface
 uses SysUtils, presentation_paths, presentation_youtube;
 type
   TPresentationAction = (paNone, paOpenFile, paCloseFile, paNextSlide,
-    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound, paEndTask, paYouTube);
+    paPreviousSlide, paGoToSlide, paSelectAvatar, paSelectVoice, paCloseSound, paEndTask, paYouTube, paAsk, paContinue, paMenu);
   TPresentationTag = record
     Action: TPresentationAction;
     Argument: string;
@@ -57,6 +57,9 @@ begin
     if not SafePresentationPath(Path) or not SupportedPresentationMedia(Path) then Exit;
     Parsed.Action:=paOpenFile;Parsed.Argument:=Path;
   end else if (Key='fechar arquivo') and (P=0) then Parsed.Action:=paCloseFile
+  else if (Key='perguntar') and (P=0) then Parsed.Action:=paAsk
+  else if (Key='menu') and (P=0) then Parsed.Action:=paMenu
+  else if (Key='continuar') and (P=0) then Parsed.Action:=paContinue
   else if (Key='fim') and (P=0) then Parsed.Action:=paEndTask
   else if (Key='fechar som') and (P=0) then Parsed.Action:=paCloseSound
   else if (Key='proximo slide') and (P=0) then Parsed.Action:=paNextSlide
@@ -79,6 +82,6 @@ function PresentationTagHelp: string;
 begin
   Result:='[executar arquivo=assets/filme.mp4|inicio=00:01:30], '+
     '[executar arquivo=assets/som.wav|inicio=00:00:10], [fechar arquivo], [fechar som], '+
-    '[youtube=https://www.youtube.com/watch?v=VIDEO_ID], [avatar=professor], [voz=padrao], [proximo slide], [slide anterior], [ir para slide=3]';
+    '[PERGUNTAR], [CONTINUAR], [MENU], [youtube=https://www.youtube.com/watch?v=VIDEO_ID], [avatar=professor], [voz=padrao], [proximo slide], [slide anterior], [ir para slide=3]';
 end;
 end.

@@ -1,0 +1,13 @@
+[PERGUNTAR]
+Vamos iniciar a explicacao. Voce pode clicar em Perguntar a qualquer momento para interromper e tirar uma duvida.
+[MENU]
+Continuamos do ponto em que o menu foi aberto.
+[FIM]
+
+[BLOCO:Objetivo]
+O objetivo desta apresentacao e demonstrar perguntas com contexto e navegacao por blocos.
+[CONTINUAR]
+
+[BLOCO:Como funciona]
+PERGUNTAR pausa para perguntas. MENU lista os blocos. CONTINUAR retoma o roteiro que foi interrompido.
+[CONTINUAR]

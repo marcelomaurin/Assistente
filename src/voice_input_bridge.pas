@@ -148,6 +148,7 @@ end;
 
 function TVoiceInputBridge.BuildConfig: TReceptionConfig;
 begin
+  Result := Default(TReceptionConfig);
   Result.Token := '';
   Result.AudioToken := '';
   Result.Model := '';
@@ -164,10 +165,6 @@ begin
 
   Result.Token := FSetMain.CHATGPT;
   Result.AudioToken := FSetMain.STTToken;
-  if Result.AudioToken = '' then
-    Result.AudioToken := FSetMain.VoiceAPIToken;
-  if Result.AudioToken = '' then
-    Result.AudioToken := FSetMain.CHATGPT;
 
   Result.Model := FSetMain.STTModel;
   Result.URL := FSetMain.STTEndpoint;
@@ -200,6 +197,11 @@ begin
   end;
 
   Cfg := BuildConfig;
+  if Cfg.RecogEngine = 3 then
+  begin
+    SetState('Use a janela do Chrome para reconhecer o microfone.');
+    Exit;
+  end;
   FJob := TReceptionJob.Create(rjTranscribe, Cfg, AFileName, '', 'voice');
   FTimer.Enabled := True;
   SetState('Transcrevendo fala...');

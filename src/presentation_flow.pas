@@ -34,7 +34,7 @@ type
     function EventCount: Integer;
     function EventBinding(Index: Integer): TFlowEvent;
     function HasFlow: Boolean;
-    function Compile(const EntryBlock: string = ''): string;
+    function Compile(const EntryBlock: string = ''; ImplicitEnd:Boolean = True): string;
     function WithoutFlowTags: string;
   end;
 function FlowNameKey(const Name: string): string;
@@ -207,7 +207,7 @@ begin
   SetLength(Marks,BlockCount);
   for I:=0 to High(FBlocks) do Visit(I,1);
 end;
-function TFlowProgram.Compile(const EntryBlock: string): string;
+function TFlowProgram.Compile(const EntryBlock: string; ImplicitEnd:Boolean): string;
 var Stopped: Boolean; Calls,Entry,Finish,I: Integer;
   procedure Append(const Text: string);
   begin
@@ -245,7 +245,7 @@ begin
     for I:=0 to High(FTokens) do if FTokens[I].Action=faBlock then begin Finish:=FTokens[I].Start;Break;end;
     Expand(1,Finish,1);
   end;
-  if (BlockCount>0) and not Stopped then Append('[FIM]');
+  if ImplicitEnd and (BlockCount>0) and not Stopped then Append('[FIM]');
 end;
 function TFlowProgram.WithoutFlowTags: string;
 var I: Integer;

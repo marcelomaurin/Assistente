@@ -431,6 +431,7 @@ begin
             Recognizer := TAIVoiceRecognizer.Create(nil);
             try
               Recognizer.Engine := TAIVoiceRecognitionEngine(FConfig.RecogEngine);
+              Recognizer.ChatGPTToken := FConfig.Token;
               Recognizer.OpenAIToken := FConfig.AudioToken;
               if FConfig.Model <> '' then Recognizer.OpenAIModel := FConfig.Model;
               if FConfig.URL <> '' then Recognizer.OpenAIEndpoint := FConfig.URL;

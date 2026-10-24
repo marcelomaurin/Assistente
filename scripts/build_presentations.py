@@ -12,14 +12,16 @@ def main():
     p.add_argument('--castle',type=Path)
     p.add_argument('--release',action='store_true',help='Strip executable debug symbols for distribution')
     p.add_argument('--test',action='append',help='Build only these named tests with --target tests')
-    p.add_argument('--target',default='all',choices=['all','editor','assistant','tool','tests','motion-editor'])
+    p.add_argument('--target',default='all',choices=['all','editor','assistant','tool','tests','motion-editor','criador-avatar'])
+    p.add_argument('--fpc-option',action='append',default=[],help='Extra compiler option (e.g. -Twin32 when cross-compiling from Linux)')
+    p.add_argument('--chatgpt',type=Path,help='CHATGPT checkout at the pinned revision (defaults to .deps or ../CHATGPT)')
     a=p.parse_args();root=a.root.resolve();base=(a.base or root).resolve()
     out=(a.out or base/'build/presentations').resolve();units=out/'units';units.mkdir(parents=True,exist_ok=True)
     platform='i386-win32';laz=a.lazarus
     if a.compiler is None:
         a.compiler=laz/'fpc/3.2.2/bin/i386-win32/fpc.exe'
         if not a.compiler.exists():a.compiler=Path('C:/FPC/3.2.2/bin/i386-Win32/fpc.exe')
-    args=[str(a.compiler),'-MObjFPC','-Scghi','-O1','-gl','-dLCL','-dLCLwin32','-dCASTLE_ENGINE_LAZARUS_PACKAGE','-FU'+str(units),'-FE'+str(out)]
+    args=[str(a.compiler),*a.fpc_option,'-MObjFPC','-Scghi','-O1','-gl','-dLCL','-dLCLwin32','-dCASTLE_ENGINE_LAZARUS_PACKAGE','-FU'+str(units),'-FE'+str(out)]
     if a.release:
         args.remove('-gl');args.append('-Xs')
     paths=[root/'src',root/'vendor/multisuite',root/'vendor/chatgpt-voice',base/'src',base/'vendor/chatgpt-voice',base/'build/professor/units'/platform]
@@ -35,7 +37,7 @@ def main():
             for node in tree.findall('.//SearchPaths/OtherUnitFiles')+tree.findall('.//SearchPaths/IncludeFiles'):
                 for entry in node.get('Value','').split(';'):
                     d=(path.parent/entry.replace('\\','/')).resolve();paths.append(d);args.append('-Fi'+str(d))
-    chat=base/'.deps/chatgpt-integration-baseline'
+    chat=a.chatgpt or base/'.deps/chatgpt-integration-baseline'
     if not chat.exists():chat=base.parent/'CHATGPT'
     if not chat.exists():raise RuntimeError('CHATGPT dependency absent; run scripts/prepare_chatgpt_baseline.ps1')
     paths.append(chat)
@@ -45,21 +47,22 @@ def main():
     for d in paths:args.append('-Fu'+str(d))
     args+=['-Fi'+str(base/'src'),'-Fi'+str(base/'vendor/chatgpt-voice')]
     targets={'tool':root/'tools/pva_tool.lpr','editor':root/'src/presentation_editor.lpr',
-             'assistant':root/'src/assistente.lpr','motion-editor':root/'tools/motion_editor/motion_editor.lpr'}
+             'assistant':root/'src/assistente.lpr','motion-editor':root/'tools/motion_editor/motion_editor.lpr',
+             'criador-avatar':root/'tools/criador_avatar/criador_avatar.lpr'}
     if a.target=='tests':
         targets={n:base/'tests'/f'{n}.lpr' for n in ['professor_commands_tests','professor_speech_commands_tests','professor_state_tests','professor_movement_sequence_tests','presentation_youtube_tests']}
         targets.update({n:root/'tests'/f'{n}.lpr' for n in ['presentation_native_smoke','presentation_ai_tests','presentation_speech_tests','presentation_rag_tests','presentation_rag_agent_tests','presentation_flow_tests','presentation_flow_editor_tests','assistant_documents_tests','presentation_flow_native_tests','presentation_flow_speech_tests','presentation_youtube_editor_tests']})
-        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['audio_path_tests','movement_animation_tests','external_movement_view_tests','movement_catalog_tests','movement_timeline_tests','movement_completion_probe','movement_scene_tests','movement_native_completion','professor_gesture_tests','professor_catalog_tests','professor_model_tests','professor_remote_speech_tests','professor_audio_smoke','professor_commands_tests','professor_state_tests','remote_stt_tests','modern_ui_tests','assistant_layout_tests','presentation_webview_tests','wave_finalize_tests']})
+        targets.update({n:root/'tests'/f'{n}.lpr' for n in ['audio_path_tests','movement_animation_tests','external_movement_view_tests','movement_catalog_tests','movement_timeline_tests','movement_completion_probe','movement_scene_tests','movement_native_completion','professor_gesture_tests','professor_catalog_tests','professor_model_tests','professor_remote_speech_tests','professor_audio_smoke','professor_commands_tests','professor_state_tests','remote_stt_tests','modern_ui_tests','assistant_layout_tests','presentation_webview_tests','wave_finalize_tests','chrome_speech_tests','voice_native_tests','openai_stt_tests','avatar_import_preview','presentation_question_tests','assistant_config_tests','settings_rag_preview']})
     elif a.target!='all':targets={a.target:targets[a.target]}
     if a.test:
         if a.target!='tests' or any(n not in targets for n in a.test):p.error('--test requires known test names and --target tests')
         targets={n:targets[n] for n in a.test}
     for name,source in targets.items():
-        cmd=args+(['-WG'] if name in ['editor','assistant','motion-editor'] else [])+[str(source)]
+        cmd=args+(['-WG'] if name in ['editor','assistant','motion-editor','criador-avatar'] else [])+[str(source)]
         proc=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         (out/f'{name}-build.log').write_bytes(proc.stdout);print(proc.stdout.decode(errors='replace'),flush=True)
         if proc.returncode:raise SystemExit(proc.returncode)
-    if any(n in targets for n in ['assistant','motion-editor']):
+    if any(n in targets for n in ['assistant','motion-editor','criador-avatar']):
         shutil.copytree(base/'AVATARES',out/'AVATARES',dirs_exist_ok=True)
     if any(n in targets for n in ['assistant','editor']):
         for name in ['libeay32.dll','ssleay32.dll','libcrypto-1_1.dll','libssl-1_1.dll']:

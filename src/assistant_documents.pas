@@ -28,6 +28,10 @@ begin
   Key:=UTF8LowerCase(S);
   if (Key='chamar bloco') or (Copy(Key,1,13)='chamar bloco ') then begin
     Result:=dcCallBlock;Argument:=CleanArgument(Copy(S,14,MaxInt));
+  end else if Copy(Key,1,4)='ir {' then begin
+    Result:=dcCallBlock;Argument:=CleanArgument(Copy(S,4,MaxInt));
+  end else if (Key='ir para bloco') or (Copy(Key,1,14)='ir para bloco ') then begin
+    Result:=dcCallBlock;Argument:=CleanArgument(Copy(S,15,MaxInt));
   end else if (Key='carregar arquivo') or (Copy(Key,1,17)='carregar arquivo ') then begin
     Result:=dcLoadFile;Argument:=CleanArgument(Copy(S,18,MaxInt));
   end;

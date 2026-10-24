@@ -16,21 +16,25 @@ O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servi
 
 ## Instalação Windows
 
-Versão atual: [setup_assistente_0214.exe](bin/setup_assistente_0214.exe).
-Inclui o Assistente atualizado, o Editor de Apresentações, o Editor de Movimentos (prévia), a ferramenta PVA,
-11 avatares e os guias de comandos. O editor tem atalho próprio no menu Iniciar
-e opção de atalho na área de trabalho.
+Versão atual: [setup_assistente_0217.exe](bin/setup_assistente_0217.exe).
+Inclui o Assistente, o Editor de Apresentações, o Editor de Movimentos (prévia), a ferramenta PVA,
+o **Criador Avatar** (criação de avatares e importação de MakeHuman, Avaturn e Tripo3D),
+19 avatares e os guias de comandos. Inclui `[PERGUNTAR]`, `[MENU]` e `[CONTINUAR]`,
+perguntas à IA com contexto do roteiro e menu com clique, teclado, permanência de cinco segundos e rolagem.
+Em Configurações, exporta e importa um arquivo de configuração e gerencia os documentos do RAG
+(apresentações `.pva` e textos `.txt`, `.md`, `.csv`, `.json`) usados como referência pela IA.
 A instalação padrão é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação e verificação da versão 0.214](Docs/INSTALACAO_0214.md) e o
-[guia de comandos](Docs/guia-comandos-assistente.md).
-Os hashes estão no [manifesto](bin/setup_assistente_0214.manifest.json), e os
-resultados dos testes no [relatório](bin/setup_assistente_0214.validacao.json).
-As versões [0.130](Docs/INSTALACAO_0130.md) e [0.120](Docs/INSTALACAO_0120.md)
+Veja [instalação e verificação da versão 0.217](Docs/INSTALACAO_0217.md), o
+[arquivo de configuração e documentos do RAG](Docs/configuracao-arquivo-e-rag.md), o
+[guia do Criador Avatar](Docs/criador-avatar.md) e o [guia de comandos](Docs/guia-comandos-assistente.md).
+Os hashes estão no [manifesto](bin/setup_assistente_0217.manifest.json), e os
+resultados dos testes no [relatório](bin/setup_assistente_0217.validacao.json).
+As versões [0.216](Docs/INSTALACAO_0216.md), [0.215](Docs/INSTALACAO_0215.md), [0.214](Docs/INSTALACAO_0214.md), [0.130](Docs/INSTALACAO_0130.md) e [0.120](Docs/INSTALACAO_0120.md)
 permanecem disponíveis como histórico.
 
 ## Professor Virtual 3D
 
-Avatar 3D nativo no formulário Lazarus, com onze perfis selecionáveis e
+Avatar 3D nativo no formulário Lazarus, com dezoito perfis selecionáveis e
 animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.

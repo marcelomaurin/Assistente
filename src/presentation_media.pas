@@ -32,6 +32,7 @@ type
     function SoundPositionMS: Integer;
     function TimedPlaybackActive: Boolean;
     function YouTubeWaiting: Boolean;
+    function IsVideo:Boolean;
     procedure SetPaused(Value: Boolean);
     property OnVisualChange: TNotifyEvent read FOnVisualChange write FOnVisualChange;
     property Active: string read FActive;
@@ -137,6 +138,8 @@ function TPresentationMedia.VideoPositionMS: Integer;
 begin if FVideo then Result:=StrToInt(QueryMCI('status pva_media position')) else Result:=0;end;
 function TPresentationMedia.SoundPositionMS: Integer;
 begin if FSound then Result:=StrToInt(QueryMCI('status pva_sound position')) else Result:=0;end;
+function TPresentationMedia.IsVideo:Boolean;
+begin Result:=FVideo or (FYouTube<>nil);end;
 function TPresentationMedia.YouTubeWaiting:Boolean;
 begin
   Result:=FYouTube<>nil;if not Result then Exit;
@@ -176,7 +179,7 @@ begin
     paYouTube: begin
       if not TryYouTubeURL(Tag.Argument,VideoID,URL,StartSeconds) then raise Exception.Create('Link do YouTube invalido');
       CloseVisual;CloseSound;FActive:=URL;FImage.Visible:=False;NotifyVisualChange;
-      try FYouTube:=TPresentationWebView.Create(FHost,VideoID,StartSeconds);
+      try FYouTube:=TPresentationWebView.Create(FHost,VideoID,StartSeconds);NotifyVisualChange;
       except CloseVisual;raise;end;
     end;
     paOpenFile: begin

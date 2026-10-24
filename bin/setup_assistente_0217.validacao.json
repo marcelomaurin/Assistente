@@ -1,0 +1,20 @@
+{
+  "version": "0.217",
+  "installer_sha256": "a31bebbc1aad6874d857e940a3655c0c63e82aa767174b1de73c0f8009a7b65c",
+  "result": "PASS",
+  "payload_files": 2212,
+  "profiles": 19,
+  "environment": "Linux + Wine 9.0 (win64 prefix); Windows-native suite (tests/check_installer.py) not run",
+  "checks": [
+    "PASS: actual installer extracted 2212 files; all SHA-256 hashes match; 19 avatars; no personal configuration",
+    "PASS: actual 0.216-to-0.217 upgrade: default movement catalog upgraded with the new avatars, user-created avatar folder preserved, editable collision/motion JSON kept (same content), all other files match",
+    "PASS: upgrade preserved a customised movement catalog",
+    "PASS: installed Criador Avatar back end (embedded CPython 3.12, numpy, scipy, Pillow, MakeHuman targets) lists the MakeHuman modifiers",
+    "PASS: assistant_config_tests (Wine): export with/without secrets, machine keys excluded, import onto defaults, local secrets kept when absent, DPAPI storage after import, invalid files rejected without changes",
+    "PASS: presentation_rag_tests (Wine): previous RAG checks plus text reference documents (add, index, answer context, not playable, UTF-8 and format validation, removal)",
+    "PASS: presentation_rag_agent_tests (Wine, local HTTP provider): selected, none, fenced, invalid and cancel modes",
+    "PASS: installed assistente.exe --importar-config applied the file at start-up and ignored the machine key POSX",
+    "PASS: settings_rag_preview (Wine): Configuracoes > Documentos (RAG) lists .pva/.md/.csv documents with Exportar/Importar buttons"
+  ],
+  "not_run": "Windows-native suite tests/check_installer.py and run_presentation_questions.py (need Windows, ffmpeg and a GPU session)"
+}

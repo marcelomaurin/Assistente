@@ -8,7 +8,7 @@ procedure Check(Condition:Boolean;const Message:string);
 begin if not Condition then raise Exception.Create(Message);end;
 procedure WriteJSON(const FileName:string;Data:TJSONData);
 var T:TStringList;
-begin T:=TStringList.Create;try T.Text:=Data.AsJSON;T.SaveToFile(FileName);finally T.Free;end;end;
+begin T:=TStringList.Create;try T.Text:=Data.FormatJSON(AsCompressedJSON);T.SaveToFile(FileName);finally T.Free;end;end;
 procedure Reject(const Message:string);
 begin
   WriteJSON(BadFile,Bad);Rejected:=False;

@@ -16,7 +16,7 @@ uses
 
   chatgpt, aivoicesynthesizer, jarvis_api, vision_types, webcam_vision, aikinectsensor, aikinect_types,
   Windows, mmsystem, Math, fphttpclient, opensslsockets, ComObj, ActiveX,
-  assistant_integration_protocol, assistant_integration_settings_ui;
+  assistant_integration_protocol, assistant_integration_settings_ui, assistant_rag_settings_ui;
 
 
 
@@ -30,6 +30,8 @@ type
 
   TfrmConfig = class(TForm)
     IntegrationUI: TIntegrationSettingsUI;
+    RAGUI: TRAGSettingsUI;
+    ConfigFileButtons: TConfigFileButtons;
 
     pcConfig: TPageControl;
 
@@ -276,8 +278,13 @@ type
     FLoading: Boolean;
 
     FTestCamera: TWebcamVision;
+    procedure ExportConfigClick(Sender: TObject);
+    procedure ImportConfigClick(Sender: TObject);
 
   public
+    { Set by the owner: generate / apply a configuration file. }
+    OnExportConfig: TNotifyEvent;
+    OnImportConfig: TNotifyEvent;
 
     function SelectedVisionSource: TVisionSource;
 
@@ -927,6 +934,8 @@ procedure TfrmConfig.FormCreate(Sender: TObject);
 
 begin
   IntegrationUI:=TIntegrationSettingsUI.CreateFor(Self,pcConfig);
+  RAGUI:=TRAGSettingsUI.CreateFor(Self,pcConfig);
+  ConfigFileButtons:=TConfigFileButtons.CreateFor(Self,pnlButtons,@ExportConfigClick,@ImportConfigClick);
 
   FLoading := True;
 
@@ -944,10 +953,21 @@ end;
 
 
 
+procedure TfrmConfig.ExportConfigClick(Sender: TObject);
+begin
+  if Assigned(OnExportConfig) then OnExportConfig(Self);
+end;
+
+procedure TfrmConfig.ImportConfigClick(Sender: TObject);
+begin
+  if Assigned(OnImportConfig) then OnImportConfig(Self);
+end;
+
 procedure TfrmConfig.FormShow(Sender: TObject);
 var
   Prov: TAIProvider;
 begin
+  RAGUI.RefreshList;
   Prov := GetAIProviderFromIndex(cbProvider.ItemIndex);
   if not (Prov in [AIP_LOCAL, AIP_LLAMA_CPP, AIP_NEURAL_API, AIP_OPENAI_COMPATIBLE]) then
   begin

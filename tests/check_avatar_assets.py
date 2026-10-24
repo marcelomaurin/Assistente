@@ -15,7 +15,9 @@ for name in ('core-assets.lock.json','system-assets.lock.json'):
         assert hashlib.sha256(file.read_bytes()).hexdigest()==record.get('prepared_sha256',record.get('sha256')), f'Artwork checksum: {file}'
 print('PASS: pinned CC0 artwork provenance and prepared source checksums')
 profiles = ['professor', 'medico', 'engenheiro', 'programador', 'dona_de_casa',
-            'empresario', 'padre', 'crianca', 'bebe', 'robo', 'ze_gotinha']
+            'empresario', 'padre', 'crianca', 'bebe', 'robo', 'ze_gotinha',
+            'professora', 'professora_loira', 'professora_cachos', 'professora_cabelo_preto',
+            'professor_terno', 'professor_barba', 'professor_oculos']
 clips = {'idle', 'listening', 'thinking', 'talking', 'wave', 'walk'}
 for profile in profiles:
     folder = root / 'AVATARES' / profile

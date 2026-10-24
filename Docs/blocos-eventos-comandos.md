@@ -76,7 +76,7 @@ carregar arquivo demonstracao
 chamar bloco Saudacao
 ```
 
-Os mesmos comandos passam pelo fluxo de texto digitado e pelo texto transcrito da voz. Chaves e pontuação final simples são aceitas: `chamar bloco {Saudacao}.` e `carregar arquivo {demonstracao}]`. Durante a apresentação, a captura contínua continua pausada, como antes; termine a execução ou use Esc para voltar à entrada de comandos. Os EVENTs não alteram esse comportamento.
+Os mesmos comandos passam pelo fluxo de texto digitado e pelo texto transcrito da voz. Chaves e pontuação final simples são aceitas: `chamar bloco {Saudacao}.` e `carregar arquivo {demonstracao}]`. Durante a narracao, a captura continua pausada. O botao Perguntar e as tags [PERGUNTAR] e [MENU] pausam a apresentacao e liberam a entrada por texto ou voz. A tag [CONTINUAR] retoma o ponto interrompido. Os EVENTs não alteram esse comportamento.
 
 A busca ocorre na pasta `%LOCALAPPDATA%/Assistente/RAG/`, ou em `ASSISTENTE_CONFIG_DIR/RAG/` quando essa variável estiver definida. O comando aceita somente nomes da biblioteca, não caminhos arbitrários. A comparação desconsidera extensão, maiúsculas, acentos e separadores usuais; pequenas diferenças de escrita são aceitas. Se dois candidatos tiverem proximidade semelhante, o Assistente informa a ambiguidade. Um nome completo com extensão pode desambiguar arquivos diferentes.
 
@@ -119,3 +119,5 @@ python tests/run_presentation_flow.py build/presentations --model AVATARES/profe
 ```
 
 O teste valida controles do editor, desfazer/refazer, compilação, arquivos salvos, fala sem tags, navegação entre blocos, retorno, FIM, eventos inativos, nomes semelhantes, documento tradicional como conhecimento e comandos pelo retorno da transcrição. A transcrição é simulada no callback real; reconhecimento físico por microfone não é medido. A IA e o áudio remoto usam um servidor HTTP local de teste.
+
+Veja [perguntas durante a apresentacao](perguntas-apresentacao.md) para MENU clicavel, IR {nome do bloco}, respostas com contexto e CONTINUAR.

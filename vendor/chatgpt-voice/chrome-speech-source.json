@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/marcelomaurin/CHATGPT",
+  "source": "pacote/AI Voice",
+  "checkout_head": "963b31bb039267af4a9fa6e843e9df0e3e0b851f",
+  "files": {
+    "aichromespeech.pas": "f65b06397205f3eea7787f36c89d39c041287922e20d229d1ba3d349c447df76",
+    "aichromespeech_page.inc": "aee1f3d20cec8a065a775f257ff246c41463755652c77649ab0814c7a25267ff",
+    "aichromespeech.html": "00beb5892a6e5c0450b71070fb40288e2a869b7363963baca77313b667eff247",
+    "aispeechfilter.pas": "a5b86ccdf49f1c3c00d29ee2e12b9d877459776883b1a360a06ddc26168b42d7",
+    "aivoicerecognizer.pas": "ff067457f17cccaba79bcf8c45447b52d30e7d2443f3b845659580bc62fd1d15"
+  },
+  "note": "Canonical working tree sources copied byte-for-byte; local uncommitted library changes retained."
+}
