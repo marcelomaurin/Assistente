@@ -176,7 +176,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "apontar_direita"
+      "animation_file": "apontar_direita.json"
     },
     {
       "id": "apontar_esquerda",
@@ -188,7 +188,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "apontar_esquerda"
+      "animation_file": "apontar_esquerda.json"
     },
     {
       "id": "levantar_mao_esquerda",
@@ -385,7 +385,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "abrir_bracos"
+      "animation_file": "abrir_bracos.json"
     },
     {
       "id": "fechar_bracos",
