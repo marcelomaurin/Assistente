@@ -66,8 +66,9 @@ begin
   if not FileExists(FileName) then raise EConvertError.Create('Animacao ausente: '+FileName);
   S:=TStringList.Create;Root:=nil;
   try
-    if FileSize(FileName)>1024*1024 then raise EConvertError.Create('Animacao excede 1 MiB');
-    S.LoadFromFile(FileName);Root:=GetJSON(S.Text);
+    S.LoadFromFile(FileName);
+    if Length(S.Text)>1024*1024 then raise EConvertError.Create('Animacao excede 1 MiB');
+    Root:=GetJSON(S.Text);
     O:=RequireObject(Root,'Animacao');
     if StringValue(O,'format')<>'assistente-motion' then raise EConvertError.Create('Formato de animacao invalido');
     if IntegerValue(O,'version',1,1)<>1 then raise EConvertError.Create('Versao invalida');
