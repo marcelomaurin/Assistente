@@ -1,0 +1,55 @@
+{
+  "format": "assistente-motion",
+  "version": 1,
+  "name": "bocejar",
+  "duration_ms": 4000,
+  "loop": false,
+  "return_to_base": true,
+  "interpolation": "smoothstep",
+  "tracks": [
+    {
+      "bone": "head",
+      "axis": "x",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 1000,
+          "angle": -12
+        },
+        {
+          "time_ms": 3000,
+          "angle": -12
+        },
+        {
+          "time_ms": 4000,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "bone": "spine02",
+      "axis": "x",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 1000,
+          "angle": -6
+        },
+        {
+          "time_ms": 3000,
+          "angle": -6
+        },
+        {
+          "time_ms": 4000,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}

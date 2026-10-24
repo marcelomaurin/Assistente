@@ -233,11 +233,28 @@ begin
 end;
 
 function TProfessorView.ExecuteMovement(const ID: string): Boolean;
-var M: TMovementDefinition; Clip,Expected: string; I: Integer;
+var M: TMovementDefinition; Clip,Expected,AnimationPath: string; I: Integer;
 begin
   Result:=False;
   if not FindMovement(ID,M) then Exit;
   Clip:=M.Clip;
+  if M.AnimationFile<>'' then begin
+    AnimationPath:=IncludeTrailingPathDelimiter(ExtractFilePath(MovementCatalogFile))+
+      'movimentos'+PathDelim+M.AnimationFile;
+    try
+      TPresentationScene(FScene).ExecuteAnimation(AnimationPath);
+      FMovementJoints:=True;
+      FDirectiveGesture:='';FDirectiveUntil:=GetTickCount64+QWord(M.Duration);
+      FDirectiveMouth:=M.SpeechMouth;
+      TPresentationScene(FScene).GestureMouth:=FDirectiveMouth;
+      Exit(True);
+    except
+      on E: Exception do begin
+        FNotice.Caption:='Falha na animacao '+M.Tag+': '+E.Message;
+        FNotice.Visible:=True;Exit(False);
+      end;
+    end;
+  end;
   if (FMachine.State=psSpeaking) and (M.TalkingClip<>'') and
     (FScene.AnimationsList.IndexOf(M.TalkingClip)>=0) then Clip:=M.TalkingClip;
   if (Clip<>'') and (FScene.AnimationsList.IndexOf(Clip)<0) then begin
@@ -291,6 +308,7 @@ begin
   FTimer.Enabled:=Active;
   FControl.AutoRedisplay:=Active;
   FScene.TimePlaying:=Active;
+  TPresentationScene(FScene).PauseJoints(not Active);
   if Active then
   begin
     FControl.Container.Fps.ZeroNextSecondsPassed;

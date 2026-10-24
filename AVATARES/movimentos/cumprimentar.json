@@ -1,0 +1,63 @@
+{
+  "format": "assistente-motion",
+  "version": 1,
+  "name": "cumprimentar",
+  "duration_ms": 2400,
+  "loop": false,
+  "return_to_base": true,
+  "interpolation": "smoothstep",
+  "tracks": [
+    {
+      "bone": "upperarm01.R",
+      "axis": "z",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 500,
+          "angle": 32
+        },
+        {
+          "time_ms": 1250,
+          "angle": 24
+        },
+        {
+          "time_ms": 1800,
+          "angle": 32
+        },
+        {
+          "time_ms": 2400,
+          "angle": 0
+        }
+      ]
+    },
+    {
+      "bone": "lowerarm01.R",
+      "axis": "x",
+      "keyframes": [
+        {
+          "time_ms": 0,
+          "angle": 0
+        },
+        {
+          "time_ms": 500,
+          "angle": 30
+        },
+        {
+          "time_ms": 1250,
+          "angle": 22.5
+        },
+        {
+          "time_ms": 1800,
+          "angle": 30
+        },
+        {
+          "time_ms": 2400,
+          "angle": 0
+        }
+      ]
+    }
+  ]
+}

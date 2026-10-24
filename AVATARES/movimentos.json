@@ -39,8 +39,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "applause",
-      "talking_clip": "applause_talking"
+      "animation_file": "aplausos.json"
     },
     {
       "id": "levantar_mao_direita",
@@ -53,7 +52,8 @@
       ],
       "mode": "raise_right",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "levantar_mao_direita.json"
     },
     {
       "id": "abaixar_mao_direita",
@@ -67,7 +67,8 @@
       ],
       "mode": "lower_right",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "abaixar_mao_direita.json"
     },
     {
       "id": "aceno",
@@ -83,7 +84,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "wave"
+      "animation_file": "aceno.json"
     },
     {
       "id": "caminhar",
@@ -97,7 +98,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "walk"
+      "animation_file": "caminhar.json"
     },
     {
       "id": "piscar",
@@ -125,7 +126,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "concordar"
+      "animation_file": "concordar.json"
     },
     {
       "id": "negar",
@@ -140,7 +141,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "negar"
+      "animation_file": "negar.json"
     },
     {
       "id": "pensar",
@@ -152,7 +153,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "thinking"
+      "animation_file": "pensar.json"
     },
     {
       "id": "explicar",
@@ -164,7 +165,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "explicar"
+      "animation_file": "explicar.json"
     },
     {
       "id": "apontar_direita",
@@ -176,7 +177,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "apontar_direita"
+      "animation_file": "apontar_direita.json"
     },
     {
       "id": "apontar_esquerda",
@@ -188,7 +189,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "apontar_esquerda"
+      "animation_file": "apontar_esquerda.json"
     },
     {
       "id": "levantar_mao_esquerda",
@@ -202,7 +203,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 600,
-      "clip": "levantar_mao_esquerda"
+      "animation_file": "levantar_mao_esquerda.json"
     },
     {
       "id": "abaixar_mao_esquerda",
@@ -213,7 +214,8 @@
       "aliases": [],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 600
+      "transition_ms": 600,
+      "animation_file": "abaixar_mao_esquerda.json"
     },
     {
       "id": "levantar_ambas_maos",
@@ -225,7 +227,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "levantar_ambas_maos"
+      "animation_file": "levantar_ambas_maos.json"
     },
     {
       "id": "abaixar_ambas_maos",
@@ -236,7 +238,8 @@
       "aliases": [],
       "mode": "lower_both",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "abaixar_ambas_maos.json"
     },
     {
       "id": "olhar_esquerda",
@@ -248,7 +251,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_esquerda"
+      "animation_file": "olhar_esquerda.json"
     },
     {
       "id": "olhar_direita",
@@ -260,7 +263,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_direita"
+      "animation_file": "olhar_direita.json"
     },
     {
       "id": "olhar_frente",
@@ -271,7 +274,8 @@
       "aliases": [],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "olhar_frente.json"
     },
     {
       "id": "surpresa",
@@ -319,7 +323,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "rir"
+      "animation_file": "rir.json"
     },
     {
       "id": "comemorar",
@@ -331,7 +335,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "comemorar"
+      "animation_file": "comemorar.json"
     },
     {
       "id": "cumprimentar",
@@ -343,7 +347,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "cumprimentar"
+      "animation_file": "cumprimentar.json"
     },
     {
       "id": "positivo",
@@ -358,7 +362,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "positivo"
+      "animation_file": "positivo.json"
     },
     {
       "id": "negativo",
@@ -370,7 +374,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "negativo"
+      "animation_file": "negativo.json"
     },
     {
       "id": "abrir_bracos",
@@ -385,7 +389,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "abrir_bracos"
+      "animation_file": "abrir_bracos.json"
     },
     {
       "id": "fechar_bracos",
@@ -399,7 +403,8 @@
       ],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "fechar_bracos.json"
     },
     {
       "id": "cruzar_bracos",
@@ -414,7 +419,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "cruzar_bracos"
+      "animation_file": "cruzar_bracos.json"
     },
     {
       "id": "descruzar_bracos",
@@ -428,7 +433,8 @@
       ],
       "mode": "clear_pose",
       "duration_ms": 2400,
-      "transition_ms": 320
+      "transition_ms": 320,
+      "animation_file": "descruzar_bracos.json"
     },
     {
       "id": "sentar",
@@ -440,7 +446,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "sentar"
+      "animation_file": "sentar.json"
     },
     {
       "id": "levantar",
@@ -463,7 +469,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "passo_atras"
+      "animation_file": "passo_atras.json"
     },
     {
       "id": "passo_frente",
@@ -475,7 +481,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "passo_frente"
+      "animation_file": "passo_frente.json"
     },
     {
       "id": "dancar",
@@ -487,7 +493,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "dancar"
+      "animation_file": "dancar.json"
     },
     {
       "id": "parar_gesto",
@@ -524,7 +530,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "gesticular_ok"
+      "animation_file": "gesticular_ok.json"
     },
     {
       "id": "coracao_com_as_maos",
@@ -539,7 +545,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "coracao_com_as_maos"
+      "animation_file": "coracao_com_as_maos.json"
     },
     {
       "id": "olhar_para_tras_direita",
@@ -554,7 +560,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_para_tras_direita"
+      "animation_file": "olhar_para_tras_direita.json"
     },
     {
       "id": "olhar_para_tras_esquerda",
@@ -569,7 +575,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_para_tras_esquerda"
+      "animation_file": "olhar_para_tras_esquerda.json"
     },
     {
       "id": "nao_com_o_dedo",
@@ -585,7 +591,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "nao_com_o_dedo"
+      "animation_file": "nao_com_o_dedo.json"
     },
     {
       "id": "levantar_pe_direito",
@@ -597,7 +603,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "levantar_pe_direito"
+      "animation_file": "levantar_pe_direito.json"
     },
     {
       "id": "fechar_mao_esquerda",
@@ -611,7 +617,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "fechar_mao_esquerda"
+      "animation_file": "fechar_mao_esquerda.json"
     },
     {
       "id": "abrir_mao_esquerda",
@@ -625,7 +631,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "abrir_mao_esquerda"
+      "animation_file": "abrir_mao_esquerda.json"
     },
     {
       "id": "fechar_mao_direita",
@@ -639,7 +645,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "fechar_mao_direita"
+      "animation_file": "fechar_mao_direita.json"
     },
     {
       "id": "abrir_mao_direita",
@@ -667,8 +673,8 @@
       "mode": "gesture",
       "duration_ms": 4000,
       "transition_ms": 320,
-      "clip": "bocejar",
-      "speech_mouth": true
+      "speech_mouth": true,
+      "animation_file": "bocejar.json"
     },
     {
       "id": "abrir_olhos",

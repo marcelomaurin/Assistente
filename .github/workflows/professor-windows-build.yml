@@ -1,0 +1,43 @@
+name: Windows Professor Build
+on:
+  push:
+    branches: [feature/external-motion-keyframes]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  professor-build:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lazarus with FPC
+        shell: pwsh
+        run: |
+          choco install lazarus --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Lazarus installation failed' }
+      - name: Inspect installed compiler
+        shell: pwsh
+        run: |
+          $paths = @('C:\lazarus', 'C:\Lazarus')
+          $lazarus = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $lazarus) { throw 'Lazarus directory not found' }
+          $compiler = Get-ChildItem $lazarus -Filter fpc.exe -Recurse | Where-Object { $_.FullName -match '3\.2\.2' -and $_.FullName -match 'i386-win32' } | Select-Object -First 1
+          if (-not $compiler) { throw 'FPC 3.2.2 i386-win32 not found in Lazarus installation' }
+          & $compiler.FullName -iV
+          "LAZARUS_HOME=$lazarus" >> $env:GITHUB_ENV
+          "FPC_COMPILER=$($compiler.FullName)" >> $env:GITHUB_ENV
+      - name: Fetch pinned Castle Game Engine
+        shell: pwsh
+        run: ./scripts/setup_castle.ps1
+      - name: Build Professor Virtual
+        shell: pwsh
+        run: |
+          ./scripts/build_professor.ps1 -Lazarus $env:LAZARUS_HOME -Compiler $env:FPC_COMPILER
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: professor-build-logs
+          path: build/professor/*-build.log
+          if-no-files-found: warn
