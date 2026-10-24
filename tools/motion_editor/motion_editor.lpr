@@ -1,7 +1,7 @@
 program motion_editor;
 {$mode objfpc}{$H+}
 uses Interfaces, Forms, SysUtils, Classes, Controls, StdCtrls, ExtCtrls, ComCtrls,
-  Dialogs, Spin, fpjson, movement_animation, presentation_joint_tags, professor_view;
+  Dialogs, Spin, FileUtil, fpjson, movement_animation, presentation_joint_tags, professor_view;
 type
   TEditorForm = class(TForm)
   private
@@ -147,10 +147,10 @@ begin
     S.Text:=Root.FormatJSON;
     S.SaveToFile(FileName+'.tmp');
     try
-      LoadMotionAnimation(FileName+'.tmp');
+      Motion:=LoadMotionAnimation(FileName+'.tmp');
       if FileExists(FileName) then begin
         if MessageDlg('Substituir arquivo existente?',mtConfirmation,[mbYes,mbNo],0)<>mrYes then Exit;
-        if not CopyFile(FileName,FileName+'.bak') then raise Exception.Create('Falha ao criar backup');
+        if not FileUtil.CopyFile(FileName,FileName+'.bak') then raise Exception.Create('Falha ao criar backup');
         DeleteFile(FileName);
       end;
       if not RenameFile(FileName+'.tmp',FileName) then raise Exception.Create('Falha ao finalizar gravação');
