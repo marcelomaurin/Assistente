@@ -39,8 +39,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "applause",
-      "talking_clip": "applause_talking"
+      "animation_file": "aplausos.json"
     },
     {
       "id": "levantar_mao_direita",
@@ -154,7 +153,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "thinking"
+      "animation_file": "pensar.json"
     },
     {
       "id": "explicar",
@@ -336,7 +335,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "comemorar"
+      "animation_file": "comemorar.json"
     },
     {
       "id": "cumprimentar",
@@ -348,7 +347,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "cumprimentar"
+      "animation_file": "cumprimentar.json"
     },
     {
       "id": "positivo",
@@ -363,7 +362,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "positivo"
+      "animation_file": "positivo.json"
     },
     {
       "id": "negativo",
@@ -375,7 +374,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "negativo"
+      "animation_file": "negativo.json"
     },
     {
       "id": "abrir_bracos",
@@ -531,7 +530,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "gesticular_ok"
+      "animation_file": "gesticular_ok.json"
     },
     {
       "id": "coracao_com_as_maos",
@@ -546,7 +545,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "coracao_com_as_maos"
+      "animation_file": "coracao_com_as_maos.json"
     },
     {
       "id": "olhar_para_tras_direita",
@@ -561,7 +560,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_para_tras_direita"
+      "animation_file": "olhar_para_tras_direita.json"
     },
     {
       "id": "olhar_para_tras_esquerda",
@@ -576,7 +575,7 @@
       "mode": "pose",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "olhar_para_tras_esquerda"
+      "animation_file": "olhar_para_tras_esquerda.json"
     },
     {
       "id": "nao_com_o_dedo",
@@ -592,7 +591,7 @@
       "mode": "gesture",
       "duration_ms": 2400,
       "transition_ms": 320,
-      "clip": "nao_com_o_dedo"
+      "animation_file": "nao_com_o_dedo.json"
     },
     {
       "id": "levantar_pe_direito",
