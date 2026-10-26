@@ -72,7 +72,7 @@ thread.start()
 url = f'http://127.0.0.1:{server.server_port}/v1/chat/completions'
 env = {'ASSISTENTE_TEST_URL': url, 'RECEPTION_TEST_URL': url}
 try:
-    run('vision_check', marker='PASS')
+    run('vision_check', marker='Vision checks passed')
     run('reception_tests', marker='ALL TESTS PASSED', extra_env=env)
     run('app_checks', marker='ALL APP CHECKS PASSED', extra_env=env)
     assert Provider.grounded_calls == 1, ('expected one grounded call per turn', Provider.grounded_calls)
