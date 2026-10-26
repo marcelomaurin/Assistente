@@ -12,15 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install pinned Lazarus with FPC
-        uses: gcarreno/setup-lazarus@v3.4.1
-        with:
-          lazarus-version: '3.0'
-          with-cache: false
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          choco install lazarus --version=3.0.0 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw 'Lazarus installation failed' }
       - name: Inspect installed compiler
         shell: pwsh
         run: |
-          $lazarus = Split-Path (Get-Command lazbuild.exe -ErrorAction Stop).Source
-          $compiler = (Get-Command fpc.exe -ErrorAction Stop).Source
+          $lazbuild = Get-Command lazbuild.exe -ErrorAction SilentlyContinue
+          $lazarus = if ($lazbuild) { Split-Path $lazbuild.Source } else { 'C:\lazarus' }
+          $compiler = Get-ChildItem (Join-Path $lazarus 'fpc') -Filter fpc.exe -Recurse | Where-Object { $_.FullName -match 'x86_64-win64' } | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $compiler) { throw 'FPC x86_64-win64 not found in Lazarus installation' }
           $cpu = (& $compiler -iTP).Trim()
           $os = (& $compiler -iTO).Trim()
           if ($cpu -ne 'x86_64' -or $os -ne 'win64') { throw "Expected Win64 compiler, found $cpu-$os" }
