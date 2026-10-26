@@ -32,6 +32,7 @@ begin
   CloseButton.SetBounds(Width-116,10,96,32);CloseButton.Anchors:=[akTop,akRight];
   Status:=TLabel.Create(Self);Status.Parent:=Self;Status.Align:=alBottom;
   Status.BorderSpacing.Around:=10;Status.Caption:='Enter ou F3: próxima ocorrência. A pesquisa ignora maiúsculas e minúsculas.';
+  Status.WordWrap:=True;
   TextMemo:=TMemo.Create(Self);TextMemo.Parent:=Self;TextMemo.Align:=alClient;
   TextMemo.ReadOnly:=True;TextMemo.ScrollBars:=ssAutoBoth;TextMemo.WordWrap:=True;
   TextMemo.HideSelection:=False;TextMemo.BorderSpacing.Around:=12;

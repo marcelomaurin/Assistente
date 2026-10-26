@@ -19,14 +19,15 @@ jobs:
       - name: Inspect installed compiler
         shell: pwsh
         run: |
-          $paths = @('C:\lazarus', 'C:\Lazarus')
-          $lazarus = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $lazarus) { throw 'Lazarus directory not found' }
-          $compiler = Get-ChildItem $lazarus -Filter fpc.exe -Recurse | Where-Object { $_.FullName -match '3\.2\.2' -and $_.FullName -match 'x86_64-win64' } | Select-Object -First 1
-          if (-not $compiler) { throw 'FPC 3.2.2 x86_64-win64 not found in Lazarus installation' }
-          & $compiler.FullName -iV
+          $lazarus = Split-Path (Get-Command lazbuild.exe -ErrorAction Stop).Source
+          $compiler = (Get-Command fpc.exe -ErrorAction Stop).Source
+          $cpu = (& $compiler -iTP).Trim()
+          $os = (& $compiler -iTO).Trim()
+          if ($cpu -ne 'x86_64' -or $os -ne 'win64') { throw "Expected Win64 compiler, found $cpu-$os" }
+          & $compiler -iV
+          Write-Output "Lazarus: $lazarus; compiler: $compiler ($cpu-$os)"
           "LAZARUS_HOME=$lazarus" >> $env:GITHUB_ENV
-          "FPC_COMPILER=$($compiler.FullName)" >> $env:GITHUB_ENV
+          "FPC_COMPILER=$compiler" >> $env:GITHUB_ENV
       - name: Fetch pinned ChatGPT component baseline
         uses: actions/checkout@v4
         with:

@@ -203,6 +203,7 @@ begin
 end;
 function TPresentationPDF.RenderSlide(const FileName: string; Slide: Integer): string;
 begin
+  Result:='';
   {$ifdef windows}
   if VarIsEmpty(PowerPoint) then begin
     COMInitialized:=CoInitialize(nil)>=0;

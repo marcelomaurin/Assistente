@@ -28,6 +28,7 @@ begin
     Application.Initialize;Application.ShowMainForm:=False;Application.CreateForm(Tfrmmain,frmmain);
     try
       Check(frmmain.Menu is TAssistantMenu,'Native main menu missing');Menu:=TAssistantMenu(frmmain.Menu);
+      Check(Windows.IsMenu(Menu.Handle),'Main menu must expose a native Windows menu handle');
       Check(Assigned(Menu.OpenFile.OnClick) and Assigned(Menu.CloseFile.OnClick) and Assigned(Menu.PrintPDF.OnClick)
         and Assigned(Menu.FindText.OnClick) and Assigned(Menu.About.OnClick),'Unwired menu action');
       Check(frmmain.FindComponent('OpenFileButton')=nil,'Extra open button must not exist');
