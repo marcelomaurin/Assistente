@@ -68,9 +68,18 @@ jobs:
           }
           $fixture = Join-Path $PWD 'build/professor/pdf-output'
           foreach ($test in @('presentation_pdf_tests', 'assistant_menu_tests', 'assistant_document_menu_tests')) {
-            $log = & (Join-Path $PWD "build/professor/$test.exe") $fixture 2>&1
-            $log | Tee-Object -FilePath "build/professor/$test-result.log"
-            if ($LASTEXITCODE -ne 0 -or (($log -join "`n") -notmatch 'PASS:')) { throw "Test failed or did not finish: $test" }
+            $stdout = Join-Path $PWD "build/professor/$test-result.log"
+            $stderr = Join-Path $PWD "build/professor/$test-error.log"
+            $process = Start-Process -FilePath (Join-Path $PWD "build/professor/$test.exe") -ArgumentList ('"' + $fixture + '"') -PassThru -NoNewWindow -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if (-not $process.WaitForExit(120000)) {
+              $process.Kill()
+              throw "Test timed out: $test"
+            }
+            $process.WaitForExit()
+            $log = Get-Content -LiteralPath $stdout -Raw
+            Write-Output $log
+            Get-Content -LiteralPath $stderr
+            if ($process.ExitCode -ne 0 -or $log -notmatch 'PASS:') { throw "Test failed or did not finish: $test" }
           }
       - name: Upload build diagnostics
         if: always()
@@ -80,6 +89,7 @@ jobs:
           path: |
             build/professor/*-build.log
             build/professor/*-result.log
+            build/professor/*-error.log
             build/professor/assistente.exe
             build/professor/pdf-output/*.pdf
           if-no-files-found: warn

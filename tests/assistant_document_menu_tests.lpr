@@ -25,7 +25,9 @@ begin
       Config.Add('CONTINUOUS_LISTENING:0');Config.Add('AUTOSPEAK:0');Config.Add('VISION_SOURCE:none');
       Config.Add('AVATAR3D_PROFILE:professor');Config.SaveToFile(ConfigDirectory+PathDelim+'Setmain.cfg');
     finally Config.Free;end;
+    WriteLn('CHECK: initializing native main form');Flush(Output);
     Application.Initialize;Application.ShowMainForm:=False;Application.CreateForm(Tfrmmain,frmmain);
+    WriteLn('CHECK: native main form created');Flush(Output);
     try
       Check(frmmain.Menu is TAssistantMenu,'Native main menu missing');Menu:=TAssistantMenu(frmmain.Menu);
       Check(Windows.IsMenu(Menu.Handle),'Main menu must expose a native Windows menu handle');
@@ -38,18 +40,21 @@ begin
       Check(Pos('marcador-pesquisa',frmmain.SearchableDocumentText)>0,'Search must include loaded document');
       Failed:=False;try frmmain.LoadDocument(Directory+'inexistente.txt');except on E:Exception do Failed:=True;end;
       Check(Failed and (frmmain.LoadedDocument=LoadedName),'Failed open must retain previous document');
-      DeleteFile(LoadedName);Check(Pos('marcador-pesquisa',frmmain.SearchableDocumentText)>0,'Search must use loaded snapshot');
+      SysUtils.DeleteFile(LoadedName);Check(Pos('marcador-pesquisa',frmmain.SearchableDocumentText)>0,'Search must use loaded snapshot');
       frmmain.CloseDocument;
       Check((frmmain.LoadedDocument='') and (frmmain.LoadedFlow=nil),'Close must clear document and flow');
       Check(Pos('marcador-pesquisa',frmmain.SearchableDocumentText)=0,'Close must clear searchable document');
+      WriteLn('CHECK: open, search and close document');Flush(Output);
       Source:='[executar arquivo=assets/slide1.png]Texto principal. [{Detalhe}][FIM]'+
         '[BLOCO:{Detalhe}]Explicação com coração.[BLOCO:{Extra}]Resposta suplementar pesquisável.';
       LoadedName:=Directory+'menu-fixture.pva';P:=TPVAPackage.Create;
       try P.ExportFile(LoadedName,Source,Directory);finally P.Free;end;
       frmmain.StartPresentation(LoadedName);
+      WriteLn('CHECK: presentation started');Flush(Output);
       Check(frmmain.LoadedFlow<>nil,'Presentation flow missing');
       Check(Pos('Resposta suplementar',frmmain.SearchableDocumentText)>0,'Search must include unplayed blocks');
-      DeleteFile(LoadedName);frmmain.SavePresentationPDF(Directory+'native-main.pdf');
+      SysUtils.DeleteFile(LoadedName);frmmain.SavePresentationPDF(Directory+'native-main.pdf');
+      WriteLn('CHECK: cached package exported to PDF');Flush(Output);
       Check(FileExists(Directory+'native-main.pdf'),'PDF must export from loaded package after source is removed');
       StopPresentation;
       Check(frmmain.ActivePresentationMedia='','Close must remove presentation media');

@@ -60,6 +60,7 @@ begin
     except on E: Exception do Failed:=True;end;
     Check(Failed,'Missing image must fail');Text:=TStringList.Create;
     try Text.LoadFromFile(Target);Check(Trim(Text.Text)='existing PDF','Failed export overwrote destination');finally Text.Free;end;
+    SysUtils.DeleteFile(Target);
     Failed:=False;try Items:=PresentationPrintItems('[GOTO:{Inexistente}]');except on E: Exception do Failed:=True;end;
     Check(Failed,'Invalid flow must fail');
     WriteLn('PASS: execution order, inline blocks, FIM, entry blocks, PPTX navigation, UTF-8 search, PDF generation, pagination and failed-export preservation');
