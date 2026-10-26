@@ -7,7 +7,7 @@
 - Versão de referência: **0.214**.
 - Commit analisado: [8fb81db7a3fc535e57bd3a19659b3b39e03bae25](https://github.com/marcelomaurin/Assistente/commit/8fb81db7a3fc535e57bd3a19659b3b39e03bae25).
 - Método: leitura dos fontes, workflows, logs do GitHub Actions e relatórios publicados. O aplicativo Windows e os testes nativos não foram executados novamente nesta revisão.
-- Situação: registro de diagnóstico; os itens abaixo permanecem abertos. Esta alteração documenta os achados.
+- Situação: diagnóstico original preservado. **BUG-03 e BUG-04 receberam correção em 26/10/2026**, conforme atualização abaixo. Os problemas do agente, as pendências do editor e a homologação física continuam abertos.
 
 P1 indica prioridade para a confiabilidade do fluxo principal ou da entrega. P2 indica complemento funcional. Pendências de implementação e lacunas de validação estão identificadas separadamente dos bugs.
 
@@ -51,6 +51,8 @@ P1 indica prioridade para a confiabilidade do fluxo principal ou da entrega. P2 
 
 **Critério de aceite:** o workflow encontra o compilador da arquitetura escolhida, executa a compilação e publica evidências do resultado.
 
+**Atualização de 26/10/2026 — corrigido para Win64:** o workflow usa Lazarus 3.0/FPC 3.2.2 de 64 bits, encontra o compilador instalado, obtém as revisões fixadas de CHATGPT e Castle e guarda o toolchain em cache. A [execução 40327124951](https://github.com/marcelomaurin/Assistente/actions/runs/40327124951) compilou o Assistente completo e aprovou os três programas de regressão de menus/documentos/PDF. Isso valida a compilação e esses testes; não substitui a homologação de dispositivos e provedores reais de VAL-01.
+
 ### BUG-04 — Envios diretos à main sem validação automática do build Windows
 
 **Evidência:** em [professor-windows-build.yml](../.github/workflows/professor-windows-build.yml), o gatilho `push` contempla apenas `feature/external-motion-keyframes`. Há gatilhos de pull request para `main` e execução manual. A consulta ao Actions não retornou execuções associadas à branch `main` durante esta revisão.
@@ -60,6 +62,8 @@ P1 indica prioridade para a confiabilidade do fluxo principal ou da entrega. P2 
 **Correção proposta:** habilitar o gatilho de envio à main e preparar todas as dependências no runner, inclusive a revisão fixada da biblioteca CHATGPT.
 
 **Critério de aceite:** um envio à main inicia a validação do commit enviado em ambiente reproduzível.
+
+**Atualização de 26/10/2026 — corrigido no workflow:** o gatilho `push` agora inclui `main`; o ambiente obtém as dependências fixadas antes de compilar. A execução Win64 e os testes foram aprovados na branch de validação antes da publicação. Cada novo envio à main agenda a mesma verificação.
 
 ### PEND-01 — Recursos de edição de movimentos ainda incompletos
 
@@ -94,6 +98,11 @@ Os documentos registram verificações locais aprovadas. A suíte mais recente d
 ## Ordem sugerida
 
 1. Corrigir argumentos e propagação de falhas no agente: BUG-01 e BUG-02.
-2. Restaurar a compilação reproduzível e automática da main: BUG-03 e BUG-04.
+2. Manter a compilação automática da main: BUG-03 e BUG-04 corrigidos para o alvo Win64; acompanhar o Actions de cada entrega.
 3. Homologar a conversa completa no computador de uso: VAL-01.
 4. Completar os recursos de autoria e integração de movimentos: PEND-01 e PEND-02.
+
+## Entrega de menus — 26/10/2026
+
+Implementados os menus suspensos de abrir/fechar arquivo, imprimir apresentação em PDF, pesquisar texto e Sobre, sem botão extra de abertura no cabeçalho. A compilação completa Win64 e os testes de regressão passaram. Consulte o [relatório da entrega](MENUS_PDF_2026-10-26.md) e o [manual de uso](ManualUsuario/README.md#menus-suspensos-arquivos-pesquisa-e-pdf). O instalador 0.214 anterior não foi substituído por essa alteração.
+
