@@ -33,6 +33,9 @@ Credenciais de IA, Jarvis, transcrição e integração externa têm finalidades
 
 | Elemento | Uso |
 | --- | --- |
+| Menu Arquivo | Abrir, fechar e imprimir a apresentação em PDF |
+| Menu Pesquisar | Localizar palavras no documento e na conversa |
+| Ajuda → Sobre o Assistente | Informações sobre o programa e o desenvolvedor |
 | Personagem à esquerda | Apresenta estados e gestos da conversa |
 | Seletor de perfil | Troca a aparência do assistente |
 | Atualizar `↻` | Relê os modelos da pasta `AVATARES` |
@@ -43,6 +46,32 @@ Credenciais de IA, Jarvis, transcrição e integração externa têm finalidades
 | Indicadores/rodapé | Mostram atividade e disponibilidade dos recursos |
 
 Use a roda do mouse sobre o avatar para aproximar/afastar. Dê duplo clique para reenquadrar. Trocar o personagem também restaura o enquadramento. O zoom altera a visualização, não o arquivo do modelo.
+
+### Menus suspensos: arquivos, pesquisa e PDF
+
+As opções ficam na barra de menus da janela principal. Não existe botão adicional de **Abrir arquivo** no cabeçalho.
+
+| Caminho | Atalho | Comportamento |
+| --- | --- | --- |
+| Arquivo → Abrir arquivo... | Ctrl+O | Seleciona um documento ou apresentação em qualquer pasta |
+| Arquivo → Fechar arquivo | Ctrl+W | Interrompe a apresentação, fecha as mídias e descarrega o documento |
+| Arquivo → Imprimir apresentação / Salvar PDF... | Ctrl+P | Salva os textos e as imagens da apresentação carregada em PDF |
+| Pesquisar → Localizar no texto... | Ctrl+F | Abre o texto pesquisável, com a ocorrência destacada |
+| Ajuda → Sobre o Assistente... | — | Exibe identificação, autoria e endereço do projeto |
+
+**Abrir:** os formatos disponíveis são `.pva`, `.script`, `.txt`, `.md`, `.res`, `.rag`, `.json` e `.csv`. Apresentações e roteiros são executados; documentos de consulta ficam disponíveis para fundamentar as próximas perguntas. Um texto com comandos reconhecidos pode ser classificado como roteiro. PDF e DOCX não são importados por esse seletor. Cancelar a escolha mantém o documento e a pergunta digitada. Um erro de leitura mantém o documento anterior.
+
+**Fechar:** remove o documento da consulta e da pesquisa, libera o pacote carregado e fecha as mídias da apresentação. O histórico da conversa é preservado. Durante uma apresentação, o fechamento também cancela a narração; uma nova abertura aguarda o encerramento dessa operação.
+
+**PDF:** escolha o nome e a pasta de destino. O Assistente usa uma cópia do pacote carregado, preserva a sequência de execução do roteiro, expande as chamadas de blocos na posição correta e respeita `GOTO`, o bloco de entrada escolhido e `FIM`. Imagens PNG/JPEG/BMP entram no PDF com proporção preservada, seguidas pelo texto correspondente. O texto é selecionável, mantém acentos e recebe paginação automática em A4. O arquivo existente só é substituído depois que a renderização termina com sucesso. Para imprimir em papel, abra o PDF salvo no seu leitor e use a impressão dele.
+
+Slides de um PPTX são convertidos em imagens seguindo as tags de navegação do roteiro; essa conversão requer **Microsoft PowerPoint instalado no Windows**, como a reprodução desses slides no Assistente. Áudio, vídeo e YouTube aparecem como referências textuais: o PDF não reproduz som nem vídeo. Blocos de evento ou de perguntas que não participam da execução escolhida não são acrescentados ao PDF. Eles continuam disponíveis na pesquisa.
+
+**Pesquisar:** a janela reúne o texto do documento carregado, inclusive os blocos suplementares, e a conversa atual. Digite uma palavra ou expressão e pressione **Enter** ou **F3** para avançar. A pesquisa ignora diferenças entre maiúsculas e minúsculas, preserva os acentos e retorna ao início depois da última ocorrência. As tags de execução não são exibidas como texto da apresentação.
+
+Enquanto um seletor ou uma janela de pesquisa está aberto, a escuta fica pausada e a integração informa que o Assistente está ocupado. Ao fechar a janela, a escuta retorna conforme a configuração. Abrir outro documento e exportar PDF ficam indisponíveis durante IA, transcrição ou reprodução. **Fechar arquivo** permanece disponível para interromper uma apresentação carregada.
+
+Esses menus pertencem aos fontes atualizados em **26/10/2026**. É necessário recompilar; o instalador 0.214 anteriormente publicado não recebe essas funções automaticamente.
 
 ## 5. Conversar por texto
 
@@ -151,3 +180,4 @@ Ao relatar um problema, informe qual executável/pacote abriu, o perfil do avata
 ## Limites desta versão
 
 Há testes de TCP/ABI e da janela real com provedor local simulado. Isso não comprova todas as contas comerciais, conexão entre computadores, microfone/Kinect em seu ambiente ou todo driver gráfico. A boca acompanha a fala por ciclo animado, sem visemas por fonema; o olhar é procedural. Integração é TCP IPv4 autenticado, sem TLS, áudio por socket ou atendimento paralelo de várias conversas.
+

@@ -2,7 +2,7 @@ unit main;
 {$mode objfpc}{$H+}
 interface
 uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Buttons, LCLType, chatgpt, setmain, frmconfig, jarvis_api, agent_manager,
+  Buttons, assistant_menu, LCLType, chatgpt, setmain, frmconfig, jarvis_api, agent_manager,
   reception_core, aiagent_memorymap, aiagent_flowevents, voice_input_bridge,
   professor_listener, professor_state, professor_view,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
@@ -32,8 +32,21 @@ type
     FLoadedFile,FLoadedKnowledge: string;
     FLoadedKind: TAssistantDocumentKind;
     FLoadedFlow: TFlowProgram;
+    FLoadedPackage: TPVAPackage;
+    FLoadedSource, FLoadedEntryBlock, FSearchQuery: string;
+    FDocumentMenu: TAssistantMenu;
+    FOpenFileDialog: TOpenDialog;
+    FPDFDialog: TSaveDialog;
+    FDocumentDialogOpen: Boolean;
     FPresentationRoot: string;
     FPresentationMode,FPresentationAvatarChanged: Boolean;
+    procedure CreateDocumentMenu;
+    procedure UpdateDocumentActions;
+    procedure OpenFileClick(Sender: TObject);
+    procedure CloseFileClick(Sender: TObject);
+    procedure PrintPDFClick(Sender: TObject);
+    procedure FindTextClick(Sender: TObject);
+    procedure AboutClick(Sender: TObject);
     function ExecuteDocumentCommand(const AInput: string): Boolean;
     procedure SelectPresentationAvatar(const AvatarID: string);
     procedure FinishPresentation;
@@ -104,6 +117,9 @@ type
   public
     procedure StartPresentation(const FileName: string; const EntryBlock: string = '');
     procedure LoadDocument(const FileName: string);
+    procedure CloseDocument;
+    procedure SavePresentationPDF(const FileName: string);
+    function SearchableDocumentText: string;
     procedure CallLoadedBlock(const BlockName: string);
     property LoadedDocument: string read FLoadedFile;
     property LoadedFlow: TFlowProgram read FLoadedFlow;
@@ -118,7 +134,8 @@ type
   end;
 var frmmain: Tfrmmain;
 implementation
-uses professor_settings, Math, FileUtil, LazFileUtils, LazUTF8;
+uses professor_settings, Math, FileUtil, LazFileUtils, LazUTF8,
+  assistant_search_dialog, presentation_pdf;
 {$R *.lfm}
 
 procedure Tfrmmain.FormCreate(Sender: TObject);
@@ -158,6 +175,7 @@ begin
   Caption := 'Assistente | Maurinsoft';
   Font.Name:='Segoe UI';Font.Size:=10;DoubleBuffered:=True;
   FMovementIDs:=TStringList.Create;
+  CreateDocumentMenu;
   Width:=1180;Height:=780;
   Constraints.MinWidth := 740;
   Constraints.MinHeight := 450;
@@ -360,6 +378,7 @@ begin
   FClosing := True;
   FreeAndNil(FRAGMonitor);
   FreeAndNil(FLoadedFlow);
+  FreeAndNil(FLoadedPackage);
   if Assigned(FTimer) then FTimer.Enabled := False;
   FreeAndNil(FIntegration);
   if Assigned(FContinuousListener) then FContinuousListener.Stop;
@@ -428,7 +447,7 @@ end;
 
 procedure Tfrmmain.RetomarEscuta;
 begin
-  if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
+  if FClosing or FDocumentDialogOpen or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
   FProfessor.SetActivity(psIdle);
   if FMicMuted then Exit;
   if FSetMain.ContinuousListening then
@@ -600,6 +619,146 @@ begin
   else FAIStatus.Caption := 'IA pronta';
   FAIStatus.Hint := ATexto;
   FAIStatus.ShowHint := True;
+  UpdateDocumentActions;
+end;
+
+procedure Tfrmmain.CreateDocumentMenu;
+begin
+  FDocumentMenu:=TAssistantMenu.Create(Self);Menu:=FDocumentMenu;
+  FDocumentMenu.OpenFile.OnClick:=@OpenFileClick;
+  FDocumentMenu.CloseFile.OnClick:=@CloseFileClick;
+  FDocumentMenu.PrintPDF.OnClick:=@PrintPDFClick;
+  FDocumentMenu.FindText.OnClick:=@FindTextClick;
+  FDocumentMenu.About.OnClick:=@AboutClick;
+  FOpenFileDialog:=TOpenDialog.Create(Self);
+  FOpenFileDialog.Title:='Abrir arquivo no Assistente';
+  FOpenFileDialog.Filter:='Documentos do Assistente|*.pva;*.script;*.txt;*.md;*.res;*.rag;*.json;*.csv|'+
+    'Apresentações e roteiros|*.pva;*.script|Textos e documentos de consulta|*.txt;*.md;*.res;*.rag;*.json;*.csv';
+  FOpenFileDialog.Options:=[ofFileMustExist,ofPathMustExist,ofEnableSizing,ofHideReadOnly];
+  FPDFDialog:=TSaveDialog.Create(Self);FPDFDialog.Title:='Imprimir apresentação / Salvar PDF';
+  FPDFDialog.Filter:='Documento PDF|*.pdf';FPDFDialog.DefaultExt:='pdf';
+  FPDFDialog.Options:=[ofOverwritePrompt,ofPathMustExist,ofEnableSizing];
+end;
+
+procedure Tfrmmain.UpdateDocumentActions;
+var Available, Idle: Boolean;
+begin
+  if FDocumentMenu=nil then Exit;
+  Available:=not FClosing and not FDocumentDialogOpen and not FConfigOpen and
+    not FAguardandoResposta and ((FVoiceInput=nil) or not FVoiceInput.Busy);
+  Idle:=Available and (FSpeechJob=nil);
+  FDocumentMenu.OpenFile.Enabled:=Idle;
+  FDocumentMenu.CloseFile.Enabled:=Available and (FLoadedFile<>'') and ((FSpeechJob=nil) or FPresentationMode);
+  FDocumentMenu.PrintPDF.Enabled:=Idle and (FLoadedPackage<>nil);
+  FDocumentMenu.FindText.Enabled:=Idle;
+  FDocumentMenu.About.Enabled:=Idle;
+end;
+
+procedure Tfrmmain.OpenFileClick(Sender: TObject);
+var Directory, MessageText: string;
+begin
+  if IntegrationBusy then Exit;
+  Directory:=ExtractFilePath(FLoadedFile);
+  if not DirectoryExists(Directory) then Directory:=PresentationRAGDirectory;
+  if not DirectoryExists(Directory) then Directory:=GetUserDir;
+  FOpenFileDialog.InitialDir:=Directory;FOpenFileDialog.FileName:='';
+  FDocumentDialogOpen:=True;PausarEscuta;UpdateDocumentActions;
+  try
+    try
+      if not FOpenFileDialog.Execute then Exit;
+      LoadDocument(FOpenFileDialog.FileName);
+      MessageText:='Arquivo carregado: '+ExtractFileName(FLoadedFile);
+      FChat.AddMessage(MessageText,False);memResposta.Lines.Add(MessageText);
+    except on E: Exception do MessageDlg('Abrir arquivo','Não foi possível abrir o arquivo: '+E.Message,mtError,[mbOK],0);end;
+  finally
+    FDocumentDialogOpen:=False;UpdateDocumentActions;RetomarEscuta;
+    if edPergunta.CanFocus then edPergunta.SetFocus;
+  end;
+end;
+
+procedure Tfrmmain.CloseDocument;
+begin
+  if FClosing or FDocumentDialogOpen or FConfigOpen or FAguardandoResposta or
+    ((FVoiceInput<>nil) and FVoiceInput.Busy) or ((FSpeechJob<>nil) and not FPresentationMode) then
+    raise Exception.Create('Aguarde o Assistente concluir a operação atual.');
+  if FLoadedFile='' then Exit;
+  PausarEscuta;
+  if FSpeechJob<>nil then FSpeechJob.Cancel;
+  FinishPresentation;FreeAndNil(FLoadedFlow);FreeAndNil(FLoadedPackage);
+  FLoadedFile:='';FLoadedKnowledge:='';FLoadedSource:='';FLoadedEntryBlock:='';FLoadedKind:=adRAG;
+  FPresentationPanel.Visible:=False;FChat.Visible:=True;FInputCard.Visible:=True;
+  FSendButton.Visible:=True;btConfig.Visible:=True;lblAssistente.Caption:='Conversa';
+  SetEstado('Arquivo fechado. Pronto para conversar',False);RetomarEscuta;
+end;
+
+procedure Tfrmmain.CloseFileClick(Sender: TObject);
+begin
+  try CloseDocument;
+  except on E: Exception do MessageDlg('Fechar arquivo',E.Message,mtError,[mbOK],0);end;
+end;
+
+procedure Tfrmmain.SavePresentationPDF(const FileName: string);
+var G: TGUID; Directory: string;
+begin
+  if FLoadedPackage=nil then raise Exception.Create('Carregue primeiro uma apresentação ou roteiro.');
+  if not SameText(ExtractFileExt(FileName),'.pdf') then raise Exception.Create('O destino deve ter a extensão .pdf.');
+  CreateGUID(G);Directory:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-print-package-'+GUIDToString(G);
+  try
+    FLoadedPackage.ExtractTo(Directory);
+    ExportPresentationPDF(FLoadedSource,Directory,FileName,ExtractFileName(FLoadedFile),FLoadedEntryBlock);
+  finally if DirectoryExists(Directory) then DeleteDirectory(Directory,False);end;
+end;
+
+procedure Tfrmmain.PrintPDFClick(Sender: TObject);
+begin
+  if IntegrationBusy or (FLoadedPackage=nil) then Exit;
+  FPDFDialog.FileName:=ChangeFileExt(ExtractFileName(FLoadedFile),'.pdf');
+  FDocumentDialogOpen:=True;PausarEscuta;UpdateDocumentActions;
+  try
+    try
+      if not FPDFDialog.Execute then Exit;
+      SavePresentationPDF(FPDFDialog.FileName);
+      MessageDlg('PDF salvo','Apresentação salva em:'+LineEnding+FPDFDialog.FileName,mtInformation,[mbOK],0);
+    except on E: Exception do MessageDlg('Imprimir apresentação',E.Message,mtError,[mbOK],0);end;
+  finally FDocumentDialogOpen:=False;UpdateDocumentActions;RetomarEscuta;end;
+end;
+
+function Tfrmmain.SearchableDocumentText: string;
+var Flow: TFlowProgram; Script: TAvatarScript;
+begin
+  Result:='';
+  if FLoadedFile<>'' then begin
+    Result:='Documento: '+ExtractFileName(FLoadedFile)+LineEnding+LineEnding;
+    if FLoadedKind=adRAG then Result:=Result+FLoadedKnowledge
+    else begin
+      Flow:=TFlowProgram.Create(FLoadedSource);
+      try Script:=ParseAvatarScript(Flow.WithoutFlowTags,4096);Result:=Result+Script.PlainText;
+      finally Flow.Free;end;
+    end;
+    Result:=Result+LineEnding+LineEnding;
+  end;
+  Result:=Result+'Conversa atual'+LineEnding+LineEnding+memResposta.Text;
+end;
+
+procedure Tfrmmain.FindTextClick(Sender: TObject);
+begin
+  if IntegrationBusy then Exit;
+  FDocumentDialogOpen:=True;PausarEscuta;UpdateDocumentActions;
+  try SearchAssistantText(Self,SearchableDocumentText,FSearchQuery);
+  finally FDocumentDialogOpen:=False;UpdateDocumentActions;RetomarEscuta;end;
+end;
+
+procedure Tfrmmain.AboutClick(Sender: TObject);
+begin
+  if IntegrationBusy then Exit;
+  FDocumentDialogOpen:=True;PausarEscuta;UpdateDocumentActions;
+  try
+    MessageDlg('Sobre o Assistente','Assistente | Maurinsoft'+LineEnding+LineEnding+
+      'Professor virtual e apresentações com avatar 3D.'+LineEnding+
+      'Desenvolvido por Marcelo Maurin Martins.'+LineEnding+'https://maurinsoft.com.br'+LineEnding+LineEnding+
+      'Arquivo: abrir, fechar e imprimir apresentação em PDF.'+LineEnding+
+      'Pesquisar: localizar palavras no documento e na conversa.',mtInformation,[mbOK],0);
+  finally FDocumentDialogOpen:=False;UpdateDocumentActions;RetomarEscuta;end;
 end;
 
 procedure Tfrmmain.EnviarPergunta;
@@ -608,7 +767,7 @@ begin ProcessarEntrada(edPergunta.Text); end;
 procedure Tfrmmain.ProcessarEntrada(const ATexto: string);
 var P, H, C: string; Script: TAvatarScript;
 begin
-  if FClosing or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
+  if FClosing or FDocumentDialogOpen or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy then Exit;
   P := Trim(ATexto);
   if P = '' then begin RetomarEscuta; Exit; end;
   if ExecuteDocumentCommand(P) then Exit;
@@ -717,7 +876,8 @@ begin
   SourcePath:=ExpandFileName(FileName);Kind:=AssistantDocumentKind(SourcePath);
   if Kind<>adRAG then begin StartPresentation(SourcePath);Exit;end;
   TextValue:=ReadAssistantKnowledge(SourcePath);
-  FreeAndNil(FLoadedFlow);FLoadedFile:=SourcePath;FLoadedKind:=adRAG;FLoadedKnowledge:=TextValue;
+  FreeAndNil(FLoadedFlow);FreeAndNil(FLoadedPackage);FLoadedSource:='';FLoadedEntryBlock:='';
+  FLoadedFile:=SourcePath;FLoadedKind:=adRAG;FLoadedKnowledge:=TextValue;
   SetEstado('Documento de consulta carregado: '+ExtractFileName(SourcePath),False);
 end;
 procedure Tfrmmain.CallLoadedBlock(const BlockName: string);
@@ -767,6 +927,8 @@ begin
     P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot,FPresentationPanel);
     FPresentationMedia.OnVisualChange:=@PresentationVisualChange;
     FreeAndNil(FLoadedFlow);FLoadedFlow:=Flow;Flow:=nil;
+    FreeAndNil(FLoadedPackage);FLoadedPackage:=P;P:=nil;
+    FLoadedSource:=FLoadedPackage.Script;FLoadedEntryBlock:=EntryBlock;
     FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
     FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
     FalarResposta(Compiled);
@@ -828,6 +990,7 @@ procedure Tfrmmain.TimerTick(Sender: TObject);
 var Ok: Boolean; Err: string; Command: TAvatarScriptStep;
 begin
   if FClosing then Exit;
+  UpdateDocumentActions;
   if Assigned(FIntegration) then FIntegration.Pump;
   FAvatarStatus.Caption := 'Avatar: ' + FProfessor.ActivityLabel;
   if FProfessor.ModelFile <> '' then FRenderStatus.Caption := 'Renderização 3D'
@@ -1019,7 +1182,7 @@ begin
 end;
 
 function Tfrmmain.IntegrationBusy:Boolean;
-begin Result:=FClosing or FConfigOpen or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy;end;
+begin Result:=FClosing or FConfigOpen or FDocumentDialogOpen or FAguardandoResposta or Assigned(FSpeechJob) or FVoiceInput.Busy;end;
 
 procedure Tfrmmain.ConfigureIntegration;
 begin
@@ -1098,3 +1261,4 @@ begin
 end;
 
 end.
+

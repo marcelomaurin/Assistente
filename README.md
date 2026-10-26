@@ -14,6 +14,15 @@ além de DLLs cliente Win32/Win64 em `bin/integration`. Requerem o aplicativo
 compilado dessas fontes e a opção Integração externa habilitada.
 O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servidor.
 
+### Menus de arquivos, pesquisa e PDF
+
+As fontes de 26/10/2026 incluem menus suspensos **Arquivo**, **Pesquisar** e **Ajuda**:
+abrir (`Ctrl+O`), fechar (`Ctrl+W`), imprimir apresentação em PDF (`Ctrl+P`),
+localizar texto (`Ctrl+F`, `F3` para avançar) e Sobre. O PDF segue o roteiro executado,
+incluindo textos, imagens e chamadas de blocos. Veja os detalhes e os requisitos
+para PPTX no [manual](Docs/ManualUsuario/README.md#menus-suspensos-arquivos-pesquisa-e-pdf).
+Essas funções exigem recompilar; não foram acrescentadas ao instalador 0.214 existente.
+
 ## Instalação Windows
 
 Versão atual: [setup_assistente_0214.exe](bin/setup_assistente_0214.exe).
@@ -112,3 +121,4 @@ Consulte o [manual do editor](Docs/editor-apresentacoes.md), o [catálogo de tag
 As fontes corrigidas após a sincronização geram os programas em `build/validation-20261024`. Esses executáveis incluem correções posteriores ao instalador 0.213; os instaladores históricos não são alterados por uma compilação local. O Editor de Movimentos também compila, mas continua sendo um protótipo. Consulte o [relatório de revisão e validação](Docs/VALIDACAO_2026-10-24.md) para evidências, comandos reproduzíveis e limitações.
 
 O instalador 0.214 inclui essas correções e a prévia do Editor de Movimentos. Veja o [guia de uso](Docs/editor-movimentos.md).
+

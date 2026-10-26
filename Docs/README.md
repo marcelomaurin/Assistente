@@ -9,7 +9,8 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
 | [Instalador 0.214](INSTALACAO_0214.md) | Assistente, apresentações e prévia do Editor de Movimentos |
 | [Guia de comandos](guia-comandos-assistente.md) | Blocos, eventos futuros, avatar, voz, mídias e comandos de entrada |
-| [Manual do usuário](ManualUsuario/README.md) | Instalação, primeiro uso, conversa, voz, avatar, vídeo e integração |
+| [Manual do usuário](ManualUsuario/README.md) | Instalação, menus de arquivos, PDF, pesquisa, conversa, voz, avatar, vídeo e integração |
+| [Menus e PDF — 26/10/2026](MENUS_PDF_2026-10-26.md) | Implementação, validação e limites da exportação |
 
 Comece pelo manual se deseja usar o programa. Para desenvolver uma integração, configure o acesso no manual, leia o protocolo e escolha o cliente socket ou DLL. Os dois caminhos exigem o aplicativo em execução e usam a mesma autorização.
 
@@ -41,3 +42,4 @@ A revisão pós-integração, os programas recompilados e os limites dos testes 
 Consulte o [guia do Editor de Movimentos (prévia)](editor-movimentos.md).
 
 A revisão com poses XYZ, vistas CAD e padrão visual MultiCNC está descrita na [validação do editor 3D](VALIDACAO_EDITOR_3D_2026-10-24.md).
+

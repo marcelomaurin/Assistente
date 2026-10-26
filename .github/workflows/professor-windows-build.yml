@@ -1,7 +1,7 @@
 name: Windows Professor Build
 on:
   push:
-    branches: [feature/external-motion-keyframes]
+    branches: [main, feature/external-motion-keyframes, work/menus-arquivo-pdf-20261026]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,33 +11,59 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Install Lazarus with FPC
-        shell: pwsh
-        run: |
-          choco install lazarus --yes --no-progress
-          if ($LASTEXITCODE -ne 0) { throw 'Lazarus installation failed' }
+      - name: Install pinned Lazarus with FPC
+        uses: gcarreno/setup-lazarus@v3.4.1
+        with:
+          lazarus-version: '3.0'
+          with-cache: false
       - name: Inspect installed compiler
         shell: pwsh
         run: |
           $paths = @('C:\lazarus', 'C:\Lazarus')
           $lazarus = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $lazarus) { throw 'Lazarus directory not found' }
-          $compiler = Get-ChildItem $lazarus -Filter fpc.exe -Recurse | Where-Object { $_.FullName -match '3\.2\.2' -and $_.FullName -match 'i386-win32' } | Select-Object -First 1
-          if (-not $compiler) { throw 'FPC 3.2.2 i386-win32 not found in Lazarus installation' }
+          $compiler = Get-ChildItem $lazarus -Filter fpc.exe -Recurse | Where-Object { $_.FullName -match '3\.2\.2' -and $_.FullName -match 'x86_64-win64' } | Select-Object -First 1
+          if (-not $compiler) { throw 'FPC 3.2.2 x86_64-win64 not found in Lazarus installation' }
           & $compiler.FullName -iV
           "LAZARUS_HOME=$lazarus" >> $env:GITHUB_ENV
           "FPC_COMPILER=$($compiler.FullName)" >> $env:GITHUB_ENV
+      - name: Fetch pinned ChatGPT component baseline
+        uses: actions/checkout@v4
+        with:
+          repository: marcelomaurin/CHATGPT
+          ref: 3c845b998c7c631c0608c12b766a04b39da13be1
+          path: .deps/chatgpt-integration-baseline
+          sparse-checkout: |
+            pacote
+            funcoes.pas
       - name: Fetch pinned Castle Game Engine
         shell: pwsh
         run: ./scripts/setup_castle.ps1
       - name: Build Professor Virtual
         shell: pwsh
         run: |
-          ./scripts/build_professor.ps1 -Lazarus $env:LAZARUS_HOME -Compiler $env:FPC_COMPILER
+          ./scripts/build_professor.ps1 -Lazarus $env:LAZARUS_HOME -Compiler $env:FPC_COMPILER -Platform x86_64-win64 -ChatGPT .deps/chatgpt-integration-baseline
+      - name: Build and run menu, document and PDF regressions
+        shell: pwsh
+        run: |
+          foreach ($target in @('tests/presentation_pdf_tests.lpr', 'tests/assistant_menu_tests.lpr', 'tests/assistant_document_menu_tests.lpr')) {
+            ./scripts/build_professor.ps1 -Lazarus $env:LAZARUS_HOME -Compiler $env:FPC_COMPILER -Platform x86_64-win64 -ChatGPT .deps/chatgpt-integration-baseline -Target $target
+          }
+          $fixture = Join-Path $PWD 'build/professor/pdf-output'
+          foreach ($test in @('presentation_pdf_tests', 'assistant_menu_tests', 'assistant_document_menu_tests')) {
+            $log = & (Join-Path $PWD "build/professor/$test.exe") $fixture 2>&1
+            $log | Tee-Object -FilePath "build/professor/$test-result.log"
+            if ($LASTEXITCODE -ne 0 -or (($log -join "`n") -notmatch 'PASS:')) { throw "Test failed or did not finish: $test" }
+          }
       - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: professor-build-logs
-          path: build/professor/*-build.log
+          name: professor-menus-pdf-win64
+          path: |
+            build/professor/*-build.log
+            build/professor/*-result.log
+            build/professor/assistente.exe
+            build/professor/pdf-output/*.pdf
           if-no-files-found: warn
+
