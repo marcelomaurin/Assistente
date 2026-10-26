@@ -186,7 +186,7 @@ begin
   FOnStepUpdate := nil;
   FOnToolLog := nil;
   CancelExecution;
-  if Assigned(FWorker) then begin FWorker.WaitFor; FreeAndNil(FWorker); end;
+  if Assigned(FWorker) then begin FWorker.Terminate;FWorker.WaitFor; FreeAndNil(FWorker); end;
   FPlanner.Free;
   FLock.Free;
   inherited Destroy;
@@ -225,6 +225,7 @@ begin
     FreeAndNil(FWorker);
   end;
   FCancelRequested := False;FSelectedPresentation:='';FSelectedPresentationDigest:='';
+  FPlanner.Clear;
   FState := asPlanning;
   FWorker := TAgentWorkerThread.Create(Self, AUserPrompt,ASelectionRequest,ASelectPresentation);
   FWorker.Start;
@@ -232,7 +233,8 @@ end;
 procedure TAssistantManager.CancelExecution;
 begin
   FCancelRequested := True;
-  if Assigned(FWorker) then FWorker.Terminate;
+  // Keep the worker entry point alive so immediate cancellation still reports
+  // completion to the UI. Destruction terminates and joins it separately.
   FState := asCancelled;
   if Assigned(FChatGPT) then FChatGPT.Cancel;
 end;

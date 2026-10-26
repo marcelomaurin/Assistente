@@ -2,17 +2,26 @@ program assistant_document_menu_tests;
 {$mode objfpc}{$H+}{$codepage utf8}
 uses Interfaces, Forms, Classes, SysUtils, Windows, main, setmain,
   assistant_menu, presentation_package;
+type TUIErrors=class
+  procedure Report(Sender:TObject;E:Exception);
+end;
 var Directory, ConfigDirectory, Source, LoadedName: string; Config: TStringList;
   Menu: TAssistantMenu; P: TPVAPackage; Failed: Boolean; Started: QWord;
+  UIErrors:TUIErrors;
+procedure TUIErrors.Report(Sender:TObject;E:Exception);
+begin WriteLn('FAIL: UI exception: '+E.Message);DumpExceptionBackTrace(Output);Flush(Output);Halt(1);end;
 procedure Check(Value: Boolean; const Message: string);
 begin if not Value then raise Exception.Create(Message);end;
 procedure StopPresentation;
 begin
+  WriteLn('CHECK: closing presentation');Flush(Output);
   frmmain.CloseDocument;Started:=GetTickCount64;
+  WriteLn('CHECK: document closed; waiting for worker');Flush(Output);
   while frmmain.ApresentandoResposta and (GetTickCount64-Started<10000) do begin
     Application.ProcessMessages;Sleep(10);
   end;
   Check(not frmmain.ApresentandoResposta,'Cancelled speech did not finish');
+  WriteLn('CHECK: speech worker finished');Flush(Output);
 end;
 begin
   try
@@ -26,7 +35,8 @@ begin
       Config.Add('AVATAR3D_PROFILE:professor');Config.SaveToFile(ConfigDirectory+PathDelim+'Setmain.cfg');
     finally Config.Free;end;
     WriteLn('CHECK: initializing native main form');Flush(Output);
-    Application.Initialize;Application.ShowMainForm:=False;Application.CreateForm(Tfrmmain,frmmain);
+    Application.Initialize;UIErrors:=TUIErrors.Create;Application.OnException:=@UIErrors.Report;
+    Application.ShowMainForm:=False;Application.CreateForm(Tfrmmain,frmmain);
     WriteLn('CHECK: native main form created');Flush(Output);
     try
       Check(frmmain.Menu is TAssistantMenu,'Native main menu missing');Menu:=TAssistantMenu(frmmain.Menu);
@@ -60,9 +70,11 @@ begin
       Check(frmmain.ActivePresentationMedia='','Close must remove presentation media');
       Check(not Menu.PrintPDF.Enabled,'Closed presentation must not remain printable');
       Source:='[executar arquivo=assets/slide1.png]Texto.[PERGUNTAR]Continuação.[FIM]';
+      WriteLn('CHECK: preparing question-pause fixture');Flush(Output);
       P:=TPVAPackage.Create;
       try P.ExportFile(LoadedName,Source,Directory);finally P.Free;end;
       frmmain.StartPresentation(LoadedName);Started:=GetTickCount64;
+      WriteLn('CHECK: waiting for question pause');Flush(Output);
       while not frmmain.WaitingForQuestion and (GetTickCount64-Started<10000) do begin
         Application.ProcessMessages;Sleep(10);
       end;

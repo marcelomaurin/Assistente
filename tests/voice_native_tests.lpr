@@ -3,10 +3,11 @@ program voice_native_tests;
 uses SysUtils,Classes,Math,aispeechfilter,aicontinuouslistener;
 type TReceiver=class
  Count:Integer;FileName:string;
+ Listener:TAIContinuousListener;StopAfter:Boolean;
  procedure Speech(Sender:TObject;const FilePath:string;Duration:Integer);
 end;
 procedure TReceiver.Speech(Sender:TObject;const FilePath:string;Duration:Integer);
-begin Inc(Count);FileName:=FilePath;end;
+begin Inc(Count);FileName:=FilePath;if StopAfter then Listener.StopListening;end;
 procedure Check(B:Boolean;const Text:string);
 begin if not B then raise Exception.Create(Text);end;
 var Filter:TAISpeechFilter;Listener:TAIContinuousListener;Receiver:TReceiver;
@@ -40,6 +41,7 @@ begin
   Filter.Filter(@Input[0],Length(Input),Output);
   for I:=0 to 1599 do Check(PSmallInt(@Output[0])[I*2+1]=0,'Stereo filter leaks channels');
   Listener.OnSpeechUtterance:=@Receiver.Speech;
+  Receiver.Listener:=Listener;
   for C:=1 to 2 do
   begin
    Listener.Channels:=C;Listener.StartPCMInput;N:=Receiver.Count;
@@ -52,6 +54,10 @@ begin
    Check(FileExists(Receiver.FileName),'No WAV created');DeleteFile(Receiver.FileName);
    Feed(1000,0,40);Check(Receiver.Count=N+1,'Silence resubmitted old utterance');Listener.StopListening;
   end;
-  WriteLn('PASS: speech band, rumble/high-frequency attenuation, channel isolation, mono/stereo VAD, silence rejection, impulse rejection, min voiced duration, silence timeout, single WAV');
+  Receiver.StopAfter:=True;Listener.StartPCMInput;
+  Feed(1000,8000,10);Feed(1000,0,30);
+  Check(Listener.State=lsStopped,'Speech callback stop was overwritten');
+  if FileExists(Receiver.FileName) then DeleteFile(Receiver.FileName);
+  WriteLn('PASS: speech band, rumble/high-frequency attenuation, channel isolation, mono/stereo VAD, silence rejection, impulse rejection, min voiced duration, silence timeout, single WAV and callback stop');
  finally Receiver.Free;Listener.Free;Filter.Free;end;
 end.

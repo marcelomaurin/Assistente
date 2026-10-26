@@ -99,6 +99,22 @@ begin
             Check(O.Success and (Pos('microsc',O.Text)>0),'atendimento retorna resposta do provedor local');
           finally M.Free;end;
           M:=TAssistantManager.Create(nil);
+          try
+            M.ChatGPT.Provider:=AIP_OPENAI_COMPATIBLE;M.ChatGPT.URL:='http://127.0.0.1:1/unavailable';
+            M.ChatGPT.CustomModel:='test';M.ChatGPT.TOKEN:='test-only';M.ChatGPT.Timeout:=1000;
+            M.OnComplete:=@O.Complete;O.Finished:=False;
+            M.ProcessUserRequestAsync('erro controlado','',False);WaitResult(O);
+            Check(not O.Success and (M.State=asError) and (M.Planner.GetStep(0).Status='error'),
+              'falha do provedor nao e marcada como tarefa concluida');
+          finally M.Free;end;
+          M:=TAssistantManager.Create(nil);
+          try
+            M.OnComplete:=@O.Complete;O.Finished:=False;
+            M.ProcessUserRequestAsync('cancel-immediately','',False);M.CancelExecution;
+            WaitResult(O);
+            Check(not O.Success and (M.State=asCancelled),'cancelamento imediato entrega conclusao e libera interface');
+          finally M.Free;end;
+          M:=TAssistantManager.Create(nil);
           M.ChatGPT.Provider:=AIP_OPENAI_COMPATIBLE;M.ChatGPT.URL:=UTF8Decode(URL);
           M.ChatGPT.CustomModel:='test';M.ChatGPT.TOKEN:='test-only';
           M.ProcessUserRequestAsync('slow');
