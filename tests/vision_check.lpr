@@ -42,7 +42,6 @@ begin
    try
      F.edKinectMinDist.Text := '1.2';
      F.edKinectMaxDist.Text := '3.5';
-     F.edKinectTargetLeft.Text := 'ECG';
 
      // Caso 1: Sem dispositivos (LKinect = [], LCam = [])
      LKinect.Clear;

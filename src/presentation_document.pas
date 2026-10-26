@@ -43,7 +43,7 @@ begin
       Token:=Flow.TokenAt(I);if Token.Action<>faNone then Continue;
       J:=Token.Start+Token.Size-1;T:=LowerCase(Trim(Copy(Source,Token.Start+1,Token.Size-2)));
       if (Pos('arquivo',T)>0) or (Pos('slide',T)>0) or (Pos('articulacao',T)=1) or
-        (Pos('youtube',T)=1) or (Pos('youtybe',T)=1) or (Pos('avatar',T)=1) or (Pos('voz',T)=1) or (Pos('fechar som',T)=1) then begin
+        (Pos('youtube',T)=1) or (Pos('youtybe',T)=1) or (Pos('avatar',T)=1) or (Pos('voz',T)=1) or (Pos('fechar som',T)=1) or (Pos('perguntar',T)=1) or (Pos('continuar',T)=1) or (Pos('menu',T)=1) then begin
         if (J>Length(Source)) or (Source[J]<>']') or
           not (TryParsePresentationTag(Copy(Source,Token.Start,Token.Size),A) or TryParseJointTag(Copy(Source,Token.Start,Token.Size),B)) then
           raise Exception.CreateFmt('Tag invalida na posicao %d',[Token.Start]);

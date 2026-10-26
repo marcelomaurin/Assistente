@@ -62,7 +62,7 @@ Os tempos são relativos ao membro, estritamente crescentes, incluindo zero e o 
 
 `initial_position_height`/`final_position_height` ou `position_height` nos pontos definem deslocamentos locais relativos à altura do avatar e à posição original. Somente os membros autorizados em `translatable_members` podem se deslocar: transladar ossos dos braços/pernas alteraria seu comprimento. `initial_scale`/`final_scale` ou `scale` permitem escalas positivas em elementos faciais. Escalar membros que sustentam volumes de colisão é proibido. Os campos iniciais de posição e escala também aceitam `"current"`.
 
-`profiles` permite substituir a trajetória por avatar, usando o ID da pasta como chave e uma receita completa com os mesmos tempos e política de retorno. O catálogo instalado contém as adaptações dos onze personagens. `speech_mouth: true` reserva a mandíbula durante o bocejo.
+`profiles` permite substituir a trajetória por avatar, usando o ID da pasta como chave e uma receita completa com os mesmos tempos e política de retorno. O catálogo instalado contém as adaptações dos dezoito personagens; o Criador Avatar acrescenta as dos avatares que gerar. `speech_mouth: true` reserva a mandíbula durante o bocejo.
 
 ## Proteção contra colisão
 

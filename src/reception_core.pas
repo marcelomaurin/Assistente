@@ -6,11 +6,12 @@ interface
 
 uses Classes, SysUtils, SyncObjs, fpjson, jsonparser, chatgpt, aiagent,
   aivoicerecognizer, aivoicesynthesizer, aiaudioplayback, airetrieval, aitrace,
-  professor_commands, presentation_tags, movement_catalog;
+  professor_commands, presentation_tags, movement_catalog, aivoiceprovider_types;
 
 type
   TReceptionConfig = record
-    Token, AudioToken, Model, URL, Language, Voice: string;
+    Token, AudioToken, Model, URL, Language, Voice, RemoteVoice: string;
+    Speed: Double;
     Provider, RecogEngine, SynthEngine, Volume, Rate: Integer;
     EnableAvatarCommands, SilentPresentation, EnablePresentationCommands: Boolean;
   end;
@@ -276,11 +277,21 @@ begin
     begin
       Synth:=TAIVoiceSynthesizer.Create(nil);
       Player:=TAIAudioPlayer.Create(nil);
+      if (FConfig.SynthEngine<Ord(Low(TSpeechEngine))) or (FConfig.SynthEngine>Ord(High(TSpeechEngine))) then
+        raise Exception.Create('Motor de sintese invalido');
+      if (FConfig.Provider<Ord(Low(TAIVoiceProvider))) or (FConfig.Provider>Ord(High(TAIVoiceProvider))) then
+        raise Exception.Create('Provedor de voz invalido');
       Synth.Engine:=TSpeechEngine(FConfig.SynthEngine);
+      Synth.Provider:=TAIVoiceProvider(FConfig.Provider);
       Synth.OpenAIToken:=FConfig.AudioToken;
+      Synth.APIToken:=FConfig.AudioToken;
+      if FConfig.Model<>'' then Synth.Model:=FConfig.Model;
+      if FConfig.URL<>'' then Synth.Endpoint:=FConfig.URL;
       if FConfig.Model<>'' then Synth.OpenAIModel:=FConfig.Model;
       if FConfig.URL<>'' then Synth.OpenAIEndpoint:=FConfig.URL;
       Synth.VoiceName:=FConfig.Voice;
+      if FConfig.RemoteVoice<>'' then Synth.RemoteVoice:=FConfig.RemoteVoice;
+      if FConfig.Speed>0 then Synth.Speed:=FConfig.Speed;
       if (Synth.Engine=seOpenAI) and (FConfig.Voice<>'') then Synth.OpenAIVoice:=FConfig.Voice;
       Synth.Language:=FConfig.Language;Synth.Volume:=FConfig.Volume;Synth.Rate:=FConfig.Rate;
       Synth.Asynchronous:=False;Synth.OpenAIOutputFormat:='wav';
@@ -431,6 +442,7 @@ begin
             Recognizer := TAIVoiceRecognizer.Create(nil);
             try
               Recognizer.Engine := TAIVoiceRecognitionEngine(FConfig.RecogEngine);
+              Recognizer.ChatGPTToken := FConfig.Token;
               Recognizer.OpenAIToken := FConfig.AudioToken;
               if FConfig.Model <> '' then Recognizer.OpenAIModel := FConfig.Model;
               if FConfig.URL <> '' then Recognizer.OpenAIEndpoint := FConfig.URL;
@@ -523,6 +535,7 @@ var R: TAIBM25Retriever; Files: TSearchRec; S, Hits: TStringList;
     I, Offset, N: Integer; Item: TAIRetrievalResult; Folder, Body: string;
 begin
   Result := '';
+  if (Trim(AFolder)='') or not DirectoryExists(AFolder) or (Trim(AQuery)='') then Exit;
   Folder := IncludeTrailingPathDelimiter(AFolder);
   R := TAIBM25Retriever.Create(nil);
   S := TStringList.Create;

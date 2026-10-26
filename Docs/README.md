@@ -7,6 +7,11 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
 | [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
+| [Instalador 0.217](INSTALACAO_0217.md) | Arquivo de configuração (exportar/importar) e documentos do RAG em Configurações |
+| [Arquivo de configuração e RAG](configuracao-arquivo-e-rag.md) | Gerar e aplicar a configuração; adicionar documentos que a IA consulta |
+| [Instalador 0.216](INSTALACAO_0216.md) | Perguntar, Menu, Continuar e Encerrar vídeo nas apresentações |
+| [Instalador 0.215](INSTALACAO_0215.md) | Criador Avatar, importação MakeHuman/Avaturn/Tripo3D e 18 avatares |
+| [Criador Avatar](criador-avatar.md) | Criar, importar e gerar avatares para o Assistente |
 | [Instalador 0.214](INSTALACAO_0214.md) | Assistente, apresentações e prévia do Editor de Movimentos |
 | [Guia de comandos](guia-comandos-assistente.md) | Blocos, eventos futuros, avatar, voz, mídias e comandos de entrada |
 | [Manual do usuário](ManualUsuario/README.md) | Instalação, menus de arquivos, PDF, pesquisa, conversa, voz, avatar, vídeo e integração |
@@ -43,3 +48,7 @@ Consulte o [guia do Editor de Movimentos (prévia)](editor-movimentos.md).
 
 A revisão com poses XYZ, vistas CAD e padrão visual MultiCNC está descrita na [validação do editor 3D](VALIDACAO_EDITOR_3D_2026-10-24.md).
 
+
+## Integração de branches
+
+Consulte a [integração de 26/10/2026](INTEGRACAO_BRANCHES_2026-10-26.md), que reúne a versão 0.217, as correções de voz e os menus de arquivos/PDF/pesquisa.

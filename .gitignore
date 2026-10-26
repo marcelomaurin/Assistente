@@ -36,3 +36,11 @@ tests/*.txt
 
 # Local conversation data
 conversation-history.json
+
+# Partes temporarias do instalador (use bin/juntar_setup_*.bat)
+bin/partes_*/
+
+tests/app_checks.exe
+conversation-history.json
+Setmain.cfg
+.lazarus/

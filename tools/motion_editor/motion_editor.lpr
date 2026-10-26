@@ -11,6 +11,7 @@ type
     NameEdit:TEdit;TimeEdit,DurationEdit:TSpinEdit;Timeline:TTrackBar;
     ViewBox,ProjectionBox:TComboBox;Compass:TPaintBox;
     Tick:TTimer;Motion:TMotionAnimation;Path:string;FUpdating:Boolean;
+    procedure LayoutMembers(Sender:TObject);
     procedure SetStatus(const S:string);
     procedure EditorChanged(Sender:TObject);
     procedure BoneChanged(Sender:TObject);
@@ -57,7 +58,7 @@ begin
   Result:=Result+Side;
 end;
 constructor TEditorForm.Create(AOwner:TComponent);
-var LeftPanel,RightPanel,BottomPanel,Host,ViewBar:TPanel;I:Integer;L:TLabel;Header:TSuiteHeader;B:TSuiteButton;
+var LeftPanel,BottomPanel,Host,ViewBar:TPanel;RightPanel:TScrollBox;I:Integer;L:TLabel;Header:TSuiteHeader;B:TSuiteButton;
   procedure LabelAt(const Text:string;P:TWinControl;Y:Integer);
   var C:TLabel;
   begin C:=TLabel.Create(Self);C.Parent:=P;C.SetBounds(12,Y,P.Width-24,22);C.Caption:=Text;C.Font.Color:=clSuiteMuted;end;
@@ -71,21 +72,24 @@ var LeftPanel,RightPanel,BottomPanel,Host,ViewBar:TPanel;I:Integer;L:TLabel;Head
 begin
   inherited CreateNew(AOwner);
   Caption:='Assistente - Editor de Movimentos 3D (prévia)';Width:=1440;Height:=900;Position:=poScreenCenter;
-  Constraints.MinWidth:=1200;Constraints.MinHeight:=840;Font.Name:=SUITE_FONT;Font.Size:=10;Color:=clSuiteSurface;
+  Constraints.MinWidth:=1200;Constraints.MinHeight:=600;Font.Name:=SUITE_FONT;Font.Size:=10;Color:=clSuiteSurface;
   KeyPreview:=True;OnKeyDown:=@EditorKeyDown;
   Header:=TSuiteHeader.Create(Self);Header.Parent:=Self;Header.Align:=alTop;Header.Height:=72;
   Header.Setup('Editor de Movimentos','Assistente • Pose, animação e navegação 3D',sikAssembly);
   Motion.DurationMS:=2400;Motion.ReturnToBase:=True;Motion.Smooth:=True;
   BottomPanel:=TPanel.Create(Self);BottomPanel.Parent:=Self;BottomPanel.Align:=alBottom;BottomPanel.Height:=105;BottomPanel.BevelOuter:=bvNone;BottomPanel.Color:=clSuiteCard;
   LeftPanel:=TPanel.Create(Self);LeftPanel.Parent:=Self;LeftPanel.Align:=alLeft;LeftPanel.Width:=214;LeftPanel.BevelOuter:=bvNone;LeftPanel.Color:=clSuiteCard;
-  RightPanel:=TPanel.Create(Self);RightPanel.Parent:=Self;RightPanel.Align:=alRight;RightPanel.Width:=264;RightPanel.BevelOuter:=bvNone;RightPanel.Color:=clSuiteCard;
+  RightPanel:=TScrollBox.Create(Self);RightPanel.Parent:=Self;RightPanel.Align:=alRight;RightPanel.Width:=264;RightPanel.BorderStyle:=bsNone;RightPanel.Color:=clSuiteCard;
+  RightPanel.VertScrollBar.Tracking:=True;RightPanel.HorzScrollBar.Visible:=False;
   Host:=TPanel.Create(Self);Host.Parent:=Self;Host.Align:=alClient;Host.BevelOuter:=bvNone;Host.Color:=clSuiteSurface;
   LabelAt('MOVIMENTO',LeftPanel,12);
   NameEdit:=TEdit.Create(Self);NameEdit.Parent:=LeftPanel;NameEdit.SetBounds(12,38,186,26);NameEdit.Text:='novo_movimento';
   ButtonAt('Abrir movimento',LeftPanel,76,@OpenClick);ButtonAt('Salvar movimento',LeftPanel,114,@SaveClick);
   LabelAt('MEMBROS DO AVATAR',LeftPanel,164);
-  BoneList:=TListBox.Create(Self);BoneList.Parent:=LeftPanel;BoneList.SetBounds(12,190,186,460);
-  BoneList.Anchors:=[akLeft,akRight,akTop,akBottom];BoneList.OnClick:=@BoneChanged;
+  BoneList:=TListBox.Create(Self);BoneList.Parent:=LeftPanel;BoneList.SetBounds(12,190,186,Max(100,LeftPanel.ClientHeight-202));
+  BoneList.ScrollWidth:=340;
+  BoneList.Anchors:=[akLeft,akRight,akTop];BoneList.OnClick:=@BoneChanged;
+  LeftPanel.OnResize:=@LayoutMembers;LayoutMembers(LeftPanel);
   LabelAt('ROTAÇÃO LOCAL (graus)',RightPanel,12);
   SelectedLabel:=TLabel.Create(Self);SelectedLabel.Parent:=RightPanel;SelectedLabel.SetBounds(12,40,225,36);SelectedLabel.Font.Style:=[fsBold];
   for I:=0 to 2 do begin
@@ -144,6 +148,10 @@ begin
 end;
 destructor TEditorForm.Destroy;
 begin if Tick<>nil then Tick.Enabled:=False;FreeAndNil(Editor);FreeAndNil(View);inherited;end;
+procedure TEditorForm.LayoutMembers(Sender:TObject);
+begin
+  if BoneList<>nil then BoneList.SetBounds(12,190,Max(80,BoneList.Parent.ClientWidth-24),Max(40,BoneList.Parent.ClientHeight-202));
+end;
 procedure TEditorForm.SetStatus(const S:string);
 begin Status.Caption:='  '+S;end;
 function TEditorForm.TrackIndex(const Bone:string):Integer;
@@ -324,6 +332,15 @@ begin
         Layout.SaveToFile(ExtractFilePath(ParamStr(0))+'motion-editor-layout.bmp');
       finally Avatar.Free;Layout.Free;end;
 
+      // All limbs remain reachable in a short window; the controls scroll too.
+      Height:=600;Application.ProcessMessages;
+      BoneList.TopIndex:=BoneList.Count-1;Application.ProcessMessages;
+      Check(BoneList.TopIndex>0,'Lista de membros nao rolou');
+      Check(BoneList.Top+BoneList.Height<=BoneList.Parent.ClientHeight,'Lista saiu da area visivel');
+      Check(TScrollBox(XYZ[0].Parent).VertScrollBar.Range>XYZ[0].Parent.ClientHeight,'Painel de controles sem rolagem');
+      TScrollBox(XYZ[0].Parent).VertScrollBar.Position:=200;Application.ProcessMessages;
+      Check(TScrollBox(XYZ[0].Parent).VertScrollBar.Position>0,'Painel nao deslocou');
+      Height:=900;TScrollBox(XYZ[0].Parent).VertScrollBar.Position:=0;Application.ProcessMessages;
       // Standard views use non-degenerate camera bases, including exact poles.
       for I:=0 to 6 do begin
         View.SetCameraView(TAvatarCameraView(I));View.Viewport.Camera.GetWorldView(CameraPos,CameraDir,CameraUp);

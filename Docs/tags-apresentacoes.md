@@ -4,6 +4,9 @@ As tags abaixo compartilham o parser com os 40 comandos de avatar existentes, de
 
 | Tag | Efeito |
 | --- | --- |
+| `[PERGUNTAR]` | Pausa para perguntas sobre o roteiro ou escolha de bloco. |
+| `[MENU]` | Pausa e mostra a lista clicavel de blocos. |
+| `[CONTINUAR]` | Retoma o roteiro suspenso; e tag, nao bloco. |
 | `[executar arquivo=assets/figura.png]` | Abre a mídia e encerra a anterior |
 | `[abrir arquivo=assets/figura.png]` | Mesmo efeito |
 | `[fechar arquivo]` | Fecha a mídia visual e o som ativo, sem argumento |
@@ -107,3 +110,5 @@ O exemplo com nova pressupõe que essa voz existe no provedor configurado. Todos
 Eventos preparados: DETECCAO_VOZ, DETECCAO_ROSTO, MAO_LEVANTADA e RECONHECIMENTO_PESSOA. Nomes descritivos com acentos também são aceitos. O fluxo principal termina antes da primeira declaração BLOCO; blocos não são percorridos automaticamente.
 
 O [manual de blocos, eventos e comandos](blocos-eventos-comandos.md) documenta retorno, GOTO, FIM, nomes, limites, exemplos, prévia no editor e os comandos falados/digitados **carregar arquivo nome** e **chamar bloco nome**.
+
+Consulte [perguntas durante a apresentacao](perguntas-apresentacao.md) para pausa manual, perguntas com contexto e navegacao com `IR {nome do bloco}`.

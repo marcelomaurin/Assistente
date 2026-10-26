@@ -44,3 +44,11 @@ sincronização dos gestos, cancelamento e limpeza dos arquivos temporários.
 ## Caminhos longos no Windows
 
 O driver MCI pode rejeitar caminhos acima de 127 caracteres com erro 304. O adaptador tenta o nome curto do Windows; se o caminho continuar longo, cria uma cópia temporária própria e a libera ao terminar, cancelar, destruir o player ou falhar a abertura. O arquivo original é preservado. `tests/run_audio_path_checks.py` valida um WAV silencioso com caminho acima de 200 caracteres. Essa adaptação permanece nesta cópia local da dependência.
+
+## Chrome, OpenAI e filtro de fala
+
+As unidades adicionais e os hashes de origem estão em `chrome-speech-source.json`. A integração atual está documentada em [reconhecimento de voz](../../Docs/reconhecimento-voz.md). O listener local filtra PCM antes do VAD e exige tempo mínimo de voz efetiva; as demais adaptações de áudio acima foram preservadas.
+
+## Integração de 26/10/2026
+
+A recuperação BM25 local de `airetrieval.pas` foi incorporada da branch de estabilidade. O capturador PCM completo com filtro de voz foi preservado; o adaptador `professor_listener.pas` assume a pausa/retomada na interface 3D. O callback de finalização preserva o estado de captura ao ser pausado ou interrompido.

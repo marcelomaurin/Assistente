@@ -1,0 +1,39 @@
+{
+  "format": "assistente-avatar-spec",
+  "version": 1,
+  "id": "businesswoman",
+  "name": "Executiva (Businesswoman)",
+  "modifiers": {
+    "macrodetails/Gender": 0.0,
+    "macrodetails/Age": 0.5,
+    "macrodetails/Caucasian": 1.0,
+    "macrodetails/African": 0.0,
+    "macrodetails/Asian": 0.0
+  },
+  "skin": "young_caucasian_female",
+  "outfit": "female_casualsuit01",
+  "hair": "long",
+  "style": {
+    "hair_root": [
+      46,
+      30,
+      22
+    ],
+    "hair_tip": [
+      120,
+      80,
+      50
+    ],
+    "eyes": [
+      64,
+      40,
+      24
+    ],
+    "smile": 0.3
+  },
+  "source": {
+    "kind": "tripo",
+    "file": "businesswoman+3d+model3.glb",
+    "rigged": true
+  }
+}

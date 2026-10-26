@@ -15,6 +15,15 @@ begin
         if (Editor.Components[I] is TBitBtn) and (TBitBtn(Editor.Components[I]).Tag in [20..25]) then Inc(FlowButtons);
       end;
       Check((Edit<>nil) and (FlowButtons=6),'editor flow controls missing');
+      for I:=0 to Editor.ComponentCount-1 do
+        if (Editor.Components[I] is TBitBtn) and (TBitBtn(Editor.Components[I]).Tag in [27,28,29]) then begin
+          Edit.Clear;TBitBtn(Editor.Components[I]).Click;
+          case TBitBtn(Editor.Components[I]).Tag of
+            27:Check(Pos('[PERGUNTAR]',Edit.Text)>0,'PERGUNTAR control');
+            28:Check(Pos('[CONTINUAR]',Edit.Text)>0,'CONTINUAR control');
+            29:Check(Pos('[MENU]',Edit.Text)>0,'MENU control');
+          end;
+        end;
       Edit.Text:='Inicio ';Edit.CaretXY:=Types.Point(8,1);Before:=Edit.Text;
       Editor.InsertFlowDirective(faCall,'A');After:=Edit.Text;
       Check(Pos('[{A}]',After)>0,'call insertion');Edit.Undo;Check(Edit.Text=Before,'flow undo');Edit.Redo;Check(Edit.Text=After,'flow redo');

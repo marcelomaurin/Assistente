@@ -25,21 +25,20 @@ Essas funções exigem recompilar; não foram acrescentadas ao instalador 0.214 
 
 ## Instalação Windows
 
-Versão atual: [setup_assistente_0214.exe](bin/setup_assistente_0214.exe).
-Inclui o Assistente atualizado, o Editor de Apresentações, o Editor de Movimentos (prévia), a ferramenta PVA,
-11 avatares e os guias de comandos. O editor tem atalho próprio no menu Iniciar
-e opção de atalho na área de trabalho.
-A instalação padrão é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`.
-Veja [instalação e verificação da versão 0.214](Docs/INSTALACAO_0214.md) e o
-[guia de comandos](Docs/guia-comandos-assistente.md).
-Os hashes estão no [manifesto](bin/setup_assistente_0214.manifest.json), e os
-resultados dos testes no [relatório](bin/setup_assistente_0214.validacao.json).
-As versões [0.130](Docs/INSTALACAO_0130.md) e [0.120](Docs/INSTALACAO_0120.md)
-permanecem disponíveis como histórico.
+As fontes atuais integram os recursos da **0.217**, os menus de abrir/fechar,
+pesquisa e PDF e as correções de estabilidade de voz. Consulte o
+[relatório da integração](Docs/INTEGRACAO_BRANCHES_2026-10-26.md).
+
+O instalador executável disponível neste repositório é
+[setup_assistente_0214.exe](bin/setup_assistente_0214.exe), anterior à integração.
+Para usar todos os recursos novos, compile os fontes atuais pelo
+[guia do projeto](Docs/Projeto/README.md#compilação).
+Os manifestos e os guias históricos de 0.215, 0.216 e 0.217 foram preservados;
+esta integração não gera novos instaladores.
 
 ## Professor Virtual 3D
 
-Avatar 3D nativo no formulário Lazarus, com onze perfis selecionáveis e
+Avatar 3D nativo no formulário Lazarus, com dezoito perfis selecionáveis e
 animações de repouso, escuta, pensamento, fala, aceno e caminhada.
 Inclua novos `.glb`/`.gltf` na pasta **AVATARES** e atualize a lista pelo ↻.
 A roda do mouse aproxima/afasta; duplo clique reenquadra.

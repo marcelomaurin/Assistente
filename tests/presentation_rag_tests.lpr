@@ -1,7 +1,7 @@
 program presentation_rag_tests;
 {$mode objfpc}{$H+}
 uses Classes, SysUtils, Windows, presentation_rag, presentation_package;
-var Root,Published,Response,Path,Digest,Prompt,Old: string;
+var Root,Published,Response,Path,Digest,Prompt,Old,Doc,DocId: string; Found: Boolean; I: Integer;
   Index: TPresentationRAG; Monitor: TPresentationRAGMonitor; P: TPVAPackage;
   Stream,OriginalBytes:TMemoryStream; Started: QWord;Stamp:TFileTime;Handle:THandle;
 procedure Check(B: Boolean; const E: string);
@@ -21,6 +21,11 @@ begin
     Index:=TPresentationRAG.Create(PresentationRAGDirectory);
     try
       Index.Refresh;Check(Index.Count=1,'catalog count');
+      Prompt:=Index.ReferenceContext('energia solar','');
+      Check((Pos('geração',Prompt)>0) and (Pos('energia solar.pva',Prompt)>0),'Missing grounded RAG reference');
+      Check(Index.ReferenceContext('energia solar',Published)='','Current package included as extra reference');
+      Check(Index.ReferenceContext('Qual e esta apresentação?','')='','Generic question retrieved unrelated reference');
+      Check(Index.ReferenceContext('oceano','')='','Unrelated content retrieved');
       Prompt:=Index.SelectionPrompt('Mostre energia solar','Conversa anterior');
       Check((Pos('geração',Prompt)>0) and (Pos('[avatar=',Prompt)=0),'selection content');
       Check(Index.Resolve('{"presentation":"1"}',Path,Digest) and (Path=Published),'selected package mapping');
@@ -83,7 +88,39 @@ begin
       Index.Refresh;Check(ReadUTF8(ChangeFileExt(Published,'.res'))='Conteudo atualizado','Media-only replacement changed RES text');
       SysUtils.DeleteFile(Published);Index.Refresh;Check(Index.Count=1,'removed package still eligible');
       Check(FileExists(ChangeFileExt(Published,'.res')),'unpaired res unexpectedly deleted');
+      // Text reference documents added from Configuracoes > Documentos (RAG).
+      WriteUTF8(Root+PathDelim+'manual fotovoltaico.md','# Paineis'+LineEnding+'O inversor converte corrente continua em alternada.');
+      Doc:=AddRAGDocument(Root+PathDelim+'manual fotovoltaico.md');
+      Check(SameText(ExtractFilePath(Doc),IncludeTrailingPathDelimiter(PresentationRAGDirectory)),'document outside library');
+      Check(FileExists(Root+PathDelim+'manual fotovoltaico.md'),'original document moved');
+      Index.Refresh;Check(Index.Count=2,'text document not indexed');
+      Found:=False;
+      for I:=0 to Index.Count-1 do if SameText(ExtractFileName(Index.Entry(I).FileName),'manual fotovoltaico.md') then begin
+        Found:=True;Check(not Index.Entry(I).Playable,'text document marked as presentation');DocId:=IntToStr(I+1);
+      end;
+      Check(Found,'text document missing from entries');
+      Prompt:=Index.AnswerContext('Como funciona o inversor de corrente?');
+      Check((Pos('inversor converte',Prompt)>0) and (Pos('manual fotovoltaico.md',Prompt)>0),'answer context lacks the document');
+      Check(Index.AnswerContext('Bom dia, tudo bem?')='','greeting retrieved a document');
+      Check(Pos('inversor',Index.ReferenceContext('inversor corrente',''))>0,'question context ignores text documents');
+      Prompt:=Index.SelectionPrompt('inversor corrente alternada','');
+      Check(Pos('manual fotovoltaico',Prompt)=0,'text document offered as presentation');
+      Rejected('{"presentation":"'+DocId+'"}');
+      Check(not FileExists(ChangeFileExt(Doc,'.res')),'text document received a res index');
+      Stream:=TMemoryStream.Create;
+      try Stream.Size:=4;PByte(Stream.Memory)^:=$FF;(PByte(Stream.Memory)+1)^:=$FE;(PByte(Stream.Memory)+2)^:=$41;(PByte(Stream.Memory)+3)^:=0;
+        Stream.SaveToFile(Root+PathDelim+'latin.txt');finally Stream.Free;end;
+      try AddRAGDocument(Root+PathDelim+'latin.txt');raise Exception.Create('non UTF-8 accepted');
+      except on E: Exception do Check(Pos('UTF-8',E.Message)>0,'non UTF-8: '+E.Message);end;
+      WriteUTF8(Root+PathDelim+'planilha.xlsx','x');
+      try AddRAGDocument(Root+PathDelim+'planilha.xlsx');raise Exception.Create('unsupported format accepted');
+      except on E: Exception do Check(Pos('Formato',E.Message)>0,'unsupported: '+E.Message);end;
+      try RemoveRAGDocument('..'+PathDelim+'Setmain.cfg');raise Exception.Create('path escape accepted');
+      except on E: Exception do Check(E.Message<>'path escape accepted','path escape');end;
+      RemoveRAGDocument('manual fotovoltaico.md');Index.Refresh;
+      Check((Index.Count=1) and not FileExists(Doc),'document not removed');
+      Check(FileExists(Root+PathDelim+'manual fotovoltaico.md'),'removal touched the original');
     finally Index.Free;end;
-    WriteLn('PASS: RAG publish/plain UTF8 res, external copy monitor, invalid/orphan packages, strict selection, replacement/removal, same-size timestamp corruption and full-package media integrity');
+    WriteLn('PASS: RAG publish/plain UTF8 res, external copy monitor, invalid/orphan packages, strict selection, replacement/removal, same-size timestamp corruption, full-package media integrity and text reference documents (add/index/answer context/not playable/UTF-8/format/remove)');
   except on E: Exception do begin WriteLn(StdErr,E.Message);Halt(1);end;end;
 end.

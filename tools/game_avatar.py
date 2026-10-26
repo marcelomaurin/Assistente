@@ -11,6 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
+from professora_avatar import skin_texture, hair_texture_tint, fit_hair_to_scalp, eyebrow_texture, mh_target, STYLES, outfit_texture, shoe_texture, shoe_shell, eye_texture, long_hair, details as professora_details
 
 SOURCE = Path(__file__).resolve().parent / 'avatar-source'
 ROOT = SOURCE.parents[1] / 'AVATARES'
@@ -28,6 +29,13 @@ PROFILES = {
     'bebe': ('Bebê', 'caucasian-male-baby', 'male_casualsuit02', 'short03', 'young_caucasian_male'),
     'robo': ('Robô', 'caucasian-female-young', 'male_casualsuit01', None, None),
     'ze_gotinha': ('Zé Gotinha', 'caucasian-male-young', 'male_casualsuit01', None, None),
+    'professora': ('Professora', 'caucasian-female-young', 'female_casualsuit01', 'long', 'young_caucasian_female'),
+    'professora_loira': ('Professora loira', 'caucasian-female-young', 'male_elegantsuit01', 'long', 'young_caucasian_female'),
+    'professora_cachos': ('Professora de cachos', 'african-female-young', 'male_elegantsuit01', 'long', 'young_african_female'),
+    'professora_cabelo_preto': ('Professora de cabelo preto', 'caucasian-female-young', 'male_elegantsuit01', 'long', 'young_caucasian_female'),
+    'professor_terno': ('Professor de terno', 'caucasian-male-young', 'male_elegantsuit01', 'short02', 'young_caucasian_male'),
+    'professor_barba': ('Professor de barba', 'african-male-young', 'male_elegantsuit01', 'afro01', 'young_african_male'),
+    'professor_oculos': ('Professor de óculos', 'caucasian-male-young', 'male_elegantsuit01', 'short02', 'young_caucasian_male'),
 }
 
 def obj(path):
@@ -95,8 +103,15 @@ class Avatar:
         self.folder = ROOT / profile
         self.folder.mkdir(parents=True, exist_ok=True)
         self.p0, self.uv, self.faces, self.groups = obj(SOURCE / 'base.obj')
-        self.p = self.p0 + target(shape, len(self.p0))
+        self.p = self.p0 + (target(shape, len(self.p0)) if shape else 0)
         self.p += target('mouth-corner-puller', len(self.p0))*(.18 if profile!='robo' else .06)
+        if profile in STYLES:
+            # Full MakeHuman macro shape (gender/age/muscle/weight) plus face and
+            # body modifiers; the race target above alone leaves an androgynous base.
+            for name,weight in STYLES[profile].get('targets',{}).items():
+                self.p += mh_target(name,len(self.p0))*weight
+            if 'smile' in STYLES[profile]:
+                self.p += target('mouth-corner-puller', len(self.p0))*(STYLES[profile]['smile']-.18)
         if profile == 'ze_gotinha':
             self.p += target('mouth-corner-puller', len(self.p0)) * 0.15
             y = self.p[:, 1]
@@ -355,6 +370,7 @@ class Avatar:
     def build(self):
         skin_dir=SOURCE/'system'/'skins'/(self.skin or 'young_caucasian_female')
         skin_tex=next(skin_dir.glob('*.png'))
+        if self.profile in STYLES:skin_tex=skin_texture(self,skin_tex,STYLES[self.profile])
         if self.skin:
             skinmat=self.material('Pele com textura',rough=.58,texture=skin_tex)
         elif self.profile=='ze_gotinha':
@@ -373,6 +389,8 @@ class Avatar:
         p,uv,f,w,d=self.fit('clothes',self.outfit)
         diffuse=next(d.glob('*diffuse.png'))
         normal=next(d.glob('*normal.png'),None);ao=next(d.glob('*_ao.png'),None)
+        style=STYLES.get(self.profile)
+        if style:diffuse,normal,ao=outfit_texture(self,diffuse,style,normal,ao)
         mat=self.material('Roupa: tecido normal e oclusão',rough=.87,texture=diffuse,normal=normal,ao=ao)
         original_mat=mat
         # Physician white coat and priest black suit retain sculpted cloth folds.
@@ -388,7 +406,13 @@ class Avatar:
             upper=p[f[:,:,0],1].mean(1)>self.origins['spine05'][1]+.025
             self.mesh('Vestuário deformável',p,uv,f[upper],mat,w)
             self.mesh('Calças',p,uv,f[~upper],original_mat,w)
-        else:self.mesh('Vestuário deformável',p,uv,f,mat,w)
+        else:
+            if style and style.get('top')=='blazer' and not style.get('tie') and hasattr(self,'_tie_mask'):
+                m=self._tie_mask;H,W=m.shape
+                c=uv[f[:,:,1]].mean(1);px=np.clip((c[:,0]*W).astype(int),0,W-1);py=np.clip((c[:,1]*H).astype(int),0,H-1)
+                f=f[~m[py,px]]
+            self.mesh('Vestuário deformável',p,uv,f,mat,w)
+        garments=[(p,w)];self._garments=garments
         if self.profile=='professor':
             # A separate cloth shell on the fitted garment; own UVs and smooth weights.
             center=p[f[:,:,0]].mean(1)
@@ -406,17 +430,28 @@ class Avatar:
             pixels=np.maximum(pixels.astype(int)-(((xx+yy)%4==0)*7)[:,:,None],0).astype(np.uint8)
             Image.fromarray(pixels).save(pattern)
             self.mesh('Colete de tricô com UVs próprios',shell,vestuv,vf,self.material('Tricô argyle',rough=.94,texture=pattern),w)
-        p,uv,f,w,d=self.fit('clothes','shoes05' if self.profile in ('crianca','bebe','programador') else 'shoes01')
-        shoetex=next(d.glob('*diffuse.png'))
-        if self.profile=='ze_gotinha':
-            shoe_im=Image.open(shoetex).convert('RGB')
-            shoe_im=ImageOps.colorize(ImageOps.grayscale(shoe_im),'#c4cfd8','#ffffff')
-            shoe_path=self.folder/'tenis_branco.png';shoe_im.save(shoe_path);shoetex=shoe_path
-        self.mesh('Calçados',p,uv,f,self.material('Tênis branco' if self.profile=='ze_gotinha' else 'Couro e sola',rough=.7,texture=shoetex,normal=next(d.glob('*normal.png'),None)),w)
-        if self.hair:
+        if style and style.get('shoe_shell'):shoe_shell(self,style)
+        else:
+          p,uv,f,w,d=self.fit('clothes','shoes05' if self.profile in ('crianca','bebe','programador') else 'shoes01')
+          shoetex=next(d.glob('*diffuse.png'))
+          if style:shoetex=shoe_texture(self,shoetex,style)
+          if self.profile=='ze_gotinha':
+              shoe_im=Image.open(shoetex).convert('RGB')
+              shoe_im=ImageOps.colorize(ImageOps.grayscale(shoe_im),'#c4cfd8','#ffffff')
+              shoe_path=self.folder/'tenis_branco.png';shoe_im.save(shoe_path);shoetex=shoe_path
+          if style and style.get('low_shoes',True):
+              # Low-cut shoes: drop the ankle collar that pokes through trouser hems.
+              cut=min(self.origins['foot.L'][1],self.origins['foot.R'][1])+style.get('shoe_cut',.012)
+              f=f[p[f[:,:,0],1].mean(1)<cut]
+          self.mesh('Calçados',p,uv,f,self.material('Tênis branco' if self.profile=='ze_gotinha' else 'Couro e sola',rough=.7,texture=shoetex,normal=next(d.glob('*normal.png'),None)),w)
+        if self.hair=='long':long_hair(self,style,garments)
+        elif self.hair:
             p,uv,f,w,d=self.fit('hair',self.hair)
+            hairtex=next(d.glob('*diffuse.png'))
+            if style and style.get('hair_tint'):hairtex=hair_texture_tint(self,hairtex,style)
+            if style and style.get('hair_fit'):p=fit_hair_to_scalp(self,p,style['hair_fit'])
             self.mesh('Cabelo com mechas e transparência recortada',p,uv,f,
-                      self.material('Cabelo',rough=.68,texture=next(d.glob('*diffuse.png')),alpha=True),w)
+                      self.material('Cabelo',rough=.68,texture=hairtex,alpha=True),w)
         p,uv,f,w,d=self.fit('eyes','high-poly')
         eyes=SOURCE/'system'/'eyes'/'materials'/'brown_eye.png'
         if self.profile=='robo':
@@ -425,9 +460,12 @@ class Avatar:
         elif self.profile=='ze_gotinha':
             im=Image.open(eyes).convert('RGBA'); rgb=np.array(im);dark=rgb[:,:,:3].mean(2)<130
             rgb[dark,:3]=np.array([15,65,175]);path=self.folder/'olhos_zegotinha.png';Image.fromarray(rgb).save(path);eyes=path
+        if style:eyes=eye_texture(self,eyes,style)
         self.mesh('Olhos: esclera íris e pupilas',p,uv,f,self.material('Córnea e íris',rough=.16,texture=eyes,alpha=True),w)
         p,uv,f,w,d=self.fit('eyebrows','eyebrow001')
-        self.mesh('Sobrancelhas',p,uv,f,self.material('Sobrancelhas',rough=.85,texture=next(d.glob('*.png')),alpha=True),w)
+        brow=next(d.glob('*.png'))
+        if style:brow=eyebrow_texture(self,brow,style)
+        self.mesh('Sobrancelhas',p,uv,f,self.material('Sobrancelhas',rough=.85,texture=brow,alpha=True),w)
         p,uv,f,w,d=self.fit('teeth','teeth_base')
         self.mesh('Dentes',p,uv,f,self.material('Esmalte',rough=.32,texture=d/'teeth.png'),w)
         self.details()
@@ -448,6 +486,7 @@ class Avatar:
         white=self.material('Branco acetinado',(.86,.9,.92),.38,.15)
         cyan=self.material('Detalhes cianos',(.025,.58,.65),.28,.4)
         gold=self.material('Dourado',(.72,.43,.08),.28,.72)
+        if self.profile in STYLES:professora_details(self,STYLES[self.profile],(dark,silver,white,gold))
         head=self.origins['head'];eye=self.origins['eye.L'];eyeR=self.origins['eye.R']
         height=(self.world(self.p).max(0)-self.world(self.p).min(0))[1]
         sc=height/1.78

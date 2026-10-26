@@ -1,7 +1,7 @@
 name: Windows Professor Build
 on:
   push:
-    branches: [main, feature/external-motion-keyframes, work/menus-arquivo-pdf-20261026]
+    branches: [main, feature/external-motion-keyframes, work/menus-arquivo-pdf-20261026, work/integracao-branches-20261026]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -63,7 +63,7 @@ jobs:
       - name: Build and run menu, document and PDF regressions
         shell: pwsh
         run: |
-          foreach ($target in @('tests/presentation_pdf_tests.lpr', 'tests/assistant_menu_tests.lpr', 'tests/assistant_document_menu_tests.lpr')) {
+          foreach ($target in @('tests/presentation_pdf_tests.lpr', 'tests/assistant_menu_tests.lpr', 'tests/assistant_document_menu_tests.lpr', 'tests/assistant_config_tests.lpr', 'tests/voice_native_tests.lpr', 'tests/chrome_speech_tests.lpr', 'tests/presentation_flow_tests.lpr', 'tests/presentation_rag_tests.lpr', 'tests/presentation_rag_agent_tests.lpr', 'tests/app_checks.lpr', 'tests/vision_check.lpr', 'tests/reception_tests.lpr', 'tools/pva_tool.lpr')) {
             ./scripts/build_professor.ps1 -Lazarus $env:LAZARUS_HOME -Compiler $env:FPC_COMPILER -Platform x86_64-win64 -ChatGPT .deps/chatgpt-integration-baseline -Target $target
           }
           $fixture = Join-Path $PWD 'build/professor/pdf-output'
@@ -81,6 +81,9 @@ jobs:
             Get-Content -LiteralPath $stderr
             if ($process.ExitCode -ne 0 -or $log -notmatch 'PASS:') { throw "Test failed or did not finish: $test" }
           }
+      - name: Validate integrated configuration, RAG and voice
+        shell: pwsh
+        run: python tests/run_branch_integration_checks.py build/professor
       - name: Upload build diagnostics
         if: always()
         uses: actions/upload-artifact@v4

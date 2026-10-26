@@ -1,8 +1,8 @@
 @echo off
 setlocal
 
-set "LOG=D:\projetos\maurinsoft\Assistente\build_log.txt"
-set "LPI=D:\projetos\maurinsoft\Assistente\src\assistente.lpi"
+set "LOG=%~dp0build_log.txt"
+set "LPI=%~dp0src\assistente.lpi"
 
 echo ==== compile_check iniciado em %DATE% %TIME% ==== > "%LOG%"
 
@@ -17,13 +17,15 @@ echo Usando LAZBUILD=%LAZBUILD% >> "%LOG%"
 if not exist "%LAZBUILD%" (
   echo ERRO: nao encontrei o lazbuild.exe automaticamente. >> "%LOG%"
   echo Ajuste manualmente o caminho no compile_check.bat. >> "%LOG%"
-  goto FIM
+  exit /b 1
 )
 
 "%LAZBUILD%" "%LPI%" >> "%LOG%" 2>&1
+set "BUILD_EXIT=%ERRORLEVEL%"
 
 echo. >> "%LOG%"
-echo ==== ExitCode=%ERRORLEVEL% ==== >> "%LOG%"
+echo ==== ExitCode=%BUILD_EXIT% ==== >> "%LOG%"
 
 :FIM
 echo ==== compile_check finalizado ==== >> "%LOG%"
+exit /b %BUILD_EXIT%

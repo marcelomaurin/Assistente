@@ -14,6 +14,16 @@ uses
 
 const filename = 'Setmain.cfg';
 
+type
+  { How TSetMain.WriteLines renders the settings: the private Setmain.cfg,
+    or a portable file for another installation (with or without secrets). }
+  TSettingsWriteMode = (swStore, swExportWithSecrets, swExportWithoutSecrets);
+
+{ Keys tied to this computer or window (never exported nor imported). }
+function IsMachineSettingKey(const Key: string): Boolean;
+{ Keys holding passwords, tokens or API keys. }
+function IsSecretSettingKey(const Key: string): Boolean;
+
 
 type
   { TSetMain }
@@ -106,7 +116,7 @@ type
         FVoiceSpeed : Double;
 
         // Configurações do Input Audio / Reconhecedor (TAIAudioInput / TAIVoiceRecognizer)
-        FRecogEngine : integer; // 0=vreOpenAIWhisper, 1=vreSAPI, 2=vreSystemDefault
+        FRecogEngine : integer; // 0=vreOpenAIWhisper, 1=vreSAPI, 2=vreSystemDefault, 3=vreChromeWebSpeech
         FRecogLanguage : String;
         FAudioSampleRate : integer;
         FAudioChannels : integer;
@@ -137,6 +147,7 @@ type
         FSTTToken : String;
         FSTTModel : String;
         FSTTEndpoint : String;
+        FRAGInAnswers : Boolean;
 
         procedure SetDevice(const Value : Boolean);
         procedure SetPOSX(value : integer);
@@ -260,6 +271,13 @@ type
         property STTToken : String read FSTTToken write FSTTToken;
         property STTModel : String read FSTTModel write FSTTModel;
         property STTEndpoint : String read FSTTEndpoint write FSTTEndpoint;
+        { Use the RAG library documents as references in ordinary answers. }
+        property RAGInAnswers : Boolean read FRAGInAnswers write FRAGInAnswers;
+        { KEY:value lines of every setting (see TSettingsWriteMode). }
+        procedure WriteLines(Lines: TStrings; Mode: TSettingsWriteMode);
+        { Apply KEY:value lines from a portable configuration file. Keys that
+          are absent keep their current value; machine keys are ignored. }
+        procedure ImportLines(Lines: TStrings);
 
   end;
 
@@ -269,6 +287,39 @@ type
     FSetMain : TSetMain;
 
 implementation
+
+const
+  MachineSettingKeys: array[0..18] of string = ('DEVICE','POSX','POSY','FIXAR','STAY','LASTFILES',
+    'HEIGHT','WIDTH','FONT','RUNSCRIPT','DEBUGSCRIPT','CLEANSCRIPT','INSTALLSCRIPT','COMPILESCRIPT',
+    'DLLPATH','DLLMYPATH','DLLPOSTPATH','AUDIODEVICEINDEX','KINECT_DEVICE_INDEX');
+  SecretSettingKeys: array[0..6] of string = ('CHATGPT','JARVISAPIKEY','PASSWORDMY','PASSWORDPOST',
+    'STT_TOKEN','INTEGRATION_TOKEN','VOICEAPITOKEN');
+
+{ Line that starts with Ref ("KEY:"). funcoes.BuscaChave matches Ref anywhere
+  in a line, so a value containing "POSX:" could be read as another key. }
+function ChaveNoInicio(Lista: TStringList; const Ref: string; var Posicao: Integer): Boolean;
+var I: Integer;
+begin
+  for I:=0 to Lista.Count-1 do
+    if Copy(Lista[I],1,Length(Ref))=Ref then begin Posicao:=I;Exit(True);end;
+  Result:=False;
+end;
+
+function IsMachineSettingKey(const Key: string): Boolean;
+var I: Integer;
+begin
+  Result:=False;
+  for I:=Low(MachineSettingKeys) to High(MachineSettingKeys) do
+    if SameText(Key,MachineSettingKeys[I]) then Exit(True);
+end;
+
+function IsSecretSettingKey(const Key: string): Boolean;
+var I: Integer;
+begin
+  Result:=False;
+  for I:=Low(SecretSettingKeys) to High(SecretSettingKeys) do
+    if SameText(Key,SecretSettingKeys[I]) then Exit(True);
+end;
 
 function SafeParseFloat(const AText: string; ADefault: Double): Double;
 var
@@ -347,8 +398,8 @@ begin
 
     FIntegration := DefaultIntegrationConfig;
     // JARVIS Defaults
-    FJarvisURL := 'https://chorus-gazette-princeton-charter.trycloudflare.com';
-    FJarvisAPIKey := 'jarvis_sec_v1_90a934713a4a1191e342ce5af0ffe9fe47b0a9a6b47bb915';
+    FJarvisURL := '';
+    FJarvisAPIKey := '';
     FJarvisIAMode := 'auto';
     FMinimizeToTray := true;
     FAutoSpeak := true;
@@ -442,217 +493,217 @@ procedure TSetMain.CarregaContexto();
 var
   posicao : integer;
 begin
-    if  BuscaChave(arquivo,'DEVICE:',posicao) then
+    if  ChaveNoInicio(arquivo,'DEVICE:',posicao) then
     begin
          ckdevice := iif(RetiraInfo(arquivo.Strings[posicao])='0',false,true);
     end;
-    if  BuscaChave(arquivo,'POSX:',posicao) then
+    if  ChaveNoInicio(arquivo,'POSX:',posicao) then
     begin
       FPOSX :=  strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'POSY:',posicao) then
+    if  ChaveNoInicio(arquivo,'POSY:',posicao) then
     begin
       FPOSY :=  strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'FIXAR:',posicao) then
+    if  ChaveNoInicio(arquivo,'FIXAR:',posicao) then
     begin
       FFixar :=  strtobool(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'STAY:',posicao) then
+    if  ChaveNoInicio(arquivo,'STAY:',posicao) then
     begin
       FStay :=  strtobool(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'LASTFILES:',posicao) then
+    if  ChaveNoInicio(arquivo,'LASTFILES:',posicao) then
     begin
       FLastFiles := RetiraInfo(arquivo.Strings[posicao]);
     end;
 
-    if  BuscaChave(arquivo,'HEIGHT:',posicao) then
+    if  ChaveNoInicio(arquivo,'HEIGHT:',posicao) then
     begin
       FHEIGHT := strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
 
-    if  BuscaChave(arquivo,'WIDTH:',posicao) then
+    if  ChaveNoInicio(arquivo,'WIDTH:',posicao) then
     begin
       FWIDTH := strtoint(RetiraInfo(arquivo.Strings[posicao]));
     end;
 
-    if  BuscaChave(arquivo,'RUNSCRIPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'RUNSCRIPT:',posicao) then
     begin
       FRunScript := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'DEBUGSCRIPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'DEBUGSCRIPT:',posicao) then
     begin
       FDebugScript := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'CLEANSCRIPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'CLEANSCRIPT:',posicao) then
     begin
       FCleanScript := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'INSTALLSCRIPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'INSTALLSCRIPT:',posicao) then
     begin
       FInstall := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'COMPILESCRIPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'COMPILESCRIPT:',posicao) then
     begin
       FCompile := RetiraInfo(arquivo.Strings[posicao]);
     end;
 
-    if  BuscaChave(arquivo,'FONT:',posicao) then
+    if  ChaveNoInicio(arquivo,'FONT:',posicao) then
     begin
       StringToFont(RetiraInfo(arquivo.Strings[posicao]),FFONT);
     end;
-    if  BuscaChave(arquivo,'CHATGPT:',posicao) then
+    if  ChaveNoInicio(arquivo,'CHATGPT:',posicao) then
     begin
-      FCHATGPT := RetiraInfo(arquivo.Strings[posicao]);
+      FCHATGPT := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'DLLPATH:',posicao) then
+    if  ChaveNoInicio(arquivo,'DLLPATH:',posicao) then
     begin
       FDLLPATH := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'DLLMYPATH:',posicao) then
+    if  ChaveNoInicio(arquivo,'DLLMYPATH:',posicao) then
     begin
       FDLLMyPATH := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'DLLPOSTPATH:',posicao) then
+    if  ChaveNoInicio(arquivo,'DLLPOSTPATH:',posicao) then
     begin
       FDLLPOSTPATH := RetiraInfo(arquivo.Strings[posicao]);
     end;
 
-    if  BuscaChave(arquivo,'HOSTNAMEMY:',posicao) then
+    if  ChaveNoInicio(arquivo,'HOSTNAMEMY:',posicao) then
     begin
       FHostnameMy := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'BANCOMY:',posicao) then
+    if  ChaveNoInicio(arquivo,'BANCOMY:',posicao) then
     begin
       FBancoMy := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'USERNAMEMY:',posicao) then
+    if  ChaveNoInicio(arquivo,'USERNAMEMY:',posicao) then
     begin
       FUsernameMy := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'PASSWORDMY:',posicao) then
+    if  ChaveNoInicio(arquivo,'PASSWORDMY:',posicao) then
     begin
-      FPasswordMy := RetiraInfo(arquivo.Strings[posicao]);
+      FPasswordMy := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'HOSTNAMEPOST:',posicao) then
+    if  ChaveNoInicio(arquivo,'HOSTNAMEPOST:',posicao) then
     begin
       FHostnamePost := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'BANCOPOST:',posicao) then
+    if  ChaveNoInicio(arquivo,'BANCOPOST:',posicao) then
     begin
       FBancoPost := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'USERNAMEPOST:',posicao) then
+    if  ChaveNoInicio(arquivo,'USERNAMEPOST:',posicao) then
     begin
       FUsernamePost := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'PASSWORDPOST:',posicao) then
+    if  ChaveNoInicio(arquivo,'PASSWORDPOST:',posicao) then
     begin
-      FPasswordPost := RetiraInfo(arquivo.Strings[posicao]);
+      FPasswordPost := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'SCHEMAPOST:',posicao) then
+    if  ChaveNoInicio(arquivo,'SCHEMAPOST:',posicao) then
     begin
       FSchemaPost := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'TOOLSFALAR:',posicao) then
+    if  ChaveNoInicio(arquivo,'TOOLSFALAR:',posicao) then
     begin
       FTOOLSFALAR := iif(RetiraInfo(arquivo.Strings[posicao])='0',false,true);
     end;
 
-    if  BuscaChave(arquivo,'CHATGPTPROVIDER:',posicao) then
+    if  ChaveNoInicio(arquivo,'CHATGPTPROVIDER:',posicao) then
     begin
       FChatGPTProvider := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
     end;
-    if  BuscaChave(arquivo,'CHATGPTMODEL:',posicao) then
+    if  ChaveNoInicio(arquivo,'CHATGPTMODEL:',posicao) then
     begin
       FChatGPTModel := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'CHATGPTURL:',posicao) then
+    if  ChaveNoInicio(arquivo,'CHATGPTURL:',posicao) then
     begin
       FChatGPTURL := RetiraInfo(arquivo.Strings[posicao]);
     end;
 
     // Leitura JARVIS
-    if  BuscaChave(arquivo,'JARVISURL:',posicao) then
+    if  ChaveNoInicio(arquivo,'JARVISURL:',posicao) then
     begin
       FJarvisURL := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'JARVISAPIKEY:',posicao) then
+    if  ChaveNoInicio(arquivo,'JARVISAPIKEY:',posicao) then
     begin
-      FJarvisAPIKey := RetiraInfo(arquivo.Strings[posicao]);
+      FJarvisAPIKey := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
     end;
-    if  BuscaChave(arquivo,'JARVISIAMODE:',posicao) then
+    if  ChaveNoInicio(arquivo,'JARVISIAMODE:',posicao) then
     begin
       FJarvisIAMode := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'MINIMIZETOTRAY:',posicao) then
+    if  ChaveNoInicio(arquivo,'MINIMIZETOTRAY:',posicao) then
     begin
       FMinimizeToTray := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     end;
-    if  BuscaChave(arquivo,'AUTOSPEAK:',posicao) then
+    if  ChaveNoInicio(arquivo,'AUTOSPEAK:',posicao) then
     begin
       FAutoSpeak := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     end;
 
-    if  BuscaChave(arquivo,'FRASE:',posicao) then
+    if  ChaveNoInicio(arquivo,'FRASE:',posicao) then
     begin
       FFrase := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'VOICESYNTHIP:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICESYNTHIP:',posicao) then
     begin
       FVoiceSynthIP := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'VOICESYNTHPORT:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICESYNTHPORT:',posicao) then
     begin
       FVoiceSynthPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8096);
     end;
-    if  BuscaChave(arquivo,'VOICERECOGIP:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICERECOGIP:',posicao) then
     begin
       FVoiceRecogIP := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'VOICERECOGPORT:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICERECOGPORT:',posicao) then
     begin
       FVoiceRecogPort := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 8097);
     end;
 
-    if  BuscaChave(arquivo,'SYNTHENGINE:',posicao) then
+    if  ChaveNoInicio(arquivo,'SYNTHENGINE:',posicao) then
     begin
       FSynthEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 1);
     end;
-    if  BuscaChave(arquivo,'SYNTHVOICE:',posicao) then
+    if  ChaveNoInicio(arquivo,'SYNTHVOICE:',posicao) then
     begin
       FSynthVoice := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'SYNTHVOLUME:',posicao) then
+    if  ChaveNoInicio(arquivo,'SYNTHVOLUME:',posicao) then
     begin
       FSynthVolume := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 100);
     end;
-    if  BuscaChave(arquivo,'SYNTHRATE:',posicao) then
+    if  ChaveNoInicio(arquivo,'SYNTHRATE:',posicao) then
     begin
       FSynthRate := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
     end;
-    if  BuscaChave(arquivo,'SYNTHASYNC:',posicao) then
+    if  ChaveNoInicio(arquivo,'SYNTHASYNC:',posicao) then
     begin
       FSynthAsync := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
     end;
 
-    if  BuscaChave(arquivo,'VOICEPROVIDER:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEPROVIDER:',posicao) then
       FVoiceProvider := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
-    if  BuscaChave(arquivo,'VOICEAPITOKEN:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEAPITOKEN:',posicao) then
       FVoiceAPIToken := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
-    if  BuscaChave(arquivo,'VOICEMODEL:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEMODEL:',posicao) then
       FVoiceModel := RetiraInfo(arquivo.Strings[posicao]);
-    if  BuscaChave(arquivo,'VOICEENDPOINT:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEENDPOINT:',posicao) then
       FVoiceEndpoint := RetiraInfo(arquivo.Strings[posicao]);
-    if  BuscaChave(arquivo,'VOICEREMOTEVOICE:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEREMOTEVOICE:',posicao) then
       FVoiceRemoteVoice := RetiraInfo(arquivo.Strings[posicao]);
-    if  BuscaChave(arquivo,'VOICELANGUAGE:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICELANGUAGE:',posicao) then
       FVoiceLanguage := RetiraInfo(arquivo.Strings[posicao]);
-    if  BuscaChave(arquivo,'VOICEOUTPUTFORMAT:',posicao) then
+    if  ChaveNoInicio(arquivo,'VOICEOUTPUTFORMAT:',posicao) then
       FVoiceOutputFormat := RetiraInfo(arquivo.Strings[posicao]);
-    if  BuscaChave(arquivo,'VOICESPEED:',posicao) then
-      FVoiceSpeed := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 1.0);
+    if  ChaveNoInicio(arquivo,'VOICESPEED:',posicao) then
+      FVoiceSpeed := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 1.0);
 
     // Migracao/fallback de configuracao antiga (tarefa 27)
     if (Trim(FVoiceAPIToken) = '') and (FSynthEngine = 3) and (Trim(FCHATGPT) <> '') then
@@ -661,45 +712,45 @@ begin
       FVoiceProvider := 1;
     end;
 
-    if  BuscaChave(arquivo,'RECOGENGINE:',posicao) then
+    if  ChaveNoInicio(arquivo,'RECOGENGINE:',posicao) then
     begin
       FRecogEngine := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 0);
     end;
-    if  BuscaChave(arquivo,'RECOGLANGUAGE:',posicao) then
+    if  ChaveNoInicio(arquivo,'RECOGLANGUAGE:',posicao) then
     begin
       FRecogLanguage := RetiraInfo(arquivo.Strings[posicao]);
     end;
-    if  BuscaChave(arquivo,'AUDIOSAMPLERATE:',posicao) then
+    if  ChaveNoInicio(arquivo,'AUDIOSAMPLERATE:',posicao) then
     begin
       FAudioSampleRate := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 16000);
     end;
-    if  BuscaChave(arquivo,'AUDIOCHANNELS:',posicao) then
+    if  ChaveNoInicio(arquivo,'AUDIOCHANNELS:',posicao) then
     begin
       FAudioChannels := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 1);
     end;
-    if  BuscaChave(arquivo,'AUDIODEVICEINDEX:',posicao) then
+    if  ChaveNoInicio(arquivo,'AUDIODEVICEINDEX:',posicao) then
     begin
       FAudioDeviceIndex := strtointdef(RetiraInfo(arquivo.Strings[posicao]), -1);
     end;
-    if  BuscaChave(arquivo,'AUDIODEVICENAME:',posicao) then
+    if  ChaveNoInicio(arquivo,'AUDIODEVICENAME:',posicao) then
     begin
       FAudioDeviceName := RetiraInfo(arquivo.Strings[posicao]);
     end;
 
-    if BuscaChave(arquivo,'CONTINUOUS_LISTENING:',posicao) then
+    if ChaveNoInicio(arquivo,'CONTINUOUS_LISTENING:',posicao) then
       FContinuousListening := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
-    if BuscaChave(arquivo,'VOICE_THRESHOLD:',posicao) then
-      FVoiceThreshold := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 0.015);
-    if BuscaChave(arquivo,'SILENCE_TIMEOUT_MS:',posicao) then
+    if ChaveNoInicio(arquivo,'VOICE_THRESHOLD:',posicao) then
+      FVoiceThreshold := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.015);
+    if ChaveNoInicio(arquivo,'SILENCE_TIMEOUT_MS:',posicao) then
       FSilenceTimeoutMs := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 900);
-    if BuscaChave(arquivo,'MIN_SPEECH_MS:',posicao) then
+    if ChaveNoInicio(arquivo,'MIN_SPEECH_MS:',posicao) then
       FMinSpeechMs := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 250);
-    if BuscaChave(arquivo,'MAX_SPEECH_MS:',posicao) then
+    if ChaveNoInicio(arquivo,'MAX_SPEECH_MS:',posicao) then
       FMaxSpeechMs := strtointdef(RetiraInfo(arquivo.Strings[posicao]), 15000);
-    if BuscaChave(arquivo,'ECHO_SUPPRESSION:',posicao) then
+    if ChaveNoInicio(arquivo,'ECHO_SUPPRESSION:',posicao) then
       FEchoSuppressionEnabled := (RetiraInfo(arquivo.Strings[posicao]) <> '0');
-    if BuscaChave(arquivo,'SELF_AUDIO_CORR_THRESH:',posicao) then
-      FSelfAudioCorrelationThreshold := strtofloatdef(StringReplace(RetiraInfo(arquivo.Strings[posicao]), ',', '.', []), 0.70);
+    if ChaveNoInicio(arquivo,'SELF_AUDIO_CORR_THRESH:',posicao) then
+      FSelfAudioCorrelationThreshold := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.70);
 
     // Sanitize values to prevent 0-value deadlocks in voice recognition & synthesis
     if FSilenceTimeoutMs <= 0 then FSilenceTimeoutMs := 900;
@@ -707,75 +758,72 @@ begin
     if FMaxSpeechMs <= 0 then FMaxSpeechMs := 15000;
     if FVoiceThreshold <= 0.0001 then FVoiceThreshold := 0.015;
     if FSelfAudioCorrelationThreshold <= 0.0001 then FSelfAudioCorrelationThreshold := 0.70;
-    if (Trim(FVoiceModel) = '') or (FVoiceModel = 'gpt-4o-mini-tts') then
-      FVoiceModel := 'tts-1';
+    if Trim(FVoiceModel) = '' then
+      FVoiceModel := 'gpt-4o-mini-tts';
 
-    if BuscaChave(arquivo,'STT_TOKEN:',posicao) then
+    if ChaveNoInicio(arquivo,'STT_TOKEN:',posicao) then
       FSTTToken := TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
-    if BuscaChave(arquivo,'STT_MODEL:',posicao) then
+    if ChaveNoInicio(arquivo,'STT_MODEL:',posicao) then
       FSTTModel := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'STT_ENDPOINT:',posicao) then
+    if ChaveNoInicio(arquivo,'STT_ENDPOINT:',posicao) then
       FSTTEndpoint := RetiraInfo(arquivo.Strings[posicao]);
 
-    if BuscaChave(arquivo,'AVATAR3D_PROFILE:',posicao) then
+    if ChaveNoInicio(arquivo,'AVATAR3D_PROFILE:',posicao) then
       FAvatar3DProfile := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'AVATAR3D_MODEL:',posicao) then
+    if ChaveNoInicio(arquivo,'AVATAR3D_MODEL:',posicao) then
       FAvatar3DModel := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'AVATAR3D_AUTO_IDLE:',posicao) then
+    if ChaveNoInicio(arquivo,'AVATAR3D_AUTO_IDLE:',posicao) then
       FAvatar3DAutoIdle := StrToBoolDef(RetiraInfo(arquivo.Strings[posicao]), True);
-    if BuscaChave(arquivo,'VISION_SOURCE:',posicao) then
+    if ChaveNoInicio(arquivo,'VISION_SOURCE:',posicao) then
       FVisionSource := ParseVisionSource(RetiraInfo(arquivo.Strings[posicao]))
-    else if BuscaChave(arquivo,'KINECT_ENABLED:',posicao) then
+    else if ChaveNoInicio(arquivo,'KINECT_ENABLED:',posicao) then
     begin
       if SameText(RetiraInfo(arquivo.Strings[posicao]), 'true') or
          (RetiraInfo(arquivo.Strings[posicao]) = '1') then FVisionSource := vsKinect
       else FVisionSource := vsNone;
     end;
-    if BuscaChave(arquivo,'KINECT_DEVICE_INDEX:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_DEVICE_INDEX:',posicao) then
       FKinectDeviceIndex := StrToIntDef(RetiraInfo(arquivo.Strings[posicao]), -1);
-    if BuscaChave(arquivo,'CAMERA_DEVICE:',posicao) then
+    if ChaveNoInicio(arquivo,'CAMERA_DEVICE:',posicao) then
       FCameraDevice := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'KINECT_MINDIST:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_MINDIST:',posicao) then
       FKinectMinDistance := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 0.8);
-    if BuscaChave(arquivo,'KINECT_MAXDIST:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_MAXDIST:',posicao) then
       FKinectMaxDistance := SafeParseFloat(RetiraInfo(arquivo.Strings[posicao]), 3.5);
     if (FKinectMinDistance <= 0) or (FKinectMaxDistance <= 0) or (FKinectMinDistance >= FKinectMaxDistance) then
     begin
       FKinectMinDistance := 0.8;
       FKinectMaxDistance := 3.5;
     end;
-    if BuscaChave(arquivo,'KINECT_SEATED:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_SEATED:',posicao) then
       FKinectSeatedMode := StrToBoolDef(RetiraInfo(arquivo.Strings[posicao]), True);
-    if BuscaChave(arquivo,'KINECT_TARGET_LEFT:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_TARGET_LEFT:',posicao) then
       FKinectTargetLeft := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'KINECT_TARGET_RIGHT:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_TARGET_RIGHT:',posicao) then
       FKinectTargetRight := RetiraInfo(arquivo.Strings[posicao]);
-    if BuscaChave(arquivo,'KINECT_TARGET_CENTER:',posicao) then
+    if ChaveNoInicio(arquivo,'KINECT_TARGET_CENTER:',posicao) then
       FKinectTargetCenter := RetiraInfo(arquivo.Strings[posicao]);
 
 
-    if BuscaChave(arquivo,'INTEGRATION_ENABLED:',posicao) then
+    if ChaveNoInicio(arquivo,'INTEGRATION_ENABLED:',posicao) then
       FIntegration.Enabled := Trim(RetiraInfo(arquivo.Strings[posicao]))='1';
-    if BuscaChave(arquivo,'INTEGRATION_BIND:',posicao) then FIntegration.BindIP:=Trim(RetiraInfo(arquivo.Strings[posicao]));
-    if BuscaChave(arquivo,'INTEGRATION_PORT:',posicao) then FIntegration.Port:=StrToIntDef(RetiraInfo(arquivo.Strings[posicao]),0);
-    if BuscaChave(arquivo,'INTEGRATION_TOKEN:',posicao) then FIntegration.Token:=TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
-    if BuscaChave(arquivo,'INTEGRATION_ALLOWED_IPS:',posicao) then FIntegration.AllowedIPs:=RetiraInfo(arquivo.Strings[posicao]);
+    if ChaveNoInicio(arquivo,'INTEGRATION_BIND:',posicao) then FIntegration.BindIP:=Trim(RetiraInfo(arquivo.Strings[posicao]));
+    if ChaveNoInicio(arquivo,'INTEGRATION_PORT:',posicao) then FIntegration.Port:=StrToIntDef(RetiraInfo(arquivo.Strings[posicao]),0);
+    if ChaveNoInicio(arquivo,'INTEGRATION_TOKEN:',posicao) then FIntegration.Token:=TVoiceCredentialStore.UnprotectToken(RetiraInfo(arquivo.Strings[posicao]));
+    if ChaveNoInicio(arquivo,'INTEGRATION_ALLOWED_IPS:',posicao) then FIntegration.AllowedIPs:=RetiraInfo(arquivo.Strings[posicao]);
+    if ChaveNoInicio(arquivo,'RAG_IN_ANSWERS:',posicao) then
+      FRAGInAnswers := Trim(RetiraInfo(arquivo.Strings[posicao]))<>'0';
 
-    // Fallback: se STTToken vazio, reaproveita FCHATGPT
-    if (Trim(FSTTToken) = '') and (Trim(FCHATGPT) <> '') then
-      FSTTToken := FCHATGPT;
+    // Consulte o token da IA ao transcrever, sem persistir uma copia obsoleta.
 
 end;
 
 procedure TSetMain.IdentificaArquivo(flag: boolean);
 begin
-  Fpath := GetAppConfigDir(false);
-  if GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR') <> '' then
-    Fpath := IncludeTrailingPathDelimiter(GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR'));
-  if not(FileExists(FPATH)) then
-  begin
-     createdir(fpath);
-  end;
+  Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+  if Fpath = '' then Fpath := GetAppConfigDir(false);
+  Fpath := IncludeTrailingPathDelimiter(Fpath);
+  ForceDirectories(Fpath);
   if (FileExists(fpath+filename)) then
   begin
     arquivo.LoadFromFile(fpath+filename);
@@ -802,113 +850,158 @@ begin
     FKinectTargetLeft := '';
     FKinectTargetRight := '';
     FKinectTargetCenter := '';
+    default();
     FIntegration := DefaultIntegrationConfig;
+    FRAGInAnswers := True;
     IdentificaArquivo(true);
 end;
 
+procedure TSetMain.WriteLines(Lines: TStrings; Mode: TSettingsWriteMode);
+  procedure Put(const Key, Value: string);
+  var V: string;
+  begin
+    V:=Value;
+    if Mode<>swStore then begin
+      if IsMachineSettingKey(Key) then Exit;
+      if IsSecretSettingKey(Key) and (Mode=swExportWithoutSecrets) then Exit;
+    end else if IsSecretSettingKey(Key) then
+      V:=TVoiceCredentialStore.ProtectToken(V);
+    { One setting per line: a line break would inject another key. }
+    V:=StringReplace(StringReplace(V,#13,' ',[rfReplaceAll]),#10,' ',[rfReplaceAll]);
+    Lines.Append(Key+':'+V);
+  end;
+begin
+  Put('DEVICE',iif(ckdevice,'1','0'));
+  Put('POSX',inttostr(FPOSX));
+  Put('POSY',inttostr(FPOSY));
+  Put('FIXAR',booltostr(FFixar));
+  Put('STAY',booltostr(FStay));
+  Put('LASTFILES',FLastFiles);
+  Put('HEIGHT',inttostr(FHEIGHT));
+  Put('WIDTH',inttostr(FWIDTH));
+  Put('RUNSCRIPT',FRunScript);
+  Put('DEBUGSCRIPT',FDebugScript);
+  Put('CLEANSCRIPT',FCleanScript);
+  Put('INSTALLSCRIPT',FInstall);
+  Put('COMPILESCRIPT',FCompile);
+  Put('FONT',FontToString(FFONT));
+  Put('CHATGPT',FCHATGPT);
+  Put('DLLPATH',FDLLPATH);
+  Put('DLLMYPATH',FDLLMYPATH);
+  Put('DLLPOSTPATH',FDLLPOSTPATH);
+
+  Put('HOSTNAMEMY',FHostnameMy);
+  Put('BANCOMY',FBancoMy);
+  Put('USERNAMEMY',FUsernameMy);
+  Put('PASSWORDMY',FPasswordMy);
+
+  Put('HOSTNAMEPOST',FHostnamePOST);
+  Put('BANCOPOST',FBancoPOST);
+  Put('USERNAMEPOST',FUsernamePOST);
+  Put('PASSWORDPOST',FPasswordPOST);
+  Put('SCHEMAPOST',FSchemaPost);
+  Put('TOOLSFALAR',iif(FToolsFalar,'1','0'));
+
+  Put('CHATGPTPROVIDER',inttostr(FChatGPTProvider));
+  Put('CHATGPTMODEL',FChatGPTModel);
+  Put('CHATGPTURL',FChatGPTURL);
+
+  // Salva JARVIS
+  Put('JARVISURL',FJarvisURL);
+  Put('JARVISAPIKEY',FJarvisAPIKey);
+  Put('JARVISIAMODE',FJarvisIAMode);
+  Put('MINIMIZETOTRAY',iif(FMinimizeToTray, '1', '0'));
+  Put('AUTOSPEAK',iif(FAutoSpeak, '1', '0'));
+
+  Put('FRASE',FFrase);
+  Put('VOICESYNTHIP',FVoiceSynthIP);
+  Put('VOICESYNTHPORT',inttostr(FVoiceSynthPort));
+  Put('VOICERECOGIP',FVoiceRecogIP);
+  Put('VOICERECOGPORT',inttostr(FVoiceRecogPort));
+
+  Put('SYNTHENGINE',inttostr(FSynthEngine));
+  Put('SYNTHVOICE',FSynthVoice);
+  Put('VOICEMODEL',FVoiceModel);
+  Put('VOICEPROVIDER',IntToStr(FVoiceProvider));
+  Put('VOICEAPITOKEN',FVoiceAPIToken);
+  Put('VOICEENDPOINT',FVoiceEndpoint);
+  Put('VOICEREMOTEVOICE',FVoiceRemoteVoice);
+  Put('VOICELANGUAGE',FVoiceLanguage);
+  Put('VOICEOUTPUTFORMAT',FVoiceOutputFormat);
+  Put('VOICESPEED',FloatToStr(FVoiceSpeed));
+  Put('SYNTHVOLUME',inttostr(FSynthVolume));
+  Put('SYNTHRATE',inttostr(FSynthRate));
+  Put('SYNTHASYNC',iif(FSynthAsync, '1', '0'));
+
+  Put('RECOGENGINE',inttostr(FRecogEngine));
+  Put('RECOGLANGUAGE',FRecogLanguage);
+  Put('AUDIOSAMPLERATE',inttostr(FAudioSampleRate));
+  Put('AUDIOCHANNELS',inttostr(FAudioChannels));
+  Put('AUDIODEVICEINDEX',inttostr(FAudioDeviceIndex));
+  Put('AUDIODEVICENAME',FAudioDeviceName);
+
+  Put('AVATAR3D_PROFILE',FAvatar3DProfile);
+  Put('AVATAR3D_MODEL',FAvatar3DModel);
+  Put('AVATAR3D_AUTO_IDLE',iif(FAvatar3DAutoIdle, '1', '0'));
+  Put('VISION_SOURCE',VisionSourceName(FVisionSource));
+  Put('KINECT_DEVICE_INDEX',IntToStr(FKinectDeviceIndex));
+  Put('CAMERA_DEVICE',FCameraDevice);
+  Put('KINECT_MINDIST',FloatToStr(FKinectMinDistance));
+  Put('KINECT_MAXDIST',FloatToStr(FKinectMaxDistance));
+  Put('KINECT_SEATED',iif(FKinectSeatedMode, '1', '0'));
+  Put('KINECT_TARGET_LEFT',FKinectTargetLeft);
+  Put('KINECT_TARGET_RIGHT',FKinectTargetRight);
+  Put('KINECT_TARGET_CENTER',FKinectTargetCenter);
+
+  Put('CONTINUOUS_LISTENING',iif(FContinuousListening, '1', '0'));
+  Put('VOICE_THRESHOLD',FloatToStr(FVoiceThreshold));
+  Put('SILENCE_TIMEOUT_MS',inttostr(FSilenceTimeoutMs));
+  Put('MIN_SPEECH_MS',inttostr(FMinSpeechMs));
+  Put('MAX_SPEECH_MS',inttostr(FMaxSpeechMs));
+  Put('ECHO_SUPPRESSION',iif(FEchoSuppressionEnabled, '1', '0'));
+  Put('SELF_AUDIO_CORR_THRESH',FloatToStr(FSelfAudioCorrelationThreshold));
+
+  Put('STT_TOKEN',FSTTToken);
+  Put('STT_MODEL',FSTTModel);
+  Put('STT_ENDPOINT',FSTTEndpoint);
+
+  Put('INTEGRATION_ENABLED',iif(FIntegration.Enabled,'1','0'));
+  Put('INTEGRATION_BIND',FIntegration.BindIP);
+  Put('INTEGRATION_PORT',IntToStr(FIntegration.Port));
+  Put('INTEGRATION_TOKEN',FIntegration.Token);
+  Put('INTEGRATION_ALLOWED_IPS',FIntegration.AllowedIPs);
+  Put('RAG_IN_ANSWERS',iif(FRAGInAnswers,'1','0'));
+end;
+
+procedure TSetMain.ImportLines(Lines: TStrings);
+var Saved,Accepted: TStringList; I,P: Integer; Key: string;
+begin
+  Accepted:=TStringList.Create;
+  try
+    for I:=0 to Lines.Count-1 do begin
+      P:=Pos(':',Lines[I]);if P<2 then Continue;
+      Key:=UpperCase(Trim(Copy(Lines[I],1,P-1)));
+      if IsMachineSettingKey(Key) then Continue;
+      Accepted.Append(Key+':'+Copy(Lines[I],P+1,MaxInt));
+    end;
+    Saved:=arquivo;arquivo:=Accepted;
+    try CarregaContexto;finally arquivo:=Saved;end;
+  finally Accepted.Free;end;
+end;
+
 procedure TSetMain.SalvaContexto(flag: boolean);
-var ProtectedIntegrationToken:string;
 begin
   if (flag) then
   begin
-    IdentificaArquivo(false);
+    Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+    if Fpath = '' then Fpath := GetAppConfigDir(False);
+    Fpath := IncludeTrailingPathDelimiter(Fpath);
+    ForceDirectories(Fpath);
   end;
-  ProtectedIntegrationToken:=TVoiceCredentialStore.ProtectToken(FIntegration.Token);
-  if (FIntegration.Token<>'') and (Copy(ProtectedIntegrationToken,1,6)<>'dpapi:') then
+  if (FIntegration.Token<>'') and (Copy(TVoiceCredentialStore.ProtectToken(FIntegration.Token),1,6)<>'dpapi:') then
     raise Exception.Create('Nao foi possivel proteger o token de integracao com DPAPI.');
   arquivo.Clear;
-  arquivo.Append('DEVICE:'+iif(ckdevice,'1','0'));
-  arquivo.Append('POSX:'+inttostr(FPOSX));
-  arquivo.Append('POSY:'+inttostr(FPOSY));
-  arquivo.Append('FIXAR:'+booltostr(FFixar));
-  arquivo.Append('STAY:'+booltostr(FStay));
-  arquivo.Append('LASTFILES:'+FLastFiles);
-  arquivo.Append('HEIGHT:'+inttostr(FHEIGHT));
-  arquivo.Append('WIDTH:'+inttostr(FWIDTH));
-  arquivo.Append('RUNSCRIPT:'+FRunScript);
-  arquivo.Append('DEBUGSCRIPT:'+FDebugScript);
-  arquivo.Append('CLEANSCRIPT:'+FCleanScript);
-  arquivo.Append('INSTALLSCRIPT:'+FInstall);
-  arquivo.Append('COMPILESCRIPT:'+FCompile);
-  arquivo.Append('FONT:'+FontToString(FFONT));
-  arquivo.Append('CHATGPT:'+FCHATGPT);
-  arquivo.Append('DLLPATH:'+FDLLPATH);
-  arquivo.Append('DLLMYPATH:'+FDLLMYPATH);
-  arquivo.Append('DLLPOSTPATH:'+FDLLPOSTPATH);
-
-  arquivo.Append('HOSTNAMEMY:'+FHostnameMy);
-  arquivo.Append('BANCOMY:'+FBancoMy);
-  arquivo.Append('USERNAMEMY:'+FUsernameMy);
-  arquivo.Append('PASSWORDMY:'+FPasswordMy);
-
-  arquivo.Append('HOSTNAMEPOST:'+FHostnamePOST);
-  arquivo.Append('BANCOPOST:'+FBancoPOST);
-  arquivo.Append('USERNAMEPOST:'+FUsernamePOST);
-  arquivo.Append('PASSWORDPOST:'+FPasswordPOST);
-  arquivo.Append('SCHEMAPOST:'+FSchemaPost);
-  arquivo.Append('TOOLSFALAR:'+iif(FToolsFalar,'1','0'));
-
-  arquivo.Append('CHATGPTPROVIDER:'+inttostr(FChatGPTProvider));
-  arquivo.Append('CHATGPTMODEL:'+FChatGPTModel);
-  arquivo.Append('CHATGPTURL:'+FChatGPTURL);
-
-  // Salva JARVIS
-  arquivo.Append('JARVISURL:'+FJarvisURL);
-  arquivo.Append('JARVISAPIKEY:'+FJarvisAPIKey);
-  arquivo.Append('JARVISIAMODE:'+FJarvisIAMode);
-  arquivo.Append('MINIMIZETOTRAY:'+iif(FMinimizeToTray, '1', '0'));
-  arquivo.Append('AUTOSPEAK:'+iif(FAutoSpeak, '1', '0'));
-
-  arquivo.Append('FRASE:'+FFrase);
-  arquivo.Append('VOICESYNTHIP:'+FVoiceSynthIP);
-  arquivo.Append('VOICESYNTHPORT:'+inttostr(FVoiceSynthPort));
-  arquivo.Append('VOICERECOGIP:'+FVoiceRecogIP);
-  arquivo.Append('VOICERECOGPORT:'+inttostr(FVoiceRecogPort));
-
-  arquivo.Append('SYNTHENGINE:'+inttostr(FSynthEngine));
-  arquivo.Append('SYNTHVOICE:'+FSynthVoice);
-  arquivo.Append('VOICEMODEL:'+FVoiceModel);
-  arquivo.Append('SYNTHVOLUME:'+inttostr(FSynthVolume));
-  arquivo.Append('SYNTHRATE:'+inttostr(FSynthRate));
-  arquivo.Append('SYNTHASYNC:'+iif(FSynthAsync, '1', '0'));
-
-  arquivo.Append('RECOGENGINE:'+inttostr(FRecogEngine));
-  arquivo.Append('RECOGLANGUAGE:'+FRecogLanguage);
-  arquivo.Append('AUDIOSAMPLERATE:'+inttostr(FAudioSampleRate));
-  arquivo.Append('AUDIOCHANNELS:'+inttostr(FAudioChannels));
-  arquivo.Append('AUDIODEVICEINDEX:'+inttostr(FAudioDeviceIndex));
-  arquivo.Append('AUDIODEVICENAME:'+FAudioDeviceName);
-
-  arquivo.Append('AVATAR3D_PROFILE:'+FAvatar3DProfile);
-  arquivo.Append('AVATAR3D_MODEL:'+FAvatar3DModel);
-  arquivo.Append('AVATAR3D_AUTO_IDLE:'+iif(FAvatar3DAutoIdle, '1', '0'));
-  arquivo.Append('VISION_SOURCE:'+VisionSourceName(FVisionSource));
-  arquivo.Append('KINECT_DEVICE_INDEX:'+IntToStr(FKinectDeviceIndex));
-  arquivo.Append('CAMERA_DEVICE:'+FCameraDevice);
-  arquivo.Append('KINECT_MINDIST:'+FloatToStr(FKinectMinDistance));
-  arquivo.Append('KINECT_MAXDIST:'+FloatToStr(FKinectMaxDistance));
-  arquivo.Append('KINECT_SEATED:'+iif(FKinectSeatedMode, '1', '0'));
-  arquivo.Append('KINECT_TARGET_LEFT:'+FKinectTargetLeft);
-  arquivo.Append('KINECT_TARGET_RIGHT:'+FKinectTargetRight);
-  arquivo.Append('KINECT_TARGET_CENTER:'+FKinectTargetCenter);
-
-  arquivo.Append('CONTINUOUS_LISTENING:'+iif(FContinuousListening, '1', '0'));
-  arquivo.Append('VOICE_THRESHOLD:'+FloatToStr(FVoiceThreshold));
-  arquivo.Append('SILENCE_TIMEOUT_MS:'+inttostr(FSilenceTimeoutMs));
-  arquivo.Append('MIN_SPEECH_MS:'+inttostr(FMinSpeechMs));
-  arquivo.Append('MAX_SPEECH_MS:'+inttostr(FMaxSpeechMs));
-  arquivo.Append('ECHO_SUPPRESSION:'+iif(FEchoSuppressionEnabled, '1', '0'));
-  arquivo.Append('SELF_AUDIO_CORR_THRESH:'+FloatToStr(FSelfAudioCorrelationThreshold));
-
-  arquivo.Append('STT_TOKEN:'+TVoiceCredentialStore.ProtectToken(FSTTToken));
-  arquivo.Append('STT_MODEL:'+FSTTModel);
-  arquivo.Append('STT_ENDPOINT:'+FSTTEndpoint);
-
-  arquivo.Append('INTEGRATION_ENABLED:'+iif(FIntegration.Enabled,'1','0'));
-  arquivo.Append('INTEGRATION_BIND:'+FIntegration.BindIP);
-  arquivo.Append('INTEGRATION_PORT:'+IntToStr(FIntegration.Port));
-  arquivo.Append('INTEGRATION_TOKEN:'+ProtectedIntegrationToken);
-  arquivo.Append('INTEGRATION_ALLOWED_IPS:'+FIntegration.AllowedIPs);
+  WriteLines(arquivo,swStore);
   arquivo.SaveToFile(fpath+filename);
 end;
 

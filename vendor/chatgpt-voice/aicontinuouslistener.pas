@@ -5,7 +5,7 @@ unit aicontinuouslistener;
 interface
 
 uses
-  Classes, SysUtils, Math,
+  Classes, SysUtils, Math, aispeechfilter,
   {$IFDEF MSWINDOWS}
   Windows, MMSystem,
   {$ENDIF}
@@ -84,6 +84,8 @@ type
   { TAIContinuousListener }
   TAIContinuousListener = class(TComponent)
   private
+    FSpeechFilter: TAISpeechFilter;
+    FVoicedDurationMs: Integer;
     FEnabled: Boolean;
     FDeviceIndex: Integer;
     FContinuous: Boolean;
@@ -154,11 +156,13 @@ type
     procedure FinalizeUtterance;
     procedure ResetVAD;
   protected
-    procedure ProcessPcmFrame(const AData: PSmallInt; ASampleCount: Integer);
+    procedure ProcessPcmFrame(AData: PSmallInt; ASampleCount: Integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    procedure StartPCMInput;
+    procedure FeedPCM(const AData: PSmallInt; ASampleCount: Integer);
     function StartListening: Boolean;
     procedure StopListening;
     procedure Reset;
@@ -353,6 +357,7 @@ begin
   FEnabled := True;
   FDeviceIndex := -1;
   FContinuous := True;
+  FSpeechFilter := TAISpeechFilter.Create;
   FSampleRate := 16000;
   FChannels := 1;
   FVoiceThreshold := 0.015;
@@ -387,13 +392,15 @@ end;
 destructor TAIContinuousListener.Destroy;
 begin
   StopListening;
+  FreeAndNil(FSpeechFilter);
   FreeAndNil(FSpeechStream);
   inherited Destroy;
 end;
 
 procedure TAIContinuousListener.InitBuffers;
 begin
-  FPreRollCapacity := (FSampleRate * (FPreRollMs div 1000 + 1) * 2);
+  FSpeechFilter.Configure(FSampleRate,FChannels);
+  FPreRollCapacity := (FSampleRate * (FPreRollMs div 1000 + 1) * 2 * FChannels);
   SetLength(FPreRollBuffer, FPreRollCapacity);
   FPreRollWritePos := 0;
   FPreRollCount := 0;
@@ -443,6 +450,19 @@ begin
     else
       NotifyAssistantSpeechEnd;
   end;
+end;
+
+procedure TAIContinuousListener.StartPCMInput;
+begin
+  StopListening;
+  InitBuffers;
+  FEnabled := True;
+  SetState(lsListening);
+end;
+
+procedure TAIContinuousListener.FeedPCM(const AData: PSmallInt; ASampleCount: Integer);
+begin
+  ProcessPcmFrame(AData,ASampleCount);
 end;
 
 function TAIContinuousListener.StartListening: Boolean;
@@ -505,6 +525,7 @@ end;
 
 procedure TAIContinuousListener.ResetVAD;
 begin
+  FVoicedDurationMs := 0;
   FConsecutiveVoiceFrames := 0;
   FSilenceAccumMs := 0;
   FSpeechDurationMs := 0;
@@ -684,10 +705,10 @@ end;
 procedure TAIContinuousListener.FlushPreRollToSpeechStream;
 var
   PreRollBytesWanted: Integer;
-  StartPos: Integer;
+  StartPos, FirstBytes: Integer;
 begin
   if not Assigned(FSpeechStream) then Exit;
-  PreRollBytesWanted := (FSampleRate * FPreRollMs div 1000) * 2;
+  PreRollBytesWanted := (FSampleRate * FPreRollMs div 1000) * 2 * FChannels;
   PreRollBytesWanted := Min(PreRollBytesWanted, FPreRollCount);
 
   if PreRollBytesWanted > 0 then
@@ -695,11 +716,14 @@ begin
     StartPos := FPreRollWritePos - PreRollBytesWanted;
     if StartPos < 0 then
       StartPos := 0;
-    FSpeechStream.WriteBuffer(FPreRollBuffer[StartPos], PreRollBytesWanted);
+    FirstBytes := Min(PreRollBytesWanted,FPreRollCapacity-StartPos);
+    FSpeechStream.WriteBuffer(FPreRollBuffer[StartPos], FirstBytes);
+    if FirstBytes<PreRollBytesWanted then
+      FSpeechStream.WriteBuffer(FPreRollBuffer[0],PreRollBytesWanted-FirstBytes);
   end;
 end;
 
-procedure TAIContinuousListener.ProcessPcmFrame(const AData: PSmallInt; ASampleCount: Integer);
+procedure TAIContinuousListener.ProcessPcmFrame(AData: PSmallInt; ASampleCount: Integer);
 var
   FrameRMS: Double;
   FrameDurationMs: Integer;
@@ -709,11 +733,20 @@ var
   RawBytes: TBytes;
   NowTick: Int64;
   IsSelfEchoTail: Boolean;
+  Filtered: TBytes;
+  StartLevel, StopLevel: Double;
 begin
   if (AData = nil) or (ASampleCount <= 0) or (not FEnabled) then Exit;
 
-  FrameDurationMs := (ASampleCount * 1000) div FSampleRate;
+  if (FSampleRate<=0) or not (FChannels in [1,2]) then Exit;
+  FSpeechFilter.Filter(AData, ASampleCount, Filtered);
+  AData := PSmallInt(@Filtered[0]);
+  FrameDurationMs := (ASampleCount * 1000) div (FSampleRate * FChannels);
   FrameRMS := ComputeRMS(AData, ASampleCount);
+  FSpeechFilter.ObserveBackground(FrameRMS,FVoiceThreshold,
+    FState in [lsSpeechDetected,lsCapturingSpeech,lsWaitingSilence]);
+  StartLevel := FSpeechFilter.StartThreshold(FVoiceThreshold);
+  StopLevel := Math.Min(StartLevel*0.8,FSpeechFilter.StopThreshold(FSilenceThreshold));
   FCurrentRMS := (FCurrentRMS * 0.2) + (FrameRMS * 0.8);
 
   if Assigned(FOnRMSChanged) then
@@ -769,8 +802,8 @@ begin
         FLastAssistantSpeakStopTime := GetTickCount64;
         SetState(lsSpeechDetected);
         FlushPreRollToSpeechStream;
-        FSpeechStream.WriteBuffer(AData^, ASampleCount * 2);
         FSpeechDurationMs := FrameDurationMs;
+        FVoicedDurationMs := FConsecutiveVoiceFrames * FrameDurationMs;
         FSilenceAccumMs := 0;
         Exit;
       end;
@@ -784,7 +817,7 @@ begin
   end;
 
   // 2. Classificacao de voz externa vs ambiente fora de reproducao
-  if FrameRMS >= FVoiceThreshold then
+  if FrameRMS >= StartLevel then
     DetectedOrigin := aoExternalSpeech
   else
     DetectedOrigin := aoEnvironment;
@@ -806,7 +839,7 @@ begin
 
     lsListening:
     begin
-      if FrameRMS >= FVoiceThreshold then
+      if FrameRMS >= StartLevel then
       begin
         Inc(FConsecutiveVoiceFrames);
         if FConsecutiveVoiceFrames >= 3 then
@@ -814,8 +847,8 @@ begin
           SetState(lsSpeechDetected);
           FSpeechStream.Clear;
           FlushPreRollToSpeechStream;
-          FSpeechStream.WriteBuffer(AData^, ASampleCount * 2);
           FSpeechDurationMs := FrameDurationMs;
+        FVoicedDurationMs := FConsecutiveVoiceFrames * FrameDurationMs;
           FSilenceAccumMs := 0;
           SetState(lsCapturingSpeech);
         end;
@@ -829,11 +862,12 @@ begin
       FSpeechStream.WriteBuffer(AData^, ASampleCount * 2);
       FSpeechDurationMs := FSpeechDurationMs + FrameDurationMs;
 
-      if FrameRMS < FSilenceThreshold then
+      if FrameRMS >= StartLevel then Inc(FVoicedDurationMs,FrameDurationMs);
+      if FrameRMS < StopLevel then
       begin
         FSilenceAccumMs := FSilenceAccumMs + FrameDurationMs;
         if FSilenceAccumMs >= FSilenceTimeoutMs then
-          FinalizeUtterance;
+        begin FinalizeUtterance; Exit; end;
       end
       else
         FSilenceAccumMs := 0;
@@ -909,7 +943,7 @@ begin
   Duration := FSpeechDurationMs;
   SetState(lsProcessing);
 
-  if Duration < FMinSpeechMs then
+  if FVoicedDurationMs < FMinSpeechMs then
   begin
     ResetVAD;
     SetState(lsListening);
@@ -923,6 +957,9 @@ begin
   end;
 
   ResetVAD;
+  // A speech callback can stop capture or suppress it while the assistant speaks.
+  // Preserve that state instead of rearming the microphone after the callback.
+  if not FEnabled or (FState in [lsStopped,lsSuppressedByAssistantSpeech,lsError]) then Exit;
   if FContinuous then
     SetState(lsListening)
   else

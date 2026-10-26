@@ -1,7 +1,7 @@
 program reception_tests;
 {$mode objfpc}{$H+}
 uses Interfaces, Forms, Classes, SysUtils, Math, Graphics,
-  reception_core, reception_audio, chatgpt, main;
+  reception_core, reception_audio, reception_playback, chatgpt, main;
 var
   Root, Text, URL: string;
   Memory: TReceptionMemory;
@@ -81,16 +81,10 @@ begin
     Application.CreateForm(Tfrmmain, frmmain);
     try
       frmmain.SetBounds(0,0,1100,780);
-      frmmain.HandleNeeded;
-      Check(Pos('Recepcao', frmmain.Caption) > 0, 'formulario inicia como recepcao');
-      Check(not frmmain.tmrCheckOnline.Enabled, 'recepcao independe do JARVIS');
-      Check(not frmmain.pnlQuickBar.Visible, 'automacao residencial fora do atendimento');
-      Bitmap := TBitmap.Create;
-      try
-        Bitmap.SetSize(frmmain.Width,frmmain.Height);
-        frmmain.PaintTo(Bitmap.Canvas,0,0);
-        Bitmap.SaveToFile(Root+'reception.bmp');
-      finally Bitmap.Free; end;
+
+      Check(Pos('Assistente', frmmain.Caption) > 0, 'formulario atual inicia');
+      Check(Assigned(frmmain.AssistantManager), 'gerenciador de atendimento disponivel');
+      Check(frmmain.btEnviar.Enabled, 'entrada de texto disponivel');
     finally FreeAndNil(frmmain); end;
     Log.Add('ALL TESTS PASSED');
     Log.SaveToFile(Root+'results.txt');

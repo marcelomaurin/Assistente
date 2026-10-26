@@ -501,6 +501,7 @@ object frmConfig: TfrmConfig
           'OpenAI Whisper (Nuvem / Alta Precisão)'
           'Windows SAPI (Local / Sem Nuvem)'
           'Padrão do Sistema'
+          'Chrome / Google (sem chave de API)'
         )
         Style = csDropDownList
         TabOrder = 0

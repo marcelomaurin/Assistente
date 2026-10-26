@@ -59,6 +59,17 @@ begin
       StopPresentation;
       Check(frmmain.ActivePresentationMedia='','Close must remove presentation media');
       Check(not Menu.PrintPDF.Enabled,'Closed presentation must not remain printable');
+      Source:='[executar arquivo=assets/slide1.png]Texto.[PERGUNTAR]Continuação.[FIM]';
+      P:=TPVAPackage.Create;
+      try P.ExportFile(LoadedName,Source,Directory);finally P.Free;end;
+      frmmain.StartPresentation(LoadedName);Started:=GetTickCount64;
+      while not frmmain.WaitingForQuestion and (GetTickCount64-Started<10000) do begin
+        Application.ProcessMessages;Sleep(10);
+      end;
+      Check(frmmain.WaitingForQuestion,'Question pause did not open');
+      frmmain.SavePresentationPDF(Directory+'paused-presentation.pdf');
+      StopPresentation;
+      Check(not frmmain.WaitingForQuestion,'Close must release question pauses');
       WriteLn('PASS: main menu wiring, open/close, failed-open preservation, searchable snapshot, all blocks, loaded-package PDF and presentation cancellation');
     finally frmmain.Free;end;
   except on E:Exception do begin WriteLn('FAIL: '+E.Message);Halt(1);end;end;

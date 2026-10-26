@@ -62,7 +62,8 @@ begin
     if Active<>'' then begin
       Check(Panel.Visible and Panel.IsVisible,'visual panel hidden');
       Check(frmmain.pnlAvatar.IsVisible,'media hides avatar');
-      Check(not frmmain.edPergunta.IsVisible,'typed text remains over visual');
+      Check(frmmain.edPergunta.IsVisible,'composer hidden by visual');
+      Check(Panel.Top+Panel.Height<frmmain.edPergunta.Parent.Top,'media covers input area');
       AvatarRight:=frmmain.pnlAvatar.ClientToScreen(Point(frmmain.pnlAvatar.Width,0)).X;
       Check(Panel.ClientToScreen(Point(0,0)).X>=AvatarRight,'media overlaps avatar');
     end else begin

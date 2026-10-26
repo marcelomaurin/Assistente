@@ -16,7 +16,7 @@ uses
 
   chatgpt, aivoicesynthesizer, jarvis_api, vision_types, webcam_vision, aikinectsensor, aikinect_types,
   Windows, mmsystem, Math, fphttpclient, opensslsockets, ComObj, ActiveX,
-  assistant_integration_protocol, assistant_integration_settings_ui;
+  assistant_integration_protocol, assistant_integration_settings_ui, assistant_rag_settings_ui;
 
 
 
@@ -30,6 +30,8 @@ type
 
   TfrmConfig = class(TForm)
     IntegrationUI: TIntegrationSettingsUI;
+    RAGUI: TRAGSettingsUI;
+    ConfigFileButtons: TConfigFileButtons;
 
     pcConfig: TPageControl;
 
@@ -276,8 +278,13 @@ type
     FLoading: Boolean;
 
     FTestCamera: TWebcamVision;
+    procedure ExportConfigClick(Sender: TObject);
+    procedure ImportConfigClick(Sender: TObject);
 
   public
+    { Set by the owner: generate / apply a configuration file. }
+    OnExportConfig: TNotifyEvent;
+    OnImportConfig: TNotifyEvent;
 
     function SelectedVisionSource: TVisionSource;
 
@@ -387,9 +394,9 @@ begin
 
         cbKinectDevice.ItemIndex := ASavedKinectIndex
 
-      else
-
-        cbKinectDevice.ItemIndex := 0;
+      else if (ASavedKinectIndex < 0) and (AKinectDevices.Count = 1) then
+        cbKinectDevice.ItemIndex := 0
+      else cbKinectDevice.ItemIndex := -1;
 
       cbKinectDevice.Enabled := chkEnableKinect.Checked;
 
@@ -401,7 +408,7 @@ begin
 
       cbKinectDevice.Items.Add('Nenhum Kinect detectado');
 
-      cbKinectDevice.ItemIndex := 0;
+      cbKinectDevice.ItemIndex := -1;
 
       cbKinectDevice.Enabled := False;
 
@@ -421,13 +428,13 @@ begin
 
     begin
 
-      chkEnableCamera.Enabled := True;
+      chkEnableCamera.Enabled := False;
 
       chkEnableCamera.Checked := False;
 
       cbCameraDevice.Items.Add('Nenhuma câmera detectada');
 
-      cbCameraDevice.ItemIndex := 0;
+      cbCameraDevice.ItemIndex := -1;
 
       cbCameraDevice.Enabled := False;
 
@@ -445,9 +452,7 @@ begin
 
       cbCameraDevice.ItemIndex := TWebcamVision.ResolveDevice(ACameraDevices, ASavedCamera);
 
-      if cbCameraDevice.ItemIndex < 0 then
 
-        cbCameraDevice.ItemIndex := 0;
 
       cbCameraDevice.Enabled := chkEnableCamera.Checked;
 
@@ -591,7 +596,9 @@ var
 
 begin
 
-  if chkEnableKinect.Checked and (cbKinectDevice.ItemIndex >= 0) then
+  if not chkEnableKinect.Enabled then
+    KinectMsg := 'Kinect: não detectado'
+  else if chkEnableKinect.Checked and (cbKinectDevice.ItemIndex >= 0) then
 
     KinectMsg := 'Kinect: ' + cbKinectDevice.Text
 
@@ -605,7 +612,9 @@ begin
 
 
 
-  if chkEnableCamera.Checked and (cbCameraDevice.ItemIndex >= 0) and
+  if not chkEnableCamera.Enabled then
+    CameraMsg := 'Câmera: não detectada'
+  else if chkEnableCamera.Checked and (cbCameraDevice.ItemIndex >= 0) and
 
      (cbCameraDevice.Text <> 'Nenhuma câmera detectada') then
 
@@ -927,6 +936,8 @@ procedure TfrmConfig.FormCreate(Sender: TObject);
 
 begin
   IntegrationUI:=TIntegrationSettingsUI.CreateFor(Self,pcConfig);
+  RAGUI:=TRAGSettingsUI.CreateFor(Self,pcConfig);
+  ConfigFileButtons:=TConfigFileButtons.CreateFor(Self,pnlButtons,@ExportConfigClick,@ImportConfigClick);
 
   FLoading := True;
 
@@ -944,10 +955,21 @@ end;
 
 
 
+procedure TfrmConfig.ExportConfigClick(Sender: TObject);
+begin
+  if Assigned(OnExportConfig) then OnExportConfig(Self);
+end;
+
+procedure TfrmConfig.ImportConfigClick(Sender: TObject);
+begin
+  if Assigned(OnImportConfig) then OnImportConfig(Self);
+end;
+
 procedure TfrmConfig.FormShow(Sender: TObject);
 var
   Prov: TAIProvider;
 begin
+  RAGUI.RefreshList;
   Prov := GetAIProviderFromIndex(cbProvider.ItemIndex);
   if not (Prov in [AIP_LOCAL, AIP_LLAMA_CPP, AIP_NEURAL_API, AIP_OPENAI_COMPATIBLE]) then
   begin

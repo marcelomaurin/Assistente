@@ -22,6 +22,7 @@ type
     FOnText: TVoiceTextEvent;
     FOnState: TVoiceStateEvent;
     FPaused: Boolean;
+    FOnFinished: TNotifyEvent;
     procedure TimerTick(Sender: TObject);
     procedure SetState(const AState: string);
     function BuildConfig: TReceptionConfig;
@@ -36,6 +37,7 @@ type
     property Paused: Boolean read FPaused;
     property OnText: TVoiceTextEvent read FOnText write FOnText;
     property OnState: TVoiceStateEvent read FOnState write FOnState;
+    property OnFinished: TNotifyEvent read FOnFinished write FOnFinished;
   end;
 
 function IsWhisperHallucination(const AText: string): Boolean;
@@ -148,6 +150,7 @@ end;
 
 function TVoiceInputBridge.BuildConfig: TReceptionConfig;
 begin
+  Result := Default(TReceptionConfig);
   Result.Token := '';
   Result.AudioToken := '';
   Result.Model := '';
@@ -164,10 +167,6 @@ begin
 
   Result.Token := FSetMain.CHATGPT;
   Result.AudioToken := FSetMain.STTToken;
-  if Result.AudioToken = '' then
-    Result.AudioToken := FSetMain.VoiceAPIToken;
-  if Result.AudioToken = '' then
-    Result.AudioToken := FSetMain.CHATGPT;
 
   Result.Model := FSetMain.STTModel;
   Result.URL := FSetMain.STTEndpoint;
@@ -200,6 +199,11 @@ begin
   end;
 
   Cfg := BuildConfig;
+  if Cfg.RecogEngine = 3 then
+  begin
+    SetState('Use a janela do Chrome para reconhecer o microfone.');
+    Exit;
+  end;
   FJob := TReceptionJob.Create(rjTranscribe, Cfg, AFileName, '', 'voice');
   FTimer.Enabled := True;
   SetState('Transcrevendo fala...');
@@ -225,6 +229,7 @@ begin
   FJob.Free;
   FJob := nil;
 
+  try
   if Ok and (TextResult <> '') then
   begin
     if IsWhisperHallucination(TextResult) then
@@ -240,6 +245,9 @@ begin
     SetState('Falha no reconhecimento: ' + ErrorResult)
   else
     SetState('Nenhuma fala reconhecida');
+  finally
+    if Assigned(FOnFinished) then FOnFinished(Self);
+  end;
 end;
 
 procedure TVoiceInputBridge.Pause;
