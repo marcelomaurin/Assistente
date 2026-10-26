@@ -11,12 +11,25 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: Restore Lazarus toolchain
+        id: lazarus-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\lazarus
+          key: lazarus-3.0.0-fpc-3.2.2-win64-v1
       - name: Install pinned Lazarus with FPC
+        if: steps.lazarus-cache.outputs.cache-hit != 'true'
         timeout-minutes: 8
         shell: pwsh
         run: |
           choco install lazarus --version=3.0.0 --yes --no-progress
           if ($LASTEXITCODE -ne 0) { throw 'Lazarus installation failed' }
+      - name: Save Lazarus toolchain
+        if: steps.lazarus-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: C:\lazarus
+          key: lazarus-3.0.0-fpc-3.2.2-win64-v1
       - name: Inspect installed compiler
         shell: pwsh
         run: |

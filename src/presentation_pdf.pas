@@ -97,7 +97,7 @@ type
 function PDFFontFile: string;
 var Base: string;
 begin
-  Base:=IncludeTrailingPathDelimiter(GetEnvironmentVariable('WINDIR'))+'Fonts'+PathDelim;
+  Base:=IncludeTrailingPathDelimiter(SysUtils.GetEnvironmentVariable('WINDIR'))+'Fonts'+PathDelim;
   if FileExists(Base+'segoeui.ttf') then Exit(Base+'segoeui.ttf');
   if FileExists(Base+'arial.ttf') then Exit(Base+'arial.ttf');
   Result:='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
@@ -136,7 +136,7 @@ begin
     if FindFirst(IncludeTrailingPathDelimiter(TempDirectory)+'*',faAnyFile,Search)=0 then
     try repeat
       if (Search.Attr and faDirectory)=0 then SysUtils.DeleteFile(IncludeTrailingPathDelimiter(TempDirectory)+Search.Name);
-    until FindNext(Search)<>0;finally FindClose(Search);end;
+    until FindNext(Search)<>0;finally SysUtils.FindClose(Search);end;
     RemoveDir(TempDirectory);
   end;
   inherited Destroy;
@@ -191,7 +191,7 @@ begin
   W:=Document.Images[Index].Width;H:=Document.Images[Index].Height;
   if (W<=0) or (H<=0) then raise Exception.Create('Imagem sem dimensões: '+ExtractFileName(FileName));
   if (Page<>nil) and (Y>29) then NewPage;
-  Scale:=Min(174/W,118/H);W:=W*Scale;H:=H*Scale;EnsureSpace(H+5);
+  Scale:=Math.Min(174/W,118/H);W:=W*Scale;H:=H*Scale;EnsureSpace(H+5);
   // With poPageOriginAtTop, DrawImage still takes the bottom-left corner.
   Page.DrawImage(18+(174-W)/2,Y+H,W,H,Index);Y:=Y+H+5;
 end;
@@ -245,7 +245,7 @@ begin
     Document.SaveToStream(Output);Output.SaveToFile(TempFile);
     {$ifdef windows}
     if not MoveFileExW(PWideChar(UTF8Decode(TempFile)),PWideChar(UTF8Decode(FileName)),
-      MOVEFILE_REPLACE_EXISTING or MOVEFILE_WRITE_THROUGH) then RaiseLastOSError;
+      MOVEFILE_REPLACE_EXISTING) then RaiseLastOSError;
     {$else}
     if not RenameFile(TempFile,FileName) then raise Exception.Create('Não foi possível salvar o PDF: '+FileName);
     {$endif}
