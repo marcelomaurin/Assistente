@@ -82,6 +82,7 @@ jobs:
             if ($process.ExitCode -ne 0 -or $log -notmatch 'PASS:') { throw "Test failed or did not finish: $test" }
           }
       - name: Validate integrated configuration, RAG and voice
+        if: always()
         shell: pwsh
         run: python tests/run_branch_integration_checks.py build/professor
       - name: Upload build diagnostics

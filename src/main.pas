@@ -1232,6 +1232,7 @@ begin
   FProfessor.SetActivity(psIdle);edPergunta.TextHint:='Pergunte sobre a apresentacao ou informe um bloco...';
   SetEstado('Apresentacao pausada: pergunte, escolha um bloco ou continue.',False);
   RetomarEscuta;
+  if not Visible then Exit;
   if FMenuPanel.Visible then begin if FBlockMenu.CanFocus then FBlockMenu.SetFocus;end
   else if edPergunta.CanFocus then edPergunta.SetFocus;
 end;
@@ -1243,7 +1244,16 @@ begin
   if not AtTag then FSpeechJob.SetPaused(True);
   SetLength(FParkedPresentations,N+1);FParkedPresentations[N].Job:=FSpeechJob;FParkedPresentations[N].AtTag:=AtTag;
   FParkedPresentations[N].YouTubePending:=FYouTubeCommandPending;FYouTubeCommandPending:=False;
-  FSpeechJob:=nil;FAnsweringQuestion:=False;QuestionReady;
+  FSpeechJob:=nil;FAnsweringQuestion:=False;
+  try QuestionReady;
+  except
+    // Restore ownership before the timer records an error or cancels the job.
+    FSpeechJob:=FParkedPresentations[N].Job;
+    FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;
+    SetLength(FParkedPresentations,N);
+    if not AtTag then FSpeechJob.SetPaused(False);
+    raise;
+  end;
 end;
 procedure Tfrmmain.ResumePresentation;
 var N:Integer;AtTag:Boolean;
@@ -1463,7 +1473,12 @@ begin
           raise Exception.Create('Nao foi possivel executar a tag ['+Command.MovementID+']. Verifique os movimentos do avatar selecionado.');
       end
       else FProfessor.ExecuteCommand(Command.Command);
-    except on E: Exception do begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;end;
+    except on E: Exception do begin
+      if not Assigned(FSpeechJob) then begin
+        FinishPresentation;SetEstado('Falha na apresentação: '+E.Message,False);Exit;
+      end;
+      FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;
+    end;end;
     if not FYouTubeCommandPending then FSpeechJob.ConfirmAvatarCommand;
   end;
   if not FSpeechJob.Done then Exit;

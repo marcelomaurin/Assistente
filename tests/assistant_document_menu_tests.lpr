@@ -78,7 +78,7 @@ begin
       while not frmmain.WaitingForQuestion and (GetTickCount64-Started<10000) do begin
         Application.ProcessMessages;Sleep(10);
       end;
-      Check(frmmain.WaitingForQuestion,'Question pause did not open');
+      Check(frmmain.WaitingForQuestion,'Question pause did not open: '+frmmain.lblStatus.Caption);
       frmmain.SavePresentationPDF(Directory+'paused-presentation.pdf');
       StopPresentation;
       Check(not frmmain.WaitingForQuestion,'Close must release question pauses');
