@@ -288,6 +288,8 @@ type
 
 implementation
 
+uses assistant_local_files;
+
 const
   MachineSettingKeys: array[0..18] of string = ('DEVICE','POSX','POSY','FIXAR','STAY','LASTFILES',
     'HEIGHT','WIDTH','FONT','RUNSCRIPT','DEBUGSCRIPT','CLEANSCRIPT','INSTALLSCRIPT','COMPILESCRIPT',
@@ -820,9 +822,7 @@ end;
 
 procedure TSetMain.IdentificaArquivo(flag: boolean);
 begin
-  Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
-  if Fpath = '' then Fpath := GetAppConfigDir(false);
-  Fpath := IncludeTrailingPathDelimiter(Fpath);
+  Fpath := AssistantConfigDirectory;
   ForceDirectories(Fpath);
   if (FileExists(fpath+filename)) then
   begin
@@ -993,16 +993,14 @@ procedure TSetMain.SalvaContexto(flag: boolean);
 begin
   if (flag) then
   begin
-    Fpath := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
-    if Fpath = '' then Fpath := GetAppConfigDir(False);
-    Fpath := IncludeTrailingPathDelimiter(Fpath);
+    Fpath := AssistantConfigDirectory;
     ForceDirectories(Fpath);
   end;
   if (FIntegration.Token<>'') and (Copy(TVoiceCredentialStore.ProtectToken(FIntegration.Token),1,6)<>'dpapi:') then
     raise Exception.Create('Nao foi possivel proteger o token de integracao com DPAPI.');
   arquivo.Clear;
   WriteLines(arquivo,swStore);
-  arquivo.SaveToFile(fpath+filename);
+  WriteLocalText(fpath+filename, arquivo.Text);
 end;
 
 destructor TSetMain.Destroy;

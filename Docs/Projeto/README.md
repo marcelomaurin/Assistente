@@ -52,7 +52,7 @@ O servidor atende uma conexão por vez em thread própria. Pedidos autenticados 
 
 ## Configuração e dados
 
-`Setmain.cfg` é lido/gravado na pasta retornada por `GetAppConfigDir(False)`. A variável `ASSISTENTE_CONFIG_DIR` substitui esse diretório, permitindo perfis de teste separados. Com essa variável, o histórico também fica nesse diretório; sem ela, o histórico mantém o caminho legado ao lado do executável.
+`Setmain.cfg` é lido/gravado na pasta retornada por `GetAppConfigDir(False)`. A variável `ASSISTENTE_CONFIG_DIR` substitui esse diretório, permitindo perfis de teste separados. O histórico fica no mesmo diretório de configuração do usuário. Quando não há histórico nesse diretório e a variável não foi definida, o Assistente tenta ler o histórico legado ao lado do executável. Na gravação seguinte, escreve na pasta do usuário e preserva o original. Um histórico inválido da pasta do usuário permanece intacto e o Assistente avisa na conversa. Configurações e histórico são gravados primeiro em um arquivo temporário da mesma pasta.
 
 O token da integração é gerado com 32 bytes aleatórios pelo Windows e salvo protegido por DPAPI. Não copie um token protegido entre usuários/máquinas como se fosse uma credencial portável. A configuração também contém dados de outros serviços, que conservam suas próprias regras de armazenamento; não publique o arquivo completo. A resposta de `status` não divulga esses dados.
 
