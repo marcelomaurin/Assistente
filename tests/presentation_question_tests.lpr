@@ -3,13 +3,13 @@ program presentation_question_tests;
 uses Interfaces,Forms,Classes,SysUtils,Windows,ExtCtrls,StdCtrls,Controls,Types,Graphics,main,professor_view,CastleControl,CastleImages,CastleURIUtils,
  presentation_package,presentation_tags,presentation_document,presentation_flow,presentation_questions;
 type TRunner=class
- Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button:TButton;
+ Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button,Playback:TButton;
  procedure Tick(Sender:TObject);
  procedure Submit(const Text:string;Voice:Boolean=False);
  procedure CheckLayout;
  procedure Capture;
 end;
-var Runner:TRunner;Settings:TStringList;Root,Config:string;Tag:TPresentationTag;OldCursor:TPoint;
+var Runner:TRunner;Settings:TStringList;Root,Config:string;Tag:TPresentationTag;OldCursor:TPoint;SmokePlayback:Boolean;
 procedure Check(B:Boolean;const Msg:string);
 begin if not B then raise Exception.Create(Msg);end;
 procedure TRunner.Submit(const Text:string;Voice:Boolean);
@@ -38,6 +38,23 @@ begin
   Frame.Canvas.Draw(Origin.X,Origin.Y,Picture.Graphic);Frame.SaveToFile(Root+PathDelim+'perguntas-menu.bmp');
  finally Picture.Free;Frame.Free;end;
 end;
+procedure CreatePlaybackFixture(const Directory: string);
+var B:TBitmap; P:TPVAPackage;
+begin
+  ForceDirectories(Directory+PathDelim+'assets');
+  B:=TBitmap.Create;
+  try
+    B.SetSize(96,64);B.Canvas.Brush.Color:=clNavy;B.Canvas.FillRect(Rect(0,0,96,64));
+    B.SaveToFile(Directory+PathDelim+'assets'+PathDelim+'pause.bmp');
+  finally B.Free;end;
+  P:=TPVAPackage.Create;
+  try
+    P.ExportFile(Directory+PathDelim+'playback.pva',
+      '[abrir arquivo=assets/pause.bmp]'+
+      'Vamos testar a pausa e continuar no mesmo ponto sem perder a imagem atual.'+
+      '[PERGUNTAR][FIM][BLOCO:Detalhes]Este é o segundo bloco.[FIM]',Directory);
+  finally P.Free;end;
+end;
 procedure TRunner.Tick(Sender:TObject);
 var K:Word;P:TPoint;UpButton,DownButton:TButton;Character:Char;
 begin
@@ -49,7 +66,13 @@ begin
     Check(frmmain.ActivePresentationMedia='assets/one.png','PERGUNTAR lost image');CheckLayout;
     Check(Button.Parent=frmmain.pnlHeader,'Perguntar is not in header');
     Check(Button.Left>frmmain.btConfig.Left,'Header controls order');
+    Check(Playback.Visible and Playback.Enabled and (Playback.Caption='Continuar'),'Resume must be available at PERGUNTAR');
+    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    Check(frmmain.BlockMenu.Visible,'Manual menu did not open');
+    Check(frmmain.ActivePresentationMedia='assets/one.png','Manual menu closed the slide');
     Button.Click;Check(frmmain.WaitingForQuestion,'Perguntar resumed instead of accepting questions');
+    Check(not frmmain.BlockMenu.Visible and (frmmain.ActivePresentationMedia='assets/one.png'),
+      'Closing manual menu did not restore the slide');
     Submit('Qual e o codigo da aula?');Phase:=1;
    end;
    1:if frmmain.WaitingForQuestion and (Pos('CODIGO_AULA_927',frmmain.QuestionAnswer.Text)>0) then begin
@@ -114,16 +137,25 @@ begin
     frmmain.StartPresentation(Root+PathDelim+'manual.pva');Phase:=6;
    end;
    6:if frmmain.ActivePresentationMedia='assets/one.png' then begin
+    Check(Playback.Visible and Playback.Enabled and (Playback.Caption='Pausar'),'Pause button unavailable');
+    Playback.Click;
+    Check((Playback.Caption='Continuar') and not frmmain.WaitingForQuestion and
+      (frmmain.ActivePresentationMedia='assets/one.png'),'Playback pause did not preserve the current slide');
+    Playback.SetFocus;
+    K:=Ord('P');frmmain.OnKeyDown(frmmain,K,[]);
+    Check((K=0) and (Playback.Caption='Pausar'),'Keyboard did not resume the same playback');
     Check(Button.Caption='Perguntar','Missing manual question button');Button.Click;
     Check(frmmain.WaitingForQuestion,'Manual pause failed');CheckLayout;
     Submit('Qual e o codigo da aula?',True);Phase:=7;
    end;
    7:if frmmain.WaitingForQuestion and not frmmain.AskingPresentation then begin
-    Submit('[CONTINUAR]');Check(not frmmain.WaitingForQuestion,'Manual resume failed');
+    Check(Playback.Enabled and (Playback.Caption='Continuar'),'Resume unavailable after answering');
+    Playback.Click;Check(not frmmain.WaitingForQuestion,'Manual resume failed');
     K:=VK_ESCAPE;frmmain.OnKeyDown(frmmain,K,[]);Phase:=8;
    end;
    8:if not frmmain.ApresentandoResposta then begin
     Check(not frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia=''),'Cancel left paused jobs/media');
+    Check(not Playback.Visible,'Playback button remained visible after cancel');
     frmmain.StartPresentation(Root+PathDelim+'video.pva');Phase:=9;
    end;
    9:if TButton(frmmain.FindComponent('StopPresentationVideoButton')).Visible then begin
@@ -144,6 +176,26 @@ begin
     K:=VK_ESCAPE;frmmain.OnKeyDown(frmmain,K,[]);
     Timer.Enabled:=False;WriteLn('PASS: local video and header Menu/Perguntar, video dismissal and resume, PERGUNTAR, contextual AI without playback commands, voice IR, MENU replaces media, 43 blocks, scroll buttons, arrows/Enter, click, five-second dwell/reset, nested CONTINUAR, invalid target, manual pause, resume, cancel and separate input/media');Application.Terminate;
    end;
+   30:if frmmain.ActivePresentationMedia='assets/pause.bmp' then begin
+    Check(Playback.Visible and Playback.Enabled and (Playback.Caption='Pausar'),'Playback not available');
+    Playback.Click;
+    Check(not frmmain.WaitingForQuestion and (Playback.Caption='Continuar'),'Pause unexpectedly opened questions');
+    Check(frmmain.ActivePresentationMedia='assets/pause.bmp','Pause closed the slide');
+    Playback.SetFocus;K:=Ord('P');frmmain.OnKeyDown(frmmain,K,[]);
+    Check((K=0) and (Playback.Caption='Pausar'),'P did not resume playback');
+    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    Check(frmmain.BlockMenu.Visible and frmmain.WaitingForQuestion,'Manual menu did not pause for navigation');
+    Check(frmmain.ActivePresentationMedia='assets/pause.bmp','Manual menu closed the slide');
+    Playback.Click;
+    Check(not frmmain.WaitingForQuestion and not frmmain.BlockMenu.Visible,'Continue did not dismiss the menu');
+    Check(frmmain.ActivePresentationMedia='assets/pause.bmp','Continue lost the slide');
+    K:=VK_ESCAPE;frmmain.OnKeyDown(frmmain,K,[]);Phase:=31;
+   end;
+   31:if not frmmain.ApresentandoResposta then begin
+    Check(not Playback.Visible and (frmmain.ActivePresentationMedia=''),'Cancel left playback controls or media active');
+    Timer.Enabled:=False;WriteLn('PASS: playback pause, keyboard resume, manual menu preserves slide, and cancellation');
+    Application.Terminate;
+   end;
   end;
  except on E:Exception do begin WriteLn('FAIL: phase ',Phase,': ',E.Message);ExitCode:=1;Timer.Enabled:=False;Application.Terminate;end;end;
 end;
@@ -153,18 +205,30 @@ begin
   Check(TryParsePresentationTag('[CONTINUAR]',Tag) and (Tag.Action=paContinue),'CONTINUAR parser');
   Check(TryParsePresentationTag('[MENU]',Tag) and (Tag.Action=paMenu),'MENU parser');
   ValidatePresentationScript('Pergunta[PERGUNTAR][MENU][BLOCO:Detalhes]Resposta[CONTINUAR]');
-  Root:=ExpandFileName(ParamStr(1));Config:=Root+PathDelim+'config';ForceDirectories(Config);
+  SmokePlayback:=ParamStr(1)='--tocador';
+  if SmokePlayback then Root:=ExpandFileName(ParamStr(2))+PathDelim+'tocador'
+  else Root:=ExpandFileName(ParamStr(1));
+  Config:=Root+PathDelim+'config';ForceDirectories(Config);
   SetEnvironmentVariableW('ASSISTENTE_CONFIG_DIR',PWideChar(UTF8Decode(Config)));Settings:=TStringList.Create;
   try Settings.Add('CONTINUOUS_LISTENING:0');if ParamStr(3)='speech' then begin Settings.Add('AUTOSPEAK:1');Settings.Add('SYNTHENGINE:3');Settings.Add('VOICEAPITOKEN:local-test');Settings.Add('VOICEENDPOINT:'+ParamStr(2));Settings.Add('SYNTHVOICE:alloy');end else Settings.Add('AUTOSPEAK:0');Settings.Add('VISION_SOURCE:none');Settings.Add('AVATAR3D_PROFILE:professor');Settings.SaveToFile(Config+PathDelim+'Setmain.cfg');finally Settings.Free;end;
   RequireDerivedFormResource:=True;Application.Initialize;Application.CreateForm(Tfrmmain,frmmain);frmmain.Show;
-  frmmain.AssistantManager.ChatGPT.TOKEN:='local-test';frmmain.AssistantManager.ChatGPT.CustomModel:='local-test';
-  frmmain.AssistantManager.ChatGPT.URL:=UTF8Decode(ParamStr(2));frmmain.AssistantManager.ChatGPT.Timeout:=5000;
-  Windows.GetCursorPos(OldCursor);Windows.SetCursorPos(0,0);
+  if not SmokePlayback then begin
+    frmmain.AssistantManager.ChatGPT.TOKEN:='local-test';frmmain.AssistantManager.ChatGPT.CustomModel:='local-test';
+    frmmain.AssistantManager.ChatGPT.URL:=UTF8Decode(ParamStr(2));frmmain.AssistantManager.ChatGPT.Timeout:=5000;
+    Windows.GetCursorPos(OldCursor);Windows.SetCursorPos(0,0);
+  end;
   Runner:=TRunner.Create;
   try
    Runner.Root:=Root;Runner.Button:=TButton(frmmain.FindComponent('PresentationAskButton'));Check(Runner.Button<>nil,'Question button missing');
+   Runner.Playback:=TButton(frmmain.FindComponent('PresentationPlaybackButton'));Check(Runner.Playback<>nil,'Playback button missing');
    Runner.Started:=GetTickCount64;Runner.Timer:=TTimer.Create(nil);Runner.Timer.Interval:=30;Runner.Timer.OnTimer:=@Runner.Tick;
-   frmmain.StartPresentation(Root+PathDelim+'questions.pva');Application.Run;
-  finally Windows.SetCursorPos(OldCursor.X,OldCursor.Y);Runner.Timer.Free;Runner.Free;frmmain.Free;end;
+   if SmokePlayback then begin
+     Runner.Phase:=30;CreatePlaybackFixture(Root);frmmain.StartPresentation(Root+PathDelim+'playback.pva');
+   end else frmmain.StartPresentation(Root+PathDelim+'questions.pva');
+   Application.Run;
+  finally
+    if not SmokePlayback then Windows.SetCursorPos(OldCursor.X,OldCursor.Y);
+    Runner.Timer.Free;Runner.Free;frmmain.Free;
+  end;
  except on E:Exception do begin WriteLn('FAIL: ',E.Message);Halt(1);end;end;
 end.

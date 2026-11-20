@@ -27,6 +27,14 @@ O fluxo principal é: texto ou transcrição → `TAssistantManager` → provedo
 
 Veja a [descrição técnica dos avatares](../professor-virtual-3d.md) e o [vocabulário de tags](../avatar-comandos-ia.md).
 
+No tocador PVA, **Pausar/Continuar** fica no cabeçalho. O botão e o atalho
+**P** pausam a narração, a mídia e os movimentos no mesmo ponto, sem abrir
+a entrada para perguntas. Quando o roteiro já está esperando uma pergunta,
+**Continuar** retoma a sessão. **Menu** no cabeçalho permite consultar os
+blocos sem fechar o slide, vídeo ou áudio da apresentação. Ao escolher
+outro bloco, o tocador troca a mídia conforme o novo trecho. O comando
+`[MENU]` no roteiro mantém o comportamento de fechar a mídia ao abrir o menu.
+
 ## Mapa das fontes
 
 | Pasta/arquivo | Responsabilidade |

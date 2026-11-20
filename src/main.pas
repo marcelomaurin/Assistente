@@ -96,10 +96,10 @@ type
     FParkedPresentations:array of TParkedPresentation;
     FAnsweringQuestion,FResumePresentation:Boolean;
     FAskButton:TButton;
-    FHeaderMenu,FHeaderAsk,FStopVideo:TButton;
+    FHeaderMenu,FHeaderAsk,FHeaderPlayback,FStopVideo:TButton;
     FBlockMenu:TListBox;FQuestionMemo:TMemo;
     FMenuPanel:TPanel;FMenuUp,FMenuDown:TButton;FMenuHint:TLabel;FMenuProgress:TProgressBar;
-    FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard:Boolean;
+    FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard,FMenuKeepsMedia:Boolean;
     procedure HideBlockMenu;
     procedure UpdateMenuHover;
     procedure ScrollBlockMenu(Sender:TObject);
@@ -107,13 +107,17 @@ type
     procedure BlockMenuKeyPress(Sender:TObject;var Key:Char);
     procedure BlockMenuMouseMove(Sender:TObject;Shift:TShiftState;X,Y:Integer);
     procedure BlockMenuMouseUp(Sender:TObject;Button:TMouseButton;Shift:TShiftState;X,Y:Integer);
-    procedure ShowBlockMenu;
+    procedure ShowBlockMenu(KeepMedia: Boolean = False);
+    procedure ClosePresentationMedia;
     procedure BlockMenuClick(Sender:TObject);
     procedure AskPresentation(Sender:TObject);
     procedure HeaderMenuClick(Sender:TObject);
     procedure StopVideoClick(Sender:TObject);
     procedure UpdateVideoButton;
     procedure HeaderAskClick(Sender:TObject);
+    procedure PlaybackClick(Sender:TObject);
+    procedure UpdatePlaybackButton;
+    procedure TogglePlayback;
     procedure ParkPresentation(AtTag:Boolean);
     procedure ResumePresentation;
     procedure QuestionReady;
@@ -355,6 +359,10 @@ begin
   FHeaderAsk:=TButton.Create(Self);FHeaderAsk.Name:='PresentationAskButton';
   FHeaderAsk.Parent:=pnlHeader;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.OnClick:=@HeaderAskClick;
   FHeaderAsk.Hint:='Pausar e perguntar sobre o conteúdo apresentado';FHeaderAsk.ShowHint:=True;
+  FHeaderPlayback:=TButton.Create(Self);FHeaderPlayback.Name:='PresentationPlaybackButton';
+  FHeaderPlayback.Parent:=pnlHeader;FHeaderPlayback.Caption:='Pausar';
+  FHeaderPlayback.Hint:='Pausar ou continuar no mesmo ponto (atalho P)';
+  FHeaderPlayback.ShowHint:=True;FHeaderPlayback.Visible:=False;FHeaderPlayback.OnClick:=@PlaybackClick;
   FMenuPanel:=TPanel.Create(Self);FMenuPanel.Parent:=FChatPanel;FMenuPanel.Name:='PresentationMenuPanel';
   FMenuPanel.BevelOuter:=bvNone;FMenuPanel.Color:=clWhite;FMenuPanel.Visible:=False;
   FMenuHint:=TLabel.Create(Self);FMenuHint.Parent:=FMenuPanel;FMenuHint.Align:=alTop;FMenuHint.Height:=28;FMenuHint.AutoSize:=False;
@@ -506,10 +514,14 @@ begin
   FInputCard.SetBounds(18, ChatHeight-82, ComposerWidth, 54);
   edPergunta.SetBounds(14, 15, ComposerWidth-64, 26);
   FSendButton.Parent:=FInputCard;FSendButton.SetBounds(ComposerWidth-40,12,30,30);
-  btConfig.SetBounds(W-268,20,32,32);
+  if FPresentationMode then btConfig.SetBounds(W-378,20,32,32)
+  else btConfig.SetBounds(W-268,20,32,32);
+  FHeaderPlayback.SetBounds(W-336,20,100,32);
   FHeaderMenu.SetBounds(W-226,20,82,32);
   FHeaderAsk.SetBounds(W-134,20,106,32);
-  lblTitulo.Width:=Max(100,W-316);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-316);
+  if FPresentationMode then lblTitulo.Width:=Max(100,W-426)
+  else lblTitulo.Width:=Max(100,W-316);
+  lblStatus.AutoSize:=False;lblStatus.Width:=lblTitulo.Width;
   CardWidth := FAvatarCard.Width-8;
   FProfileCombo.SetBounds(10, 9, Max(100,CardWidth-112), 28);
   FReloadButton.SetBounds(CardWidth-92, 9, 28, 25);
@@ -826,6 +838,7 @@ begin
   FAskButton.Enabled:=FPresentationMode and not AOcupado and not FVoiceInput.Busy and not FResumePresentation and not (FAnsweringQuestion and Assigned(FSpeechJob));
   FBlockMenu.Enabled:=btEnviar.Enabled;
   FAskButton.Caption:='Continuar';
+  UpdatePlaybackButton;
   edPergunta.Enabled := btEnviar.Enabled;
   btConfig.Enabled := btEnviar.Enabled and not FVoiceInput.Busy;
   FWaveButton.Enabled := btEnviar.Enabled;
@@ -1143,14 +1156,24 @@ begin
     SetEstado(MessageText,False);RetomarEscuta;
   end;end;
 end;
-procedure Tfrmmain.ShowBlockMenu;
-var I:Integer;CloseTag:TPresentationTag;
+procedure Tfrmmain.ClosePresentationMedia;
+var CloseTag:TPresentationTag;
+begin
+  if FPresentationMedia=nil then Exit;
+  CloseTag:=Default(TPresentationTag);
+  CloseTag.Action:=paCloseFile;
+  FPresentationMedia.Execute(CloseTag);
+end;
+
+procedure Tfrmmain.ShowBlockMenu(KeepMedia: Boolean);
+var I:Integer;
 begin
   FBlockMenu.Items.Clear;
   if FLoadedFlow=nil then raise Exception.Create('Nenhuma apresentacao carregada.');
   for I:=0 to FLoadedFlow.BlockCount-1 do FBlockMenu.Items.Add(FLoadedFlow.BlockName(I));
   if FBlockMenu.Items.Count=0 then raise Exception.Create('A apresentacao nao possui blocos para o MENU.');
-  if FPresentationMedia<>nil then begin CloseTag:=Default(TPresentationTag);CloseTag.Action:=paCloseFile;FPresentationMedia.Execute(CloseTag);end;
+  if not KeepMedia then ClosePresentationMedia;
+  FMenuKeepsMedia:=KeepMedia;
   FMenuPanel.Visible:=True;FBlockMenu.Visible:=True;FQuestionMemo.Visible:=False;
   FMenuHoverIndex:=-1;FMenuHoverSince:=0;FMenuKeyboard:=False;FMenuProgress.Position:=0;
   FBlockMenu.ItemIndex:=-1;LayoutProfessor(nil);PresentationVisualChange(nil);
@@ -1162,7 +1185,7 @@ begin
 end;
 procedure Tfrmmain.HideBlockMenu;
 begin
-  FMenuPanel.Visible:=False;FBlockMenu.Visible:=False;FMenuHoverIndex:=-1;FMenuHoverSince:=0;
+  FMenuPanel.Visible:=False;FBlockMenu.Visible:=False;FMenuKeepsMedia:=False;FMenuHoverIndex:=-1;FMenuHoverSince:=0;
   FMenuProgress.Position:=0;PresentationVisualChange(nil);
 end;
 procedure Tfrmmain.ScrollBlockMenu(Sender:TObject);
@@ -1263,6 +1286,8 @@ begin
   PausarEscuta;AtTag:=FParkedPresentations[N].AtTag;FSpeechJob:=FParkedPresentations[N].Job;
   FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;SetLength(FParkedPresentations,N);
   FAnsweringQuestion:=False;FSpeechJob.SetPaused(False);if AtTag then FSpeechJob.ConfirmAvatarCommand;
+  TPresentationScene(FProfessor.Scene).PauseJoints(False);
+  FProfessor.SetRenderingActive(True);
   if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
   edPergunta.TextHint:='Digite sua pergunta...';SetEstado('Continuando apresentacao...',False);
 end;
@@ -1297,7 +1322,7 @@ begin
   if not FHeaderMenu.Enabled then Exit;
   try
     if Assigned(FSpeechJob) then ParkPresentation(False);
-    if WaitingForQuestion then begin ShowBlockMenu;QuestionReady;end;
+    if WaitingForQuestion then begin ShowBlockMenu(True);QuestionReady;end;
   except on E:Exception do SetEstado(E.Message,False);end;
 end;
 procedure Tfrmmain.AskPresentation(Sender:TObject);
@@ -1317,6 +1342,7 @@ begin
     if (Key='continuar') or (Key='[continuar]') then begin edPergunta.Clear;ResumePresentation;Exit;end;
     if not QuestionBlock(FLoadedFlow,Input,TargetBlock) then Exit(False);
     Compiled:=FLoadedFlow.Compile(TargetBlock,False);ValidateRuntimeScript(Compiled);
+    if FMenuPanel.Visible and FMenuKeepsMedia then ClosePresentationMedia;
     HideBlockMenu;LayoutProfessor(nil);
     PausarEscuta;edPergunta.Clear;FChat.AddMessage('Bloco: '+TargetBlock,True);
     FAnsweringQuestion:=False;
@@ -1348,7 +1374,7 @@ begin
     FreeAndNil(FLoadedPackage);FLoadedPackage:=P;P:=nil;
     FLoadedSource:=FLoadedPackage.Script;FLoadedEntryBlock:=EntryBlock;
     FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
-    FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
+    FPresentationMode:=True;LayoutProfessor(nil);PausarEscuta;FProfessor.ResetCommands;
     FalarResposta(Compiled);
     if FSpeechJob=nil then FinishPresentation;
     except FinishPresentation;raise;end;
@@ -1379,7 +1405,7 @@ begin
   HideBlockMenu;FQuestionMemo.Visible:=False;
   edPergunta.TextHint:='Digite sua pergunta...';
   FYouTubeCommandPending:=False;
-  FreeAndNil(FPresentationMedia);FPresentationMode:=False;
+  FreeAndNil(FPresentationMedia);FPresentationMode:=False;UpdatePlaybackButton;
   if FPresentationAvatarChanged then begin
     FPresentationAvatarChanged:=False;
     if not FClosing then AplicarConfiguracao;
@@ -1393,18 +1419,61 @@ begin
     DeleteDirectory(FPresentationRoot,False);
   FPresentationRoot:='';LayoutProfessor(nil);
 end;
-procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure Tfrmmain.UpdatePlaybackButton;
+begin
+  if not Assigned(FHeaderPlayback) then Exit;
+  FHeaderPlayback.Visible:=FPresentationMode;
+  FHeaderPlayback.Enabled:=FPresentationMode and not FAguardandoResposta and
+    not FResumePresentation and not FAnsweringQuestion and ((FVoiceInput=nil) or not FVoiceInput.Busy) and
+    (Assigned(FSpeechJob) or (Length(FParkedPresentations)>0));
+  if WaitingForQuestion or (Assigned(FSpeechJob) and FSpeechJob.Paused) then
+    FHeaderPlayback.Caption:='Continuar'
+  else
+    FHeaderPlayback.Caption:='Pausar';
+end;
+
+procedure Tfrmmain.TogglePlayback;
 var Paused: Boolean;
 begin
-  if not Assigned(FSpeechJob) and (Length(FParkedPresentations)=0) then Exit;
-  if FPresentationMode and Assigned(FSpeechJob) and (ActiveControl<>edPergunta) and (Key=Ord('P')) and (Shift=[]) then begin
-    Paused:=not FSpeechJob.Paused;FSpeechJob.SetPaused(Paused);
+  if FClosing or not FHeaderPlayback.Enabled then Exit;
+  try
+    if WaitingForQuestion then
+    begin
+      ResumePresentation;
+      Exit;
+    end;
+    if not Assigned(FSpeechJob) then Exit;
+    Paused:=not FSpeechJob.Paused;
+    FSpeechJob.SetPaused(Paused);
     TPresentationScene(FProfessor.Scene).PauseJoints(Paused);
     FProfessor.SetRenderingActive(not Paused);
-    try FPresentationMedia.SetPaused(Paused);
-    except on E: Exception do begin FSpeechJob.Cancel;lblStatus.Caption:=E.Message;end;end;
-    if Paused then lblStatus.Caption:='Apresentacao pausada (P retoma; Esc cancela)';
-    Key:=0;Exit;
+    if FPresentationMedia<>nil then FPresentationMedia.SetPaused(Paused);
+    if Paused then lblStatus.Caption:='Apresentação pausada. Clique em Continuar ou pressione P.'
+    else lblStatus.Caption:='Continuando apresentação...';
+  except on E: Exception do
+    begin
+      if Assigned(FSpeechJob) then
+      begin FSpeechJob.ErrorText:=E.Message;FSpeechJob.Cancel;end;
+      lblStatus.Caption:='Falha no tocador: '+E.Message;
+    end;
+  end;
+  UpdatePlaybackButton;
+end;
+
+procedure Tfrmmain.PlaybackClick(Sender:TObject);
+begin
+  TogglePlayback;
+end;
+
+procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if not Assigned(FSpeechJob) and (Length(FParkedPresentations)=0) then Exit;
+  if FPresentationMode and FHeaderPlayback.Enabled and (ActiveControl<>edPergunta) and
+    (ActiveControl<>FBlockMenu) and (Key=Ord('P')) and (Shift=[]) then
+  begin
+    TogglePlayback;
+    Key:=0;
+    Exit;
   end;
   if Key=VK_ESCAPE then begin
     if FAnsweringQuestion and FAguardandoResposta then FAssistantManager.CancelExecution;
@@ -1420,7 +1489,7 @@ var Ok: Boolean; Err: string; Command: TAvatarScriptStep;
 begin
   if FClosing then Exit;
   UpdateDocumentActions;
-  FChromeSpeech.Poll;UpdateMenuHover;UpdateVideoButton;
+  FChromeSpeech.Poll;UpdateMenuHover;UpdateVideoButton;UpdatePlaybackButton;
   if Assigned(FIntegration) then FIntegration.Pump;
   FAvatarStatus.Caption := 'Avatar: ' + FProfessor.ActivityLabel;
   if FProfessor.ModelFile <> '' then FRenderStatus.Caption := 'Renderização 3D'
@@ -1428,7 +1497,7 @@ begin
   FRenderStatus.Hint := FDeviceStatus.Caption;
   FRenderStatus.ShowHint := True;
   if not Assigned(FSpeechJob) then Exit;
-  if FYouTubeCommandPending then begin
+  if FYouTubeCommandPending and not FSpeechJob.Paused then begin
     try
       if (FPresentationMedia=nil) or not FPresentationMedia.YouTubeWaiting then begin
         FYouTubeCommandPending:=False;FSpeechJob.ConfirmAvatarCommand;
