@@ -734,21 +734,21 @@ begin
 end;
 
 procedure Tfrmmain.InicializarMemoria;
-var Directory, ReadPath: string; Loaded: Boolean;
+var Directory, ReadPath: string; HistoryLoaded: Boolean;
 begin
   Directory := AssistantConfigDirectory;
   FHistoryFile := Directory + AssistantHistoryName;
   ReadPath := AssistantHistoryReadPath(Directory, ExtractFilePath(Application.ExeName),
     GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR') = '');
-  Loaded := False;
+  HistoryLoaded := False;
   if ReadPath <> '' then
     try
       FMemoryMap.LoadFromFile(ReadPath);
-      Loaded := FMemoryMap.LastError='';
+      HistoryLoaded := FMemoryMap.LastError='';
     except
-      Loaded := False;
+      HistoryLoaded := False;
     end;
-  if (ReadPath <> '') and not Loaded then
+  if (ReadPath <> '') and not HistoryLoaded then
   begin
     FHistoryWriteBlocked := ReadPath = FHistoryFile;
     FHistoryWarning := 'Não foi possível carregar o histórico de conversas. O arquivo original foi preservado.';
@@ -762,7 +762,7 @@ begin
   FMemoryMap.StoreFullResponse := True;
   FMemoryMap.DetectInformationLoss := True;
   FMemoryMap.RedactSensitiveData := True;
-  if not Loaded then FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
+  if not HistoryLoaded then FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
 end;
 
 procedure Tfrmmain.SalvarMemoria;
