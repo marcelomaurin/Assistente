@@ -20,7 +20,7 @@ uses Classes, SysUtils, {$IFDEF MSWINDOWS}Windows{$ELSE}BaseUnix{$ENDIF};
 
 function AssistantConfigDirectory: string;
 begin
-  Result := GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
+  Result := SysUtils.GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR');
   if Result = '' then Result := GetAppConfigDir(False);
   Result := IncludeTrailingPathDelimiter(ExpandFileName(Result));
 end;
@@ -74,7 +74,7 @@ begin
   {$IFDEF MSWINDOWS}
   if not MoveFileExW(PWideChar(UTF8Decode(ExpandFileName(TempFile))),
     PWideChar(UTF8Decode(ExpandFileName(Destination))),
-    MOVEFILE_REPLACE_EXISTING or MOVEFILE_WRITE_THROUGH) then RaiseLastOSError;
+    MOVEFILE_REPLACE_EXISTING) then RaiseLastOSError;
   {$ELSE}
   if fpRename(PChar(TempFile), PChar(Destination)) <> 0 then RaiseLastOSError;
   {$ENDIF}
@@ -93,7 +93,7 @@ begin
     end;
     ReplaceLocalFile(TempFile, Destination);
   finally
-    if FileExists(TempFile) then DeleteFile(TempFile);
+    if FileExists(TempFile) then SysUtils.DeleteFile(TempFile);
   end;
 end;
 
