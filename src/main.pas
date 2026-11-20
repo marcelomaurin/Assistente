@@ -75,7 +75,8 @@ type
     FContinuousListener: TProfessorListener;
     FMemoryMap: TAIAgentMemoryMap;
     FMemoryItem: TAIAgentMemoryMapItem;
-    FHistoryFile, FCurrentUserText: string;
+    FHistoryFile, FCurrentUserText, FHistoryWarning: string;
+    FHistoryWriteBlocked, FHistoryWriteWarningShown: Boolean;
     FAguardandoResposta, FClosing, FMicMuted, FShown: Boolean;
     FProfessor: TProfessorView;
     FTimer: TTimer;
@@ -175,7 +176,7 @@ type
   end;
 var frmmain: Tfrmmain;
 implementation
-uses professor_settings, assistant_config_file, Math, Types, FileUtil, LazFileUtils, LazUTF8,
+uses professor_settings, assistant_config_file, assistant_local_files, Math, Types, FileUtil, LazFileUtils, LazUTF8,
   assistant_search_dialog, presentation_pdf;
 {$R *.lfm}
 
@@ -558,6 +559,7 @@ begin
     if FConfigImportMessage<>'' then begin
       memResposta.Lines.Add(FConfigImportMessage);memResposta.Lines.Add('');
     end;
+    if FHistoryWarning<>'' then FChat.AddMessage(FHistoryWarning,False);
     IniciarEscuta;
     IniciarVideo;
     FProfessor.Gesture(psWave);
@@ -732,26 +734,51 @@ begin
 end;
 
 procedure Tfrmmain.InicializarMemoria;
+var Directory, ReadPath: string; Loaded: Boolean;
 begin
-  if GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR')<>'' then
-    FHistoryFile:=IncludeTrailingPathDelimiter(GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR'))+'conversation-history.json'
-  else
-  FHistoryFile := IncludeTrailingPathDelimiter(ExtractFilePath(Application.ExeName)) + 'conversation-history.json';
+  Directory := AssistantConfigDirectory;
+  FHistoryFile := Directory + AssistantHistoryName;
+  ReadPath := AssistantHistoryReadPath(Directory, ExtractFilePath(Application.ExeName),
+    GetEnvironmentVariable('ASSISTENTE_CONFIG_DIR') = '');
+  Loaded := False;
+  if ReadPath <> '' then
+    try
+      FMemoryMap.LoadFromFile(ReadPath);
+      Loaded := FMemoryMap.LastError='';
+    except
+      Loaded := False;
+    end;
+  if (ReadPath <> '') and not Loaded then
+  begin
+    FHistoryWriteBlocked := ReadPath = FHistoryFile;
+    FHistoryWarning := 'Não foi possível carregar o histórico de conversas. O arquivo original foi preservado.';
+    if FHistoryWriteBlocked then
+      FHistoryWarning := FHistoryWarning + ' Nesta sessão o histórico não será gravado.';
+  end;
+  { LoadFromFile also loads the memory-map settings serialized in the file. Keep
+    the Assistente's limits and redaction policy when opening older histories. }
   FMemoryMap.MaxItems := 100;
   FMemoryMap.StoreFullPrompt := True;
   FMemoryMap.StoreFullResponse := True;
   FMemoryMap.DetectInformationLoss := True;
   FMemoryMap.RedactSensitiveData := True;
-  if FileExists(FHistoryFile) then
-    try FMemoryMap.LoadFromFile(FHistoryFile);
-    except FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface'); end
-  else FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
+  if not Loaded then FMemoryMap.StartFlow('', 'Assistente', 'usuario', 'interface');
 end;
 
 procedure Tfrmmain.SalvarMemoria;
 begin
-  if (FMemoryMap = nil) or (FHistoryFile = '') then Exit;
-  try FMemoryMap.SaveToFile(FHistoryFile); except end;
+  if (FMemoryMap = nil) or (FHistoryFile = '') or FHistoryWriteBlocked then Exit;
+  try
+    ForceDirectories(ExtractFileDir(FHistoryFile));
+    WriteLocalText(FHistoryFile,FMemoryMap.AsJSON+LineEnding);
+    FHistoryWriteWarningShown := False;
+  except
+    if not FClosing and not FHistoryWriteWarningShown and Assigned(FChat) then
+    begin
+      FHistoryWriteWarningShown := True;
+      FChat.AddMessage('Não foi possível salvar o histórico de conversas. O histórico anterior foi preservado.',False);
+    end;
+  end;
 end;
 
 procedure Tfrmmain.AplicarConfiguracao;

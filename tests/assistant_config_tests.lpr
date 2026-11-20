@@ -2,7 +2,7 @@ program assistant_config_tests;
 { Configuration file export/import (Configurações > Exportar / Importar and
   assistente.exe --importar-config=<arquivo>). Usage: assistant_config_tests <work dir> }
 {$mode objfpc}{$H+}
-uses Interfaces, Classes, SysUtils, Windows, fpjson, jsonparser, setmain, assistant_config_file;
+uses Interfaces, Classes, SysUtils, Windows, fpjson, jsonparser, setmain, assistant_config_file, assistant_local_files;
 var Root,Plain,NoSecrets,Bad: string; A,B: TSetMain; J: TJSONData; S: TJSONObject; L: TStringList; N: Integer;
 procedure Check(Value: Boolean; const Error: string);
 begin if not Value then raise Exception.Create(Error);end;
@@ -20,6 +20,33 @@ begin
   try ImportAssistantConfig(B,FileName);raise Exception.Create('accepted: '+Text);
   except on E: Exception do Check(Pos(Expected,E.Message)>0,'unexpected error for '+Text+': '+E.Message);end;
 end;
+procedure CheckLocalFiles;
+var Profile, Legacy, Target, Temp: string; Failed: Boolean; J: TJSONData;
+begin
+  Profile:=Root+PathDelim+'perfil-local'; Legacy:=Root+PathDelim+'instalacao';
+  ForceDirectories(Profile); ForceDirectories(Legacy);
+  DeleteFile(Profile+PathDelim+AssistantHistoryName);
+  WriteLocalText(Legacy+PathDelim+AssistantHistoryName,'{"origem":"legado"}');
+  Check(AssistantHistoryReadPath(Profile,Legacy,True)=Legacy+PathDelim+AssistantHistoryName,'legacy fallback failed');
+  Check(AssistantHistoryReadPath(Profile,Legacy,False)='','isolated profile read a legacy history');
+  Target:=Profile+PathDelim+AssistantHistoryName;
+  WriteLocalText(Target,'{"origem":"perfil"}');
+  Check(AssistantHistoryReadPath(Profile,Legacy,True)=Target,'legacy took precedence over the profile');
+  Temp:=CreateSiblingTempFile(Target);
+  Check((ExtractFileDir(Temp)=Profile) and FileExists(Temp),'temporary file was not reserved beside destination');
+  DeleteFile(Temp);
+  Failed:=False;
+  try ReplaceLocalFile(Temp,Target);
+  except on E: Exception do Failed:=True;end;
+  Check(Failed,'replacement did not fail when source disappeared');
+  J:=ReadJSON(Target);
+  try Check(TJSONObject(J).Get('origem','')='perfil','failed replacement damaged the original');
+  finally J.Free;end;
+  WriteLocalText(Target,'{"origem":"atualizado"}');
+  J:=ReadJSON(Target);
+  try Check(TJSONObject(J).Get('origem','')='atualizado','replacement failed');
+  finally J.Free;end;
+end;
 procedure UseConfigDir(const Name: string);
 begin
   ForceDirectories(Root+PathDelim+Name);
@@ -28,6 +55,7 @@ end;
 begin
   try
     Root:=ExpandFileName(ParamStr(1));ForceDirectories(Root);
+    CheckLocalFiles;
     UseConfigDir('origem');
     A:=TSetMain.Create;
     try

@@ -25,12 +25,12 @@ function ImportAssistantConfig(Settings: TSetMain; const FileName: string): Inte
   *.assistente-config.json argument, or ''. }
 function ConfigFileFromCommandLine: string;
 implementation
-uses fpjson, jsonparser, jsonscanner;
+uses fpjson, jsonparser, jsonscanner, assistant_local_files;
 const MaxConfigSize = 1024*1024;
 
 procedure ExportAssistantConfig(Settings: TSetMain; const FileName: string; IncludeSecrets: Boolean);
-var Lines: TStringList; Root, Values: TJSONObject; I, P: Integer; Text, Temp: string;
-  Mode: TSettingsWriteMode; Stream: TFileStream;
+var Lines: TStringList; Root, Values: TJSONObject; I, P: Integer;
+  Mode: TSettingsWriteMode;
 begin
   Lines:=TStringList.Create;Root:=TJSONObject.Create;
   try
@@ -45,16 +45,7 @@ begin
     Root.Add('exported_at',FormatDateTime('yyyy-mm-dd"T"hh:nn:ss',Now));
     Root.Add('contains_secrets',IncludeSecrets);
     Root.Add('settings',Values);
-    Text:=Root.FormatJSON([],2)+LineEnding;
-    Temp:=FileName+'.tmp';
-    Stream:=TFileStream.Create(Temp,fmCreate);
-    try Stream.WriteBuffer(Text[1],Length(Text));finally Stream.Free;end;
-    if FileExists(FileName) and not DeleteFile(FileName) then begin
-      DeleteFile(Temp);raise Exception.Create('Não foi possível substituir '+FileName);
-    end;
-    if not RenameFile(Temp,FileName) then begin
-      DeleteFile(Temp);raise Exception.Create('Não foi possível gravar '+FileName);
-    end;
+    WriteLocalText(FileName,Root.FormatJSON([],2)+LineEnding);
   finally Lines.Free;Root.Free;end;
 end;
 
