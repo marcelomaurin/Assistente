@@ -189,6 +189,9 @@ type
     property QuestionAnswer:TMemo read FQuestionMemo;
     property AskingPresentation:Boolean read FAnsweringQuestion;
     function WaitingForQuestion:Boolean;
+    { Script parked for audience questions (composer and questions card shown). }
+    function PresentationQuestionMode:Boolean;
+    property PresentationActive:Boolean read FPresentationMode;
     property LoadedDocument: string read FLoadedFile;
     property LoadedFlow: TFlowProgram read FLoadedFlow;
     procedure FalarResposta(const ATexto: string);
@@ -499,10 +502,10 @@ begin
   FQuestionTitle.Font.Style:=[fsBold];FQuestionTitle.Font.Color:=ChromeQuestionTitle;FQuestionTitle.Caption:='✋ Perguntas da plateia';
   FQuestionSub:=TLabel.Create(Self);FQuestionSub.Parent:=FQuestionHead;FQuestionSub.AutoSize:=False;
   FQuestionSub.SetBounds(16,34,300,20);FQuestionSub.Font.Name:='Segoe UI';FQuestionSub.Font.Height:=-12;
-  FQuestionSub.Font.Color:=ChromeQuestionSub;FQuestionSub.Caption:='Roteiro pausado · a resposta usa o roteiro e a biblioteca';
+  FQuestionSub.Font.Color:=ChromeQuestionSub;FQuestionSub.Caption:='Roteiro pausado · a resposta usa o roteiro e a biblioteca · diga "continuar" para retomar';
   FQuestionMemo:=TMemo.Create(Self);FQuestionMemo.Name:='PresentationQuestionAnswer';FQuestionMemo.Parent:=FChatPanel;
   FQuestionMemo.ReadOnly:=True;FQuestionMemo.ScrollBars:=ssAutoVertical;FQuestionMemo.Visible:=False;
-  FQuestionMemo.Font.Name:='Segoe UI';FQuestionMemo.Font.Height:=-14;FQuestionMemo.Font.Color:=ChromeInk;
+  FQuestionMemo.Font.Name:='Segoe UI';FQuestionMemo.Font.Height:=-17;FQuestionMemo.Font.Color:=ChromeInk;
   FQuestionMemo.BorderStyle:=bsNone;FQuestionMemo.Color:=clWhite;
   FStepBar:=TPresentationStepBar.Create(Self);FStepBar.Name:='PresentationStepBar';FStepBar.Parent:=FChatPanel;
   FStepBar.Font.Name:='Segoe UI';FStepBar.Font.Height:=-12;FStepBar.Visible:=False;
@@ -629,7 +632,7 @@ end;
 
 procedure Tfrmmain.LayoutProfessor(Sender: TObject);
 var W, H, LeftWidth, ComposerWidth, CardWidth, ChatWidth,ChatHeight,MediaWidth,MediaHeight,QuestionHeight: Integer;
-  Presenting: Boolean; MediaTop, BarTop, CaptionTop, QuestionWidth, QuestionLeft, StepWidth: Integer;
+  Presenting, QuestionMode, QuestionShown, HasVisual: Boolean; MediaTop, BarTop, StepWidth: Integer;
   TopicsHeight, AvatarTop, ReloadWidth: Integer;
 begin
   if FClosing or not Assigned(FRenderStatus) then Exit;
@@ -653,37 +656,37 @@ begin
   ChatWidth:=W-LeftWidth-20;ChatHeight:=H-32;
   FChatPanel.SetBounds(LeftWidth+4,16,ChatWidth,ChatHeight);
   { During a presentation the chat area becomes the dark stage: block bar,
-    media, spoken caption, control bar and the audience questions panel. }
+    media and control bar. While the script is parked for questions the
+    composer appears below the controls and the "Perguntas da plateia" card
+    takes the main area, so questions and answers are read there. }
   ApplyPresentationTheme(Presenting);
   lblAssistente.Visible:=not Presenting;
-  FStepBar.Visible:=Presenting;FSpokenCaption.Visible:=Presenting;FControlBar.Visible:=Presenting;
-  FQuestionCard.Visible:=Presenting and FQuestionMemo.Visible;
+  FStepBar.Visible:=Presenting;FSpokenCaption.Visible:=False;FControlBar.Visible:=Presenting;
+  QuestionMode:=PresentationQuestionMode;
+  QuestionShown:=Presenting and FQuestionMemo.Visible;
+  FQuestionCard.Visible:=QuestionShown;
+  FInputCard.Visible:=not Presenting or QuestionMode;
   ComposerWidth:=ChatWidth-36;
   if Presenting then begin
     StepWidth:=ChatWidth-28;
     if FStopVideo.Visible then Dec(StepWidth,170);
     FStepBar.SetBounds(14,6,Max(1,StepWidth),48);
     FStopVideo.SetBounds(ChatWidth-170,14,156,32);
-    BarTop:=ChatHeight-82-70;
+    if QuestionMode then BarTop:=ChatHeight-82-70 else BarTop:=ChatHeight-70;
     FControlBar.SetBounds(14,BarTop,Max(1,ChatWidth-28),62);
-    CaptionTop:=BarTop-60;
     MediaTop:=62;
-    QuestionWidth:=0;
-    if FQuestionMemo.Visible then QuestionWidth:=EnsureRange((ChatWidth-28) div 3,220,340);
     MediaWidth:=Max(1,ChatWidth-28);
-    if QuestionWidth>0 then MediaWidth:=Max(1,MediaWidth-QuestionWidth-12);
-    FSpokenCaption.SetBounds(14,CaptionTop,MediaWidth,50);
-    MediaHeight:=Max(1,CaptionTop-10-MediaTop);
+    MediaHeight:=Max(1,BarTop-10-MediaTop);
     FPresentationPanel.SetBounds(14,MediaTop,MediaWidth,MediaHeight);
     FChat.SetBounds(18,MediaTop,Max(1,MediaWidth-8),MediaHeight);
-    QuestionLeft:=14+MediaWidth+12;
-    { The card runs from the media top to the caption bottom; the memo sits
-      inside it below the amber header. }
-    FQuestionCard.SetBounds(QuestionLeft,MediaTop,Max(1,QuestionWidth),Max(1,CaptionTop+50-MediaTop));
-    FQuestionSub.Width:=Max(1,QuestionWidth-28);FQuestionTitle.Width:=Max(1,QuestionWidth-28);
-    FQuestionMemo.SetBounds(QuestionLeft+12,MediaTop+FQuestionHead.Height+10,Max(1,QuestionWidth-20),
-      Max(1,CaptionTop+50-MediaTop-FQuestionHead.Height-20));
-    FQuestionMemo.BringToFront;
+    HasVisual:=(FPresentationMedia<>nil) and (FPresentationMedia.Active<>'');
+    FPresentationPanel.Visible:=HasVisual and not QuestionShown;
+    FChat.Visible:=not HasVisual and not QuestionShown;
+    FQuestionCard.SetBounds(14,MediaTop,MediaWidth,MediaHeight);
+    FQuestionSub.Width:=Max(1,MediaWidth-28);FQuestionTitle.Width:=Max(1,MediaWidth-28);
+    FQuestionMemo.SetBounds(30,MediaTop+FQuestionHead.Height+12,Max(1,MediaWidth-32),
+      Max(1,MediaHeight-FQuestionHead.Height-24));
+    if QuestionShown then begin FQuestionCard.BringToFront;FQuestionMemo.BringToFront;end;
     LayoutControlBar;
   end else begin
     lblAssistente.SetBounds(14, 12, ChatWidth-28, 22);
@@ -692,6 +695,7 @@ begin
     FChat.SetBounds(18,48,Max(1,MediaWidth-8),MediaHeight);
     FPresentationPanel.SetBounds(14,40,MediaWidth,MediaHeight);
     FQuestionMemo.SetBounds(14,ChatHeight-250,Max(1,ChatWidth-28),110);
+    if (FPresentationMedia=nil) and not FPresentationPanel.Visible then FChat.Visible:=True;
     FStopVideo.SetBounds(ChatWidth-170,5,156,32);
     lblAssistente.Width:=Max(1,ChatWidth-198);
   end;
@@ -1663,6 +1667,8 @@ begin
   FMenuProgress.Position:=Min(5000,Elapsed);
   if Elapsed>5000 then begin FMenuHoverSince:=0;FMenuHoverIndex:=-1;FMenuProgress.Position:=0;BlockMenuClick(FBlockMenu);end;
 end;
+function Tfrmmain.PresentationQuestionMode:Boolean;
+begin Result:=FPresentationMode and (Length(FParkedPresentations)>0);end;
 function Tfrmmain.WaitingForQuestion:Boolean;
 begin Result:=(Length(FParkedPresentations)>0) and not Assigned(FSpeechJob) and not FAguardandoResposta;end;
 procedure Tfrmmain.QuestionReady;
@@ -1703,7 +1709,7 @@ begin
   HideBlockMenu;FQuestionMemo.Visible:=False;LayoutProfessor(nil);
   PausarEscuta;AtTag:=FParkedPresentations[N].AtTag;FSpeechJob:=FParkedPresentations[N].Job;
   FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;
-  FCurrentBlock:=FParkedPresentations[N].Block;RefreshStepBar;SetLength(FParkedPresentations,N);
+  FCurrentBlock:=FParkedPresentations[N].Block;RefreshStepBar;SetLength(FParkedPresentations,N);LayoutProfessor(nil);
   FAnsweringQuestion:=False;FSpeechJob.SetPaused(False);if AtTag then FSpeechJob.ConfirmAvatarCommand;
   if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
   edPergunta.TextHint:='Digite sua pergunta...';SetEstado('Continuando apresentacao...',False);
@@ -1860,6 +1866,7 @@ begin
     lblAssistente.Caption:='Apresentação';
     FPresentationPanel.BringToFront;
   end else lblAssistente.Caption:='Conversa';
+  if FPresentationMode then LayoutProfessor(nil); // keep the questions card and composer rules
 end;
 
 procedure Tfrmmain.FinishPresentation;

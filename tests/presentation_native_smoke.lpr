@@ -62,13 +62,14 @@ begin
     if Active<>'' then begin
       Check(Panel.Visible and Panel.IsVisible,'visual panel hidden');
       Check(frmmain.pnlAvatar.IsVisible,'media hides avatar');
-      Check(frmmain.edPergunta.IsVisible,'composer hidden by visual');
-      Check(Panel.Top+Panel.Height<frmmain.edPergunta.Parent.Top,'media covers input area');
+      { The composer only shows while the script is paused for questions. }
+      Check(frmmain.edPergunta.IsVisible=(not frmmain.PresentationActive or frmmain.PresentationQuestionMode),'composer visibility does not follow question mode');
+      Check(Panel.Top+Panel.Height<TControl(frmmain.FindComponent('PresentationControlBar')).Top,'media covers presentation controls');
       AvatarRight:=frmmain.pnlAvatar.ClientToScreen(Point(frmmain.pnlAvatar.Width,0)).X;
       Check(Panel.ClientToScreen(Point(0,0)).X>=AvatarRight,'media overlaps avatar');
     end else begin
       Check(not Panel.Visible,'closed media panel remains visible');
-      Check(frmmain.edPergunta.IsVisible,'text panel not restored');
+      Check(frmmain.edPergunta.IsVisible=(not frmmain.PresentationActive or frmmain.PresentationQuestionMode),'composer visibility does not follow question mode');
       Check(frmmain.edPergunta.Text='Rascunho preservado','typed draft was changed');
     end;
     SawAvatar:=SawAvatar or (frmmain.ActivePresentationAvatar='engenheiro');
