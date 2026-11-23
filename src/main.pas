@@ -98,7 +98,7 @@ type
     FAIConnected: Boolean;
     FMicButton, FWaveButton, FWalkButton: TSpeedButton;
     FDeviceStatus: TLabel;
-    FMovementPanel:TPanel;FMovementCombo:TComboBox;FMovementRun, FMovementReload:TButton;
+    FMovementPanel:TPanel;FMovementCombo:TComboBox;FMovementRun, FMovementReload:TChromeButton;
     FMovementIDs:TStringList;
     FYouTubeCommandPending:Boolean;
     FParkedPresentations:array of TParkedPresentation;
@@ -108,7 +108,7 @@ type
     FBlockMenu:TListBox;FQuestionMemo:TMemo;
     FTopicsCard, FTopicsBody, FMenuPanel, FMenuScrollBar: TPanel;
     FTopicsList: TListBox;
-    FTopicsEmpty: TLabel;
+    FTopicsEmpty, FTopicsHeading: TLabel;
     FMenuUp,FMenuDown:TButton;FMenuProgress:TProgressBar;
     FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard:Boolean;
     FStepBar:TPresentationStepBar;FSpokenCaption:TPresentationCaption;
@@ -309,7 +309,6 @@ begin
 end;
 
 procedure Tfrmmain.CriarControles;
-var TopicsHeading: TLabel;
 begin
   Caption := 'Assistente | Maurinsoft';
   Font.Name:='Segoe UI';Font.Size:=10;DoubleBuffered:=True;
@@ -318,18 +317,18 @@ begin
   Width:=1180;Height:=780;
   Constraints.MinWidth := 740;
   Constraints.MinHeight := 450;
-  pnlRoot.Color := $00F8F5F3;
-  pnlConteudo.Color := $00F8F5F3;
+  pnlRoot.Color := ChromeDark;
+  pnlConteudo.Color := ChromeDark;
   pnlEntrada.Height := 40;
-  pnlEntrada.Color := $00F8F5F3;
-  pnlHeader.Visible:=True;pnlHeader.Height:=72;pnlHeader.Color:=clWhite;
-  lblTitulo.Caption:='Assistente';lblTitulo.Font.Size:=20;lblTitulo.Font.Color:=$0035251D;
-  lblTitulo.SetBounds(24,10,280,32);lblStatus.SetBounds(26,46,600,20);lblStatus.Font.Color:=$00746558;
+  pnlEntrada.Color := ChromeDark;
+  pnlHeader.Visible:=True;pnlHeader.Height:=72;pnlHeader.Color:=ChromeDark;
+  lblTitulo.Caption:='Assistente';lblTitulo.Font.Size:=20;lblTitulo.Font.Color:=clWhite;
+  lblTitulo.SetBounds(24,10,280,32);lblStatus.SetBounds(26,46,600,20);lblStatus.Font.Color:=ChromeMuted;
   memResposta.Visible := False;
   btEnviar.Visible := False;
   FAvatarCard := TRoundedCard.Create(Self);
   FAvatarCard.Parent := pnlConteudo;
-  FAvatarCard.Color := pnlConteudo.Color;
+  FAvatarCard.Color := ChromeDark;FAvatarCard.Fill:=clWhite;FAvatarCard.Border:=clWhite;
   pnlAvatar.Parent := FAvatarCard;
   pnlAvatar.Align := alClient;
   pnlAvatar.BorderSpacing.Around := 4;
@@ -415,15 +414,15 @@ begin
   FTopicsCard.Name:='PresentationTopicsPanel';
   FTopicsCard.Parent:=pnlConteudo;
   FTopicsCard.BevelOuter:=bvNone;
-  FTopicsCard.Color:=clWhite;
+  FTopicsCard.Color:=ChromeDarkPanel;FTopicsCard.ParentBackground:=False;
   FTopicsCard.Visible:=False;
 
-  TopicsHeading:=TLabel.Create(Self);
-  TopicsHeading.Parent:=FTopicsCard;
-  TopicsHeading.Align:=alTop;
-  TopicsHeading.BorderSpacing.Around:=8;
-  TopicsHeading.Caption:='Assuntos';
-  TopicsHeading.Font.Style:=[fsBold];
+  FTopicsHeading:=TLabel.Create(Self);
+  FTopicsHeading.Parent:=FTopicsCard;
+  FTopicsHeading.Align:=alTop;
+  FTopicsHeading.BorderSpacing.Around:=8;
+  FTopicsHeading.Caption:='Assuntos';
+  FTopicsHeading.Font.Style:=[fsBold];
 
   FTopicsBody:=TPanel.Create(Self);
   FTopicsBody.Parent:=FTopicsCard;
@@ -431,7 +430,7 @@ begin
   FTopicsBody.BorderSpacing.Left:=8;
   FTopicsBody.BorderSpacing.Right:=8;
   FTopicsBody.BorderSpacing.Bottom:=8;
-  FTopicsBody.BevelOuter:=bvNone;
+  FTopicsBody.BevelOuter:=bvNone;FTopicsBody.ParentBackground:=False;FTopicsBody.Color:=ChromeDarkPanel;
 
   FTopicsEmpty:=TLabel.Create(Self);
   FTopicsEmpty.Parent:=FTopicsBody;
@@ -448,7 +447,7 @@ begin
   FTopicsList.OnKeyDown:=@TopicKeyDown;
 
   FMenuPanel:=TPanel.Create(Self);FMenuPanel.Parent:=FTopicsBody;FMenuPanel.Name:='PresentationMenuPanel';
-  FMenuPanel.Align:=alClient;FMenuPanel.BevelOuter:=bvNone;FMenuPanel.Visible:=False;
+  FMenuPanel.Align:=alClient;FMenuPanel.BevelOuter:=bvNone;FMenuPanel.ParentBackground:=False;FMenuPanel.Visible:=False;
   FMenuScrollBar:=TPanel.Create(Self);
   FMenuScrollBar.Parent:=FMenuPanel;
   FMenuScrollBar.Align:=alBottom;
@@ -511,7 +510,7 @@ begin
   btConfig.Caption := '';
   btConfig.Hint := 'Configurações';
   btConfig.ShowHint := True;
-  SetLineIcon(btConfig, 'config', $00707070);
+  SetLineIcon(btConfig, 'config', ChromeLight);
   FMicButton := TSpeedButton.Create(Self);
   FMicButton.Parent := pnlConteudo;
   FMicButton.Caption := 'Microfone pausado';
@@ -520,7 +519,7 @@ begin
   FMicButton.Flat := True;
   FMicButton.Font.Height := -11;
   FMicButton.OnClick := @MicClick;
-  SetLineIcon(FMicButton, 'mic', $004CAF28);
+  SetLineIcon(FMicButton, 'mic', ChromeDone);
   FWaveButton := TSpeedButton.Create(Self);
   FWaveButton.Parent := FProfilePanel;
   FWaveButton.Caption := '↗';
@@ -558,9 +557,11 @@ begin
   FMovementPanel.Height:=86;FMovementPanel.BevelOuter:=bvNone;FMovementPanel.Color:=clWhite;
   FMovementCombo:=TComboBox.Create(Self);FMovementCombo.Name:='MovementSelector';FMovementCombo.Parent:=FMovementPanel;
   FMovementCombo.Style:=csDropDownList;
-  FMovementRun:=TButton.Create(Self);FMovementRun.Parent:=FMovementPanel;FMovementRun.Caption:='Executar gesto';FMovementRun.OnClick:=@RunMovement;
+  FMovementRun:=TChromeButton.Create(Self);FMovementRun.Parent:=FMovementPanel;FMovementRun.Caption:='Executar gesto';FMovementRun.OnClick:=@RunMovement;
+  FMovementRun.SetStyle(ChromeAccent,clWhite,ChromeAccent);FMovementRun.Font.Height:=-13;
   FMovementRun.Hint:='Executar gesto selecionado';FMovementRun.ShowHint:=True;
-  FMovementReload:=TButton.Create(Self);FMovementReload.Parent:=FMovementPanel;FMovementReload.Caption:='Recarregar';FMovementReload.OnClick:=@RefreshMovements;
+  FMovementReload:=TChromeButton.Create(Self);FMovementReload.Parent:=FMovementPanel;FMovementReload.Caption:='Recarregar';FMovementReload.OnClick:=@RefreshMovements;
+  FMovementReload.SetStyle(clWhite,ChromeInk,ChromeLine);FMovementReload.Font.Height:=-13;
   RefreshMovements(nil);
   OnResize := @LayoutProfessor;
   pnlConteudo.OnResize:=@LayoutProfessor;
@@ -698,26 +699,30 @@ begin
 end;
 
 procedure Tfrmmain.ApplyPresentationTheme(Presenting: Boolean);
-{ The whole window turns into the dark stage of the layout proposal while a
-  presentation runs, and returns to the light theme afterwards. }
+{ Dark theme of layout proposal 2. The window is always dark; the
+  conversation is a white card, and during a presentation that card turns
+  into the dark stage (step bar, media, caption and controls). }
 begin
-  if Presenting=FPresentationThemed then Exit;
-  FPresentationThemed:=Presenting;
+  if FPresentationThemed and (Presenting=(FChatPanel.Color=ChromeDark)) then Exit;
+  FPresentationThemed:=True;
+  pnlRoot.Color:=ChromeDark;pnlConteudo.Color:=ChromeDark;pnlHeader.Color:=ChromeDark;pnlEntrada.Color:=ChromeDark;
+  lblTitulo.Font.Color:=clWhite;lblStatus.Font.Color:=ChromeMuted;
+  FAvatarCard.Color:=ChromeDark;FAvatarCard.Invalidate;
+  FSidebarDivider.Color:=ChromeDark;
+  FMicButton.Font.Color:=ChromeLight;
+  FAvatarStatus.Font.Color:=ChromeMuted;FAIStatus.Font.Color:=ChromeMuted;FRenderStatus.Font.Color:=ChromeMuted;
+  FTopicsCard.Color:=ChromeDarkPanel;FTopicsBody.Color:=ChromeDarkPanel;
+  FTopicsList.Color:=ChromeDarkPanel;FTopicsList.Font.Color:=ChromeLight;
+  FTopicsEmpty.Font.Color:=ChromeMuted;FTopicsHeading.Font.Color:=clWhite;
+  FBlockMenu.Color:=ChromeDarkPanel;FBlockMenu.Font.Color:=ChromeLight;
+  FMenuScrollBar.Color:=ChromeDarkPanel;FMenuPanel.Color:=ChromeDarkPanel;
   if Presenting then begin
-    pnlConteudo.Color:=ChromeDark;pnlHeader.Color:=ChromeDark;
-    lblTitulo.Font.Color:=clWhite;lblStatus.Font.Color:=ChromeMuted;
-    FChatPanel.Color:=ChromeDark;FAvatarCard.Color:=ChromeDark;FSidebarDivider.Color:=ChromeDarkPanel;
-    FMicButton.Font.Color:=ChromeLight;
-    FAvatarStatus.Font.Color:=ChromeMuted;FAIStatus.Font.Color:=ChromeMuted;FRenderStatus.Font.Color:=ChromeMuted;
+    FChatPanel.Color:=ChromeDark;
   end else begin
-    pnlConteudo.Color:=$00F8F5F3;pnlHeader.Color:=clWhite;
-    lblTitulo.Font.Color:=$0035251D;lblStatus.Font.Color:=$00746558;
-    FChatPanel.Color:=clWhite;FAvatarCard.Color:=pnlConteudo.Color;FSidebarDivider.Color:=$00DFD7D1;
-    FMicButton.Font.Color:=clDefault;
-    FAvatarStatus.Font.Color:=clDefault;FAIStatus.Font.Color:=clDefault;FRenderStatus.Font.Color:=clDefault;
+    FChatPanel.Color:=clWhite;
+    lblAssistente.Font.Color:=ChromeInk;
   end;
-  FInputCard.Color:=FChatPanel.Color;
-  pnlEntrada.Color:=pnlConteudo.Color;
+  FInputCard.Color:=FChatPanel.Color;FInputCard.Invalidate;
 end;
 
 procedure Tfrmmain.LayoutControlBar;
