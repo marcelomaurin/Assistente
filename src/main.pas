@@ -39,7 +39,7 @@ type
     FLoadedPackage: TPVAPackage;
     FLoadedSource, FLoadedEntryBlock, FSearchQuery: string;
     FDocumentMenu: TAssistantMenu;
-    FOpenFileDialog: TOpenDialog;
+    FOpenFileDialog, FPVAFileDialog: TOpenDialog;
     FPDFDialog: TSaveDialog;
     FDocumentDialogOpen: Boolean;
     FPresentationRoot: string;
@@ -47,6 +47,13 @@ type
     procedure CreateDocumentMenu;
     procedure UpdateDocumentActions;
     procedure OpenFileClick(Sender: TObject);
+    procedure UpdatePresentationTopics;
+    procedure PlayPresentationClick(Sender: TObject);
+    procedure PlayLoadedPresentation(const EntryBlock: string);
+    procedure OpenPresentation(const FileName, EntryBlock: string; Play: Boolean);
+    function PreparePresentation(Package: TPVAPackage; Flow: TFlowProgram;
+      const EntryBlock: string): string;
+    procedure BeginPresentation(const Compiled: string);
     procedure CloseFileClick(Sender: TObject);
     procedure PrintPDFClick(Sender: TObject);
     procedure FindTextClick(Sender: TObject);
@@ -82,7 +89,8 @@ type
     FProfileCombo: TComboBox;
     FCatalog: TAvatarCatalog;
     FReloadButton: TSpeedButton;
-    FChatPanel, FProfilePanel, FPresentationPanel: TPanel;
+    FChatPanel, FProfilePanel, FPresentationPanel, FSidebarDivider: TPanel;
+    FSidebarWidth, FSidebarDragOffset: Integer;
     FAvatarCard, FInputCard: TRoundedCard;
     FChat: TConversationView;
     FSendButton: TSpeedButton;
@@ -98,8 +106,18 @@ type
     FAskButton:TButton;
     FHeaderMenu,FHeaderAsk,FStopVideo:TButton;
     FBlockMenu:TListBox;FQuestionMemo:TMemo;
-    FMenuPanel:TPanel;FMenuUp,FMenuDown:TButton;FMenuHint:TLabel;FMenuProgress:TProgressBar;
+    FTopicsCard, FTopicsBody, FMenuPanel, FMenuScrollBar: TPanel;
+    FTopicsList: TListBox;
+    FTopicsEmpty: TLabel;
+    FMenuUp,FMenuDown:TButton;FMenuProgress:TProgressBar;
     FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard:Boolean;
+    procedure SidebarMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure SidebarMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure SidebarMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure TopicMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure TopicKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure ActivateTopic(Index: Integer);
+    procedure PlayQuestionBlock(const TargetBlock: string);
     procedure HideBlockMenu;
     procedure UpdateMenuHover;
     procedure ScrollBlockMenu(Sender:TObject);
@@ -121,8 +139,6 @@ type
     procedure RefreshMovements(Sender:TObject);
     procedure RunMovement(Sender:TObject);
   private
-    FVideoPanel: TPanel;
-    FVideoPreview: TImage;
     FCamera: TWebcamVision;
     FKinect: TAIKinectSensor;
     procedure AplicarConfiguracao;
@@ -176,7 +192,7 @@ type
 var frmmain: Tfrmmain;
 implementation
 uses professor_settings, assistant_config_file, Math, Types, FileUtil, LazFileUtils, LazUTF8,
-  assistant_search_dialog, presentation_pdf;
+  assistant_search_dialog, presentation_pdf, Menus;
 {$R *.lfm}
 
 procedure Tfrmmain.ImportConfigAtStartup;
@@ -283,6 +299,7 @@ begin
 end;
 
 procedure Tfrmmain.CriarControles;
+var TopicsHeading: TLabel;
 begin
   Caption := 'Assistente | Maurinsoft';
   Font.Name:='Segoe UI';Font.Size:=10;DoubleBuffered:=True;
@@ -326,6 +343,20 @@ begin
   FReloadButton.Hint := 'Atualizar modelos da pasta AVATARES';
   FReloadButton.ShowHint := True;
   FReloadButton.OnClick := @ReloadAvatars;
+  FSidebarDivider := TPanel.Create(Self);
+  FSidebarDivider.Name := 'SidebarDivider';
+  FSidebarDivider.Caption := '';
+  FSidebarDivider.Parent := pnlConteudo;
+  FSidebarDivider.BevelOuter := bvNone;
+  FSidebarDivider.ParentBackground := False;
+  FSidebarDivider.Color := $00DFD7D1;
+  FSidebarDivider.Cursor := crHSplit;
+  FSidebarDivider.Hint := 'Arraste para ajustar a largura da coluna esquerda.';
+  FSidebarDivider.ShowHint := True;
+  FSidebarDivider.OnMouseDown := @SidebarMouseDown;
+  FSidebarDivider.OnMouseMove := @SidebarMouseMove;
+  FSidebarDivider.OnMouseUp := @SidebarMouseUp;
+
   FChatPanel := TPanel.Create(Self);
   FChatPanel.Parent := pnlConteudo;
   FChatPanel.BevelOuter := bvNone;
@@ -355,17 +386,58 @@ begin
   FHeaderAsk:=TButton.Create(Self);FHeaderAsk.Name:='PresentationAskButton';
   FHeaderAsk.Parent:=pnlHeader;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.OnClick:=@HeaderAskClick;
   FHeaderAsk.Hint:='Pausar e perguntar sobre o conteúdo apresentado';FHeaderAsk.ShowHint:=True;
-  FMenuPanel:=TPanel.Create(Self);FMenuPanel.Parent:=FChatPanel;FMenuPanel.Name:='PresentationMenuPanel';
-  FMenuPanel.BevelOuter:=bvNone;FMenuPanel.Color:=clWhite;FMenuPanel.Visible:=False;
-  FMenuHint:=TLabel.Create(Self);FMenuHint.Parent:=FMenuPanel;FMenuHint.Align:=alTop;FMenuHint.Height:=28;FMenuHint.AutoSize:=False;
-  FMenuHint.Caption:='Clique, use as setas e Enter ou mantenha o cursor por 5 segundos.';
-  FMenuUp:=TButton.Create(Self);FMenuUp.Name:='MenuScrollUp';FMenuUp.Parent:=FMenuPanel;FMenuUp.Top:=28;FMenuUp.Align:=alTop;
-  FMenuUp.Height:=32;FMenuUp.Caption:='▲ Rolar para cima';FMenuUp.Tag:=-1;FMenuUp.OnClick:=@ScrollBlockMenu;
-  FMenuDown:=TButton.Create(Self);FMenuDown.Name:='MenuScrollDown';FMenuDown.Parent:=FMenuPanel;FMenuDown.Align:=alBottom;
-  FMenuDown.Height:=32;FMenuDown.Caption:='▼ Rolar para baixo';FMenuDown.Tag:=1;FMenuDown.OnClick:=@ScrollBlockMenu;
-  FMenuProgress:=TProgressBar.Create(Self);FMenuProgress.Parent:=FMenuPanel;FMenuProgress.Align:=alBottom;FMenuProgress.Height:=8;FMenuProgress.Max:=5000;
+  FTopicsCard:=TPanel.Create(Self);
+  FTopicsCard.Name:='PresentationTopicsPanel';
+  FTopicsCard.Parent:=pnlConteudo;
+  FTopicsCard.BevelOuter:=bvNone;
+  FTopicsCard.Color:=clWhite;
+  FTopicsCard.Visible:=False;
+
+  TopicsHeading:=TLabel.Create(Self);
+  TopicsHeading.Parent:=FTopicsCard;
+  TopicsHeading.Align:=alTop;
+  TopicsHeading.BorderSpacing.Around:=8;
+  TopicsHeading.Caption:='Assuntos';
+  TopicsHeading.Font.Style:=[fsBold];
+
+  FTopicsBody:=TPanel.Create(Self);
+  FTopicsBody.Parent:=FTopicsCard;
+  FTopicsBody.Align:=alClient;
+  FTopicsBody.BorderSpacing.Left:=8;
+  FTopicsBody.BorderSpacing.Right:=8;
+  FTopicsBody.BorderSpacing.Bottom:=8;
+  FTopicsBody.BevelOuter:=bvNone;
+
+  FTopicsEmpty:=TLabel.Create(Self);
+  FTopicsEmpty.Parent:=FTopicsBody;
+  FTopicsEmpty.Align:=alClient;
+  FTopicsEmpty.Layout:=tlCenter;
+  FTopicsEmpty.WordWrap:=True;
+  FTopicsEmpty.Caption:='Esta apresentação não tem assuntos.';
+
+  FTopicsList:=TListBox.Create(Self);
+  FTopicsList.Name:='PresentationTopicsList';
+  FTopicsList.Parent:=FTopicsBody;
+  FTopicsList.Align:=alClient;
+  FTopicsList.OnMouseUp:=@TopicMouseUp;
+  FTopicsList.OnKeyDown:=@TopicKeyDown;
+
+  FMenuPanel:=TPanel.Create(Self);FMenuPanel.Parent:=FTopicsBody;FMenuPanel.Name:='PresentationMenuPanel';
+  FMenuPanel.Align:=alClient;FMenuPanel.BevelOuter:=bvNone;FMenuPanel.Visible:=False;
+  FMenuScrollBar:=TPanel.Create(Self);
+  FMenuScrollBar.Parent:=FMenuPanel;
+  FMenuScrollBar.Align:=alBottom;
+  FMenuScrollBar.BevelOuter:=bvNone;
+  FMenuScrollBar.Height:=25;
+  FMenuUp:=TButton.Create(Self);FMenuUp.Name:='MenuScrollUp';FMenuUp.Parent:=FMenuScrollBar;FMenuUp.Align:=alLeft;
+  FMenuUp.Caption:='▲ Para cima';FMenuUp.Tag:=-1;FMenuUp.OnClick:=@ScrollBlockMenu;
+  FMenuDown:=TButton.Create(Self);FMenuDown.Name:='MenuScrollDown';FMenuDown.Parent:=FMenuScrollBar;FMenuDown.Align:=alClient;
+  FMenuDown.Caption:='▼ Para baixo';FMenuDown.Tag:=1;FMenuDown.OnClick:=@ScrollBlockMenu;
+  FMenuProgress:=TProgressBar.Create(Self);FMenuProgress.Parent:=FMenuPanel;FMenuProgress.Align:=alBottom;FMenuProgress.Height:=5;FMenuProgress.Max:=5000;
   FBlockMenu:=TListBox.Create(Self);FBlockMenu.Name:='PresentationBlockMenu';FBlockMenu.Parent:=FMenuPanel;FBlockMenu.Align:=alClient;
-  FBlockMenu.Font.Size:=12;FBlockMenu.Visible:=False;
+  FBlockMenu.Visible:=False;
+  FBlockMenu.Hint:='Clique, use as setas e Enter ou mantenha o cursor por 5 segundos.';
+  FBlockMenu.ShowHint:=True;
   FBlockMenu.OnKeyDown:=@BlockMenuKeyDown;FBlockMenu.OnKeyPress:=@BlockMenuKeyPress;
   FBlockMenu.OnMouseMove:=@BlockMenuMouseMove;FBlockMenu.OnMouseUp:=@BlockMenuMouseUp;
   FMenuHoverIndex:=-1;
@@ -437,22 +509,12 @@ begin
   FRenderStatus.Alignment := taRightJustify;
   FRenderStatus.Font.Height := -10;
   FRenderStatus.Caption := 'Renderização 3D';
-  FVideoPanel := TPanel.Create(Self);
-  FVideoPanel.Parent := pnlAvatar;
-  FVideoPanel.Align := alBottom;
-  FVideoPanel.Height := 100;
-  FVideoPanel.BevelOuter := bvNone;
-  FVideoPanel.Visible := False;
-  FVideoPreview := TImage.Create(Self);
-  FVideoPreview.Parent := FVideoPanel;
-  FVideoPreview.Align := alClient;
-  FVideoPreview.Proportional := True;
-  FVideoPreview.Center := True;
   FMovementPanel:=TPanel.Create(Self);FMovementPanel.Parent:=pnlAvatar;FMovementPanel.Align:=alBottom;
   FMovementPanel.Height:=86;FMovementPanel.BevelOuter:=bvNone;FMovementPanel.Color:=clWhite;
   FMovementCombo:=TComboBox.Create(Self);FMovementCombo.Name:='MovementSelector';FMovementCombo.Parent:=FMovementPanel;
   FMovementCombo.Style:=csDropDownList;
   FMovementRun:=TButton.Create(Self);FMovementRun.Parent:=FMovementPanel;FMovementRun.Caption:='Executar gesto';FMovementRun.OnClick:=@RunMovement;
+  FMovementRun.Hint:='Executar gesto selecionado';FMovementRun.ShowHint:=True;
   FMovementReload:=TButton.Create(Self);FMovementReload.Parent:=FMovementPanel;FMovementReload.Caption:='Recarregar';FMovementReload.OnClick:=@RefreshMovements;
   RefreshMovements(nil);
   OnResize := @LayoutProfessor;
@@ -481,14 +543,46 @@ begin
   except on E:Exception do lblStatus.Caption:=E.Message;end;
 end;
 
+procedure Tfrmmain.SidebarMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if Button<>mbLeft then Exit;
+  FSidebarDragOffset:=X;
+  SetCaptureControl(FSidebarDivider);
+end;
+
+procedure Tfrmmain.SidebarMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+begin
+  if not (ssLeft in Shift) or (GetCaptureControl<>FSidebarDivider) then Exit;
+  FSidebarWidth:=Max(1,FAvatarCard.Width+X-FSidebarDragOffset);
+  LayoutProfessor(nil);
+  FSidebarWidth:=FAvatarCard.Width;
+end;
+
+procedure Tfrmmain.SidebarMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if (Button=mbLeft) and (GetCaptureControl=FSidebarDivider) then SetCaptureControl(nil);
+end;
+
 procedure Tfrmmain.LayoutProfessor(Sender: TObject);
 var W, H, LeftWidth, ComposerWidth, CardWidth, ChatWidth,ChatHeight,MediaWidth,MediaHeight,QuestionHeight: Integer;
+  TopicsHeight, AvatarTop, ReloadWidth: Integer;
 begin
   if FClosing or not Assigned(FRenderStatus) then Exit;
   W := ClientWidth;
   H := pnlConteudo.ClientHeight;
-  LeftWidth := W div 3;
-  FAvatarCard.SetBounds(16, 16, LeftWidth-28, H-64);
+  LeftWidth := FSidebarWidth;
+  if LeftWidth=0 then LeftWidth:=(W div 3-28) div 2;
+  LeftWidth:=EnsureRange(LeftWidth,172,Max(172,W-398))+28;
+  FSidebarDivider.SetBounds(LeftWidth-8,16,8,Max(1,H-32));
+  AvatarTop:=16;
+  if FTopicsCard.Visible then
+  begin
+    TopicsHeight:=EnsureRange((H-64) div 4, 96, 220);
+    FTopicsCard.SetBounds(16,16,LeftWidth-28,TopicsHeight);
+    FMenuUp.Width:=(FTopicsCard.ClientWidth-16) div 2;
+    Inc(AvatarTop,TopicsHeight+10);
+  end;
+  FAvatarCard.SetBounds(16,AvatarTop,LeftWidth-28,Max(1,H-48-AvatarTop));
   FMicButton.SetBounds(16, H-40, LeftWidth-28, 32);
   ChatWidth:=W-LeftWidth-20;ChatHeight:=H-32;
   FChatPanel.SetBounds(LeftWidth+4,16,ChatWidth,ChatHeight);
@@ -497,7 +591,6 @@ begin
   MediaWidth:=Max(1,ChatWidth-28);MediaHeight:=Max(1,ChatHeight-178-QuestionHeight);
   FChat.SetBounds(18,48,Max(1,MediaWidth-8),MediaHeight);
   FPresentationPanel.SetBounds(14,40,MediaWidth,MediaHeight);
-  FMenuPanel.SetBounds(14,40,MediaWidth,MediaHeight);
   FQuestionMemo.SetBounds(14,ChatHeight-250,Max(1,ChatWidth-28),110);
   FAskButton.SetBounds(18,ChatHeight-126,130,32);
   FStopVideo.SetBounds(ChatWidth-170,5,156,32);
@@ -511,13 +604,16 @@ begin
   FHeaderAsk.SetBounds(W-134,20,106,32);
   lblTitulo.Width:=Max(100,W-316);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-316);
   CardWidth := FAvatarCard.Width-8;
-  FProfileCombo.SetBounds(10, 9, Max(100,CardWidth-112), 28);
-  FReloadButton.SetBounds(CardWidth-92, 9, 28, 25);
-  FWaveButton.SetBounds(CardWidth-62, 9, 28, 25);
-  FWalkButton.SetBounds(CardWidth-32, 9, 28, 25);
-  FMovementCombo.SetBounds(10,5,Max(120,CardWidth-20),28);
-  FMovementRun.SetBounds(10,40,Max(100,CardWidth-126),32);
-  FMovementReload.SetBounds(CardWidth-108,40,98,32);
+  FProfileCombo.SetBounds(10,9,CardWidth-88,28);
+  FReloadButton.SetBounds(CardWidth-76,9,20,25);
+  FWaveButton.SetBounds(CardWidth-54,9,20,25);
+  FWalkButton.SetBounds(CardWidth-32,9,20,25);
+  FMovementCombo.SetBounds(10,5,CardWidth-20,28);
+  ReloadWidth:=Min(98,(CardWidth-24) div 2);
+  FMovementRun.SetBounds(10,40,CardWidth-26-ReloadWidth,32);
+  if FMovementRun.Width<96 then FMovementRun.Caption:='Executar'
+  else FMovementRun.Caption:='Executar gesto';
+  FMovementReload.SetBounds(CardWidth-10-ReloadWidth,40,ReloadWidth,32);
   FAvatarStatus.SetBounds(18, 13, LeftWidth-20, 16);
   FAIStatus.SetBounds(W div 3, 13, W div 3, 16);
   FRenderStatus.SetBounds(W-180, 13, 168, 16);
@@ -845,6 +941,8 @@ procedure Tfrmmain.CreateDocumentMenu;
 begin
   FDocumentMenu:=TAssistantMenu.Create(Self);Menu:=FDocumentMenu;
   FDocumentMenu.OpenFile.OnClick:=@OpenFileClick;
+  FDocumentMenu.LoadPresentation.OnClick:=@OpenFileClick;
+  FDocumentMenu.PlayPresentation.OnClick:=@PlayPresentationClick;
   FDocumentMenu.CloseFile.OnClick:=@CloseFileClick;
   FDocumentMenu.PrintPDF.OnClick:=@PrintPDFClick;
   FDocumentMenu.FindText.OnClick:=@FindTextClick;
@@ -854,19 +952,31 @@ begin
   FOpenFileDialog.Filter:='Documentos do Assistente|*.pva;*.script;*.txt;*.md;*.res;*.rag;*.json;*.csv|'+
     'Apresentações e roteiros|*.pva;*.script|Textos e documentos de consulta|*.txt;*.md;*.res;*.rag;*.json;*.csv';
   FOpenFileDialog.Options:=[ofFileMustExist,ofPathMustExist,ofEnableSizing,ofHideReadOnly];
+  FPVAFileDialog:=TOpenDialog.Create(Self);
+  FPVAFileDialog.Title:='Carregar apresentação';
+  FPVAFileDialog.Filter:='Apresentação do Assistente (*.pva)|*.pva';
+  FPVAFileDialog.DefaultExt:='pva';
+  FPVAFileDialog.Options:=FOpenFileDialog.Options;
   FPDFDialog:=TSaveDialog.Create(Self);FPDFDialog.Title:='Imprimir apresentação / Salvar PDF';
   FPDFDialog.Filter:='Documento PDF|*.pdf';FPDFDialog.DefaultExt:='pdf';
   FPDFDialog.Options:=[ofOverwritePrompt,ofPathMustExist,ofEnableSizing];
 end;
 
 procedure Tfrmmain.UpdateDocumentActions;
-var Available, Idle: Boolean;
+var Available, Idle, HasPresentation: Boolean;
 begin
   if FDocumentMenu=nil then Exit;
   Available:=not FClosing and not FDocumentDialogOpen and not FConfigOpen and
     not FAguardandoResposta and ((FVoiceInput=nil) or not FVoiceInput.Busy);
   Idle:=Available and (FSpeechJob=nil) and (Length(FParkedPresentations)=0);
+  HasPresentation:=(FLoadedKind=adPresentation) and (FLoadedFlow<>nil);
   FDocumentMenu.OpenFile.Enabled:=Idle;
+  FDocumentMenu.LoadPresentation.Enabled:=Idle;
+  FDocumentMenu.PlayPresentation.Enabled:=Idle and HasPresentation;
+  FDocumentMenu.Topics.Enabled:=Idle and HasPresentation;
+  if FTopicsList<>nil then
+    FTopicsList.Enabled:=Available and not FResumePresentation and
+      ((FSpeechJob=nil) or (FPresentationMode and not FAnsweringQuestion));
   FDocumentMenu.CloseFile.Enabled:=Available and (FLoadedFile<>'') and ((FSpeechJob=nil) or FPresentationMode);
   FDocumentMenu.PrintPDF.Enabled:=Idle and (FLoadedPackage<>nil);
   FDocumentMenu.FindText.Enabled:=Idle;
@@ -875,23 +985,102 @@ end;
 
 procedure Tfrmmain.OpenFileClick(Sender: TObject);
 var Directory, MessageText: string;
+  Dialog: TOpenDialog;
 begin
   if IntegrationBusy then Exit;
+  if Sender=FDocumentMenu.LoadPresentation then Dialog:=FPVAFileDialog
+  else Dialog:=FOpenFileDialog;
   Directory:=ExtractFilePath(FLoadedFile);
   if not DirectoryExists(Directory) then Directory:=PresentationRAGDirectory;
   if not DirectoryExists(Directory) then Directory:=GetUserDir;
-  FOpenFileDialog.InitialDir:=Directory;FOpenFileDialog.FileName:='';
+  Dialog.InitialDir:=Directory;Dialog.FileName:='';
   FDocumentDialogOpen:=True;PausarEscuta;UpdateDocumentActions;
   try
     try
-      if not FOpenFileDialog.Execute then Exit;
-      LoadDocument(FOpenFileDialog.FileName);
-      MessageText:='Arquivo carregado: '+ExtractFileName(FLoadedFile);
+      if not Dialog.Execute then Exit;
+      if Dialog=FPVAFileDialog then
+      begin
+        if not SameText(ExtractFileExt(Dialog.FileName),'.pva') then
+          raise Exception.Create('Selecione uma apresentação com extensão .pva.');
+        OpenPresentation(Dialog.FileName,'',False);
+        MessageText:='Apresentação carregada: '+ExtractFileName(FLoadedFile);
+      end
+      else
+      begin
+        LoadDocument(Dialog.FileName);
+        MessageText:='Arquivo carregado: '+ExtractFileName(FLoadedFile);
+      end;
       FChat.AddMessage(MessageText,False);memResposta.Lines.Add(MessageText);
     except on E: Exception do MessageDlg('Abrir arquivo','Não foi possível abrir o arquivo: '+E.Message,mtError,[mbOK],0);end;
   finally
     FDocumentDialogOpen:=False;UpdateDocumentActions;RetomarEscuta;
     if edPergunta.CanFocus then edPergunta.SetFocus;
+  end;
+end;
+
+procedure Tfrmmain.UpdatePresentationTopics;
+var I: Integer;
+  Topic: TMenuItem;
+begin
+  if FDocumentMenu=nil then Exit;
+  FTopicsList.Items.BeginUpdate;
+  try
+    FTopicsList.Items.Clear;
+    if FLoadedFlow<>nil then
+      for I:=0 to FLoadedFlow.BlockCount-1 do
+        FTopicsList.Items.Add(FLoadedFlow.BlockName(I));
+  finally
+    FTopicsList.Items.EndUpdate;
+  end;
+  FTopicsCard.Visible:=(FLoadedFlow<>nil) and
+    ((FLoadedKind=adPresentation) or (FTopicsList.Items.Count>0));
+  FTopicsList.Visible:=FTopicsList.Items.Count>0;
+  FTopicsEmpty.Visible:=not FTopicsList.Visible;
+  LayoutProfessor(nil);
+
+  FDocumentMenu.Topics.Clear;
+  if (FLoadedKind<>adPresentation) or (FLoadedFlow=nil) then Exit;
+  if FLoadedFlow.BlockCount=0 then
+  begin
+    Topic:=TMenuItem.Create(FDocumentMenu);
+    Topic.Caption:='Esta apresentação não tem assuntos';
+    Topic.Enabled:=False;
+    FDocumentMenu.Topics.Add(Topic);
+    Exit;
+  end;
+  for I:=0 to FLoadedFlow.BlockCount-1 do
+  begin
+    Topic:=TMenuItem.Create(FDocumentMenu);
+    Topic.Caption:=' '+StringReplace(FLoadedFlow.BlockName(I),'&','&&',[rfReplaceAll]);
+    Topic.Tag:=I;
+    Topic.OnClick:=@PlayPresentationClick;
+    FDocumentMenu.Topics.Add(Topic);
+  end;
+end;
+
+procedure Tfrmmain.PlayPresentationClick(Sender: TObject);
+begin
+  if IntegrationBusy or (FLoadedKind<>adPresentation) or (FLoadedFlow=nil) then Exit;
+  if Sender=FDocumentMenu.PlayPresentation then PlayLoadedPresentation('')
+  else PlayLoadedPresentation(FLoadedFlow.BlockName(TMenuItem(Sender).Tag));
+end;
+
+procedure Tfrmmain.PlayLoadedPresentation(const EntryBlock: string);
+var Compiled: string;
+begin
+  try
+    FinishPresentation;
+    FQuestionMemo.Clear;
+    Compiled:=PreparePresentation(FLoadedPackage,FLoadedFlow,EntryBlock);
+    FLoadedEntryBlock:=EntryBlock;
+    BeginPresentation(Compiled);
+  except
+    on E: Exception do
+    begin
+      FinishPresentation;
+      RetomarEscuta;
+      MessageDlg('Apresentação',E.Message,mtError,[mbOK],0);
+    end;
   end;
 end;
 
@@ -905,6 +1094,7 @@ begin
   if FSpeechJob<>nil then FSpeechJob.Cancel;
   FinishPresentation;FreeAndNil(FLoadedFlow);FreeAndNil(FLoadedPackage);
   FLoadedFile:='';FLoadedKnowledge:='';FLoadedSource:='';FLoadedEntryBlock:='';FLoadedKind:=adRAG;
+  UpdatePresentationTopics;
   FPresentationPanel.Visible:=False;FChat.Visible:=True;FInputCard.Visible:=True;
   FSendButton.Visible:=True;btConfig.Visible:=True;lblAssistente.Caption:='Conversa';
   SetEstado('Arquivo fechado. Pronto para conversar',False);RetomarEscuta;
@@ -1115,6 +1305,7 @@ begin
   TextValue:=ReadAssistantKnowledge(SourcePath);
   FreeAndNil(FLoadedFlow);FreeAndNil(FLoadedPackage);FLoadedSource:='';FLoadedEntryBlock:='';
   FLoadedFile:=SourcePath;FLoadedKind:=adRAG;FLoadedKnowledge:=TextValue;
+  UpdatePresentationTopics;
   SetEstado('Documento de consulta carregado: '+ExtractFileName(SourcePath),False);
 end;
 procedure Tfrmmain.CallLoadedBlock(const BlockName: string);
@@ -1143,6 +1334,44 @@ begin
     SetEstado(MessageText,False);RetomarEscuta;
   end;end;
 end;
+procedure Tfrmmain.TopicMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  if Button=mbLeft then ActivateTopic(FTopicsList.ItemAtPos(Types.Point(X,Y),True));
+end;
+
+procedure Tfrmmain.TopicKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key=VK_RETURN) and (Shift=[]) then
+  begin
+    Key:=0;
+    ActivateTopic(FTopicsList.ItemIndex);
+  end;
+end;
+
+procedure Tfrmmain.ActivateTopic(Index: Integer);
+var Topic: string;
+begin
+  UpdateDocumentActions;
+  if not FTopicsList.Enabled or (FLoadedFlow=nil) or
+    (Index<0) or (Index>=FLoadedFlow.BlockCount) then Exit;
+  Topic:=FLoadedFlow.BlockName(Index);
+  if not FPresentationMode then
+  begin
+    PlayLoadedPresentation(Topic);
+    Exit;
+  end;
+  try
+    if Assigned(FSpeechJob) then ParkPresentation(False);
+    if WaitingForQuestion then PlayQuestionBlock(Topic);
+  except
+    on E: Exception do
+    begin
+      if WaitingForQuestion then QuestionReady;
+      lblStatus.Caption:=E.Message;
+    end;
+  end;
+end;
+
 procedure Tfrmmain.ShowBlockMenu;
 var I:Integer;CloseTag:TPresentationTag;
 begin
@@ -1151,6 +1380,7 @@ begin
   for I:=0 to FLoadedFlow.BlockCount-1 do FBlockMenu.Items.Add(FLoadedFlow.BlockName(I));
   if FBlockMenu.Items.Count=0 then raise Exception.Create('A apresentacao nao possui blocos para o MENU.');
   if FPresentationMedia<>nil then begin CloseTag:=Default(TPresentationTag);CloseTag.Action:=paCloseFile;FPresentationMedia.Execute(CloseTag);end;
+  FTopicsList.Visible:=False;
   FMenuPanel.Visible:=True;FBlockMenu.Visible:=True;FQuestionMemo.Visible:=False;
   FMenuHoverIndex:=-1;FMenuHoverSince:=0;FMenuKeyboard:=False;FMenuProgress.Position:=0;
   FBlockMenu.ItemIndex:=-1;LayoutProfessor(nil);PresentationVisualChange(nil);
@@ -1158,11 +1388,12 @@ end;
 procedure Tfrmmain.BlockMenuClick(Sender:TObject);
 begin
   if WaitingForQuestion and (FBlockMenu.ItemIndex>=0) then
-    ProcessarEntrada('IR {'+FBlockMenu.Items[FBlockMenu.ItemIndex]+'}');
+    ActivateTopic(FBlockMenu.ItemIndex);
 end;
 procedure Tfrmmain.HideBlockMenu;
 begin
   FMenuPanel.Visible:=False;FBlockMenu.Visible:=False;FMenuHoverIndex:=-1;FMenuHoverSince:=0;
+  FTopicsList.Visible:=FTopicsList.Items.Count>0;
   FMenuProgress.Position:=0;PresentationVisualChange(nil);
 end;
 procedure Tfrmmain.ScrollBlockMenu(Sender:TObject);
@@ -1308,7 +1539,7 @@ begin
   end else if Length(FParkedPresentations)>0 then ResumePresentation;
 end;
 function Tfrmmain.PresentationInput(const Input:string):Boolean;
-var TargetBlock,Key,Compiled:string;
+var TargetBlock,Key:string;
 begin
   Result:=True;
   try
@@ -1316,55 +1547,98 @@ begin
     if (Key='menu') or (Key='[menu]') then begin edPergunta.Clear;ShowBlockMenu;QuestionReady;Exit;end;
     if (Key='continuar') or (Key='[continuar]') then begin edPergunta.Clear;ResumePresentation;Exit;end;
     if not QuestionBlock(FLoadedFlow,Input,TargetBlock) then Exit(False);
-    Compiled:=FLoadedFlow.Compile(TargetBlock,False);ValidateRuntimeScript(Compiled);
-    HideBlockMenu;LayoutProfessor(nil);
-    PausarEscuta;edPergunta.Clear;FChat.AddMessage('Bloco: '+TargetBlock,True);
-    FAnsweringQuestion:=False;
-    if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
-    if Trim(Compiled)='' then QuestionReady else FalarResposta(Compiled);
+    PlayQuestionBlock(TargetBlock);
   except on E:Exception do begin QuestionReady;lblStatus.Caption:=E.Message;end;end;
 end;
+
+procedure Tfrmmain.PlayQuestionBlock(const TargetBlock: string);
+var Compiled: string;
+begin
+  Compiled:=FLoadedFlow.Compile(TargetBlock,False);ValidateRuntimeScript(Compiled);
+  HideBlockMenu;LayoutProfessor(nil);
+  PausarEscuta;edPergunta.Clear;FChat.AddMessage('Bloco: '+TargetBlock,True);
+  FAnsweringQuestion:=False;
+  if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
+  if Trim(Compiled)='' then QuestionReady else FalarResposta(Compiled);
+end;
 procedure Tfrmmain.StartPresentation(const FileName,EntryBlock: string);
-var P: TPVAPackage; G: TGUID; Script: TAvatarScript; I: Integer; Flow: TFlowProgram; Compiled,SourcePath: string; Kind: TAssistantDocumentKind;
+begin
+  OpenPresentation(FileName,EntryBlock,True);
+end;
+
+function Tfrmmain.PreparePresentation(Package: TPVAPackage; Flow: TFlowProgram;
+  const EntryBlock: string): string;
+var G: TGUID;
+  Script: TAvatarScript;
+  I: Integer;
+begin
+  Result:=Flow.Compile(EntryBlock);
+  ValidateRuntimeScript(Result);
+  Script:=ParseAvatarScript(Result,4096);
+  for I:=0 to High(Script.Steps) do
+    if (Script.Steps[I].Presentation.Action=paSelectAvatar) and
+      (FCatalog.IndexOfID(Script.Steps[I].Presentation.Argument)<0) then
+      raise Exception.Create('Avatar nao instalado: '+Script.Steps[I].Presentation.Argument);
+  if FSetMain.AutoSpeak and (FSetMain.SynthEngine=2) then
+    raise Exception.Create('Apresentacoes com pausa requerem SAPI ou voz remota no Windows');
+  CreateGUID(G);
+  FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
+  Package.ExtractTo(FPresentationRoot);
+  FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot,FPresentationPanel);
+  FPresentationMedia.OnVisualChange:=@PresentationVisualChange;
+end;
+
+procedure Tfrmmain.BeginPresentation(const Compiled: string);
+begin
+  FPresentationMode:=True;
+  PausarEscuta;
+  FProfessor.ResetCommands;
+  FalarResposta(Compiled);
+  if FSpeechJob=nil then FinishPresentation;
+end;
+
+procedure Tfrmmain.OpenPresentation(const FileName, EntryBlock: string; Play: Boolean);
+var Package: TPVAPackage;
+  Flow: TFlowProgram;
+  Compiled, SourcePath: string;
+  Kind: TAssistantDocumentKind;
 begin
   if Assigned(FSpeechJob) or FAguardandoResposta then raise Exception.Create('Assistente ocupado');
-  SourcePath:=ExpandFileName(FileName);Kind:=AssistantDocumentKind(SourcePath);
-  FinishPresentation;FQuestionMemo.Clear;
-  P:=OpenAssistantPackage(SourcePath);Flow:=nil;
+  SourcePath:=ExpandFileName(FileName);
+  Kind:=AssistantDocumentKind(SourcePath);
+  FinishPresentation;
+  FQuestionMemo.Clear;
+  Package:=OpenAssistantPackage(SourcePath);
+  Flow:=nil;
   try
     try
-    Flow:=TFlowProgram.Create(P.Script);Compiled:=Flow.Compile(EntryBlock);ValidateRuntimeScript(Compiled);
-    Script:=ParseAvatarScript(Compiled,4096);
-    for I:=0 to High(Script.Steps) do
-      if (Script.Steps[I].Presentation.Action=paSelectAvatar) and
-        (FCatalog.IndexOfID(Script.Steps[I].Presentation.Argument)<0) then
-        raise Exception.Create('Avatar nao instalado: '+Script.Steps[I].Presentation.Argument);
-    if FSetMain.AutoSpeak and (FSetMain.SynthEngine=2) then raise Exception.Create('Apresentacoes com pausa requerem SAPI ou voz remota no Windows');
-    CreateGUID(G);
-    FPresentationRoot:=IncludeTrailingPathDelimiter(GetTempDir(False))+'assistente-pva-'+GUIDToString(G);
-    P.ExtractTo(FPresentationRoot);FPresentationMedia:=TPresentationMedia.Create(FPresentationRoot,FPresentationPanel);
-    FPresentationMedia.OnVisualChange:=@PresentationVisualChange;
-    FreeAndNil(FLoadedFlow);FLoadedFlow:=Flow;Flow:=nil;
-    FreeAndNil(FLoadedPackage);FLoadedPackage:=P;P:=nil;
-    FLoadedSource:=FLoadedPackage.Script;FLoadedEntryBlock:=EntryBlock;
-    FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
-    FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
-    FalarResposta(Compiled);
-    if FSpeechJob=nil then FinishPresentation;
-    except FinishPresentation;raise;end;
-  finally Flow.Free;P.Free;end;
+      Flow:=TFlowProgram.Create(Package.Script);
+      if Play then Compiled:=PreparePresentation(Package,Flow,EntryBlock);
+      FreeAndNil(FLoadedFlow);FLoadedFlow:=Flow;Flow:=nil;
+      FreeAndNil(FLoadedPackage);FLoadedPackage:=Package;Package:=nil;
+      FLoadedSource:=FLoadedPackage.Script;FLoadedEntryBlock:=EntryBlock;
+      FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
+      UpdatePresentationTopics;
+      if Play then BeginPresentation(Compiled)
+      else SetEstado('Apresentação carregada: '+ExtractFileName(SourcePath),False);
+    except
+      FinishPresentation;
+      raise;
+    end;
+  finally
+    Flow.Free;
+    Package.Free;
+  end;
 end;
 procedure Tfrmmain.PresentationVisualChange(Sender: TObject);
 var HasVisual: Boolean;
 begin
   UpdateVideoButton;
   HasVisual:=(FPresentationMedia<>nil) and (FPresentationMedia.Active<>'');
-  FPresentationPanel.Visible:=HasVisual and not FMenuPanel.Visible;
-  FChat.Visible:=not HasVisual and not FMenuPanel.Visible;FInputCard.Visible:=True;
+  FPresentationPanel.Visible:=HasVisual;
+  FChat.Visible:=not HasVisual;FInputCard.Visible:=True;
   FSendButton.Visible:=True;btConfig.Visible:=True;
-  if FMenuPanel.Visible then begin
-    lblAssistente.Caption:='Blocos da apresentação';FMenuPanel.BringToFront;
-  end else if HasVisual then begin
+  if HasVisual then begin
     lblAssistente.Caption:='Apresentação';
     FPresentationPanel.BringToFront;
   end else lblAssistente.Caption:='Conversa';
@@ -1605,7 +1879,6 @@ procedure Tfrmmain.PararVideo;
 begin
   FreeAndNil(FCamera);
   FreeAndNil(FKinect);
-  if Assigned(FVideoPanel) then FVideoPanel.Visible := False;
 end;
 
 procedure Tfrmmain.IniciarVideo;
@@ -1619,10 +1892,10 @@ begin
     if Trim(FSetMain.CameraDevice) <> '' then
       try
         FCamera := TWebcamVision.Create(Self);
-        FVideoPanel.Visible := True;
-        if FCamera.OpenDevice(FSetMain.CameraDevice, FVideoPanel, FVideoPreview) then Status := 'Câmera RGB ativa'
-        else begin Status := 'Câmera indisponível: ' + FCamera.LastError; FVideoPanel.Visible := False; end;
-      except on E: Exception do begin Status := 'Câmera: ' + E.Message; FVideoPanel.Visible := False; end; end;
+        if FCamera.OpenDevice(FSetMain.CameraDevice, Self, nil) then Status := 'Câmera RGB ativa'
+        else Status := 'Câmera indisponível: ' + FCamera.LastError;
+      except
+        on E: Exception do Status := 'Câmera: ' + E.Message; end;
   end;
   if FSetMain.VisionSource in [vsKinect, vsBoth] then
     try

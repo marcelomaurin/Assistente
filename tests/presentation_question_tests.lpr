@@ -15,9 +15,14 @@ begin if not B then raise Exception.Create(Msg);end;
 procedure TRunner.Submit(const Text:string;Voice:Boolean);
 begin if Voice then frmmain.VoiceInput.OnText(nil,Text) else begin frmmain.edPergunta.Text:=Text;frmmain.btEnviarClick(nil);end;end;
 procedure TRunner.CheckLayout;
-var Media:TControl;Composer:TControl;
+var Media, Composer, Sidebar, Avatar: TControl;
 begin
  Media:=TControl(frmmain.FindComponent('PresentationMediaPanel'));Composer:=frmmain.edPergunta.Parent;
+ Sidebar:=TControl(frmmain.FindComponent('PresentationTopicsPanel'));Avatar:=frmmain.pnlAvatar.Parent;
+ Check(Assigned(Sidebar) and Sidebar.Visible,'Topics sidebar missing during playback');
+ Check((Sidebar.Parent=Avatar.Parent) and (Sidebar.Top+Sidebar.Height<Avatar.Top),'Topics sidebar overlaps presenter');
+ Check((Sidebar.Width=Avatar.Width) and (Sidebar.Height<Avatar.Height),'Presenter should retain most of the left column');
+ Check(Sidebar.Left+Sidebar.Width<Media.Parent.Left,'Topics sidebar covers the presentation');
  Check(Composer.Visible and frmmain.edPergunta.Enabled,'Input hidden/disabled while waiting');
  Check(Media.Top+Media.Height<Composer.Top,'Media covers composer');
  Check(frmmain.QuestionAnswer.Top+frmmain.QuestionAnswer.Height<Composer.Top,'Answer covers composer');
@@ -39,7 +44,7 @@ begin
  finally Picture.Free;Frame.Free;end;
 end;
 procedure TRunner.Tick(Sender:TObject);
-var K:Word;P:TPoint;UpButton,DownButton:TButton;Character:Char;
+var K:Word;P:TPoint;UpButton,DownButton:TButton;Character:Char;Topics:TListBox;
 begin
  try
   if Phase<>LastTrace then begin LastTrace:=Phase;WriteLn('PHASE ',Phase);Flush(Output);end;
@@ -79,7 +84,10 @@ begin
     Submit('[CONTINUAR]');Phase:=4;
    end;
    4:if frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia='assets/three.png') then begin
-    Submit('IR {Referencia}');Phase:=20;
+    Topics:=TListBox(frmmain.FindComponent('PresentationTopicsList'));
+    Check(Assigned(Topics) and Topics.Visible and (Topics.Items.Count=43),'Persistent topic list is unavailable');
+    Check(TControl(frmmain.FindComponent('PresentationMediaPanel')).Visible,'Topic list hid the current slide');
+    Topics.ItemIndex:=2;K:=VK_RETURN;Topics.OnKeyDown(Topics,K,[]);Phase:=20;
    end;
    20:if frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia='assets/three.png') then begin
     Submit('IR {Nao existe}');Check(frmmain.WaitingForQuestion,'Invalid block left question mode');
