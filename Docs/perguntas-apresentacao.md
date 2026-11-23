@@ -1,6 +1,6 @@
 # Perguntas durante a apresentacao
 
-No cabecalho, ao lado de **Configuracoes**, os botoes **Menu** e **Perguntar** ficam sempre visiveis. Menu abre os blocos e encerra a midia anterior; Perguntar pausa sem retomar automaticamente. O botao separado **Continuar** retoma a apresentacao. Os controles sao habilitados quando ha uma apresentacao em andamento.
+Durante a apresentacao, a area da direita vira um palco escuro: no topo, a barra de blocos mostra o titulo e o bloco atual; abaixo da midia, a **legenda** mostra o trecho que o avatar esta falando; e a **barra de controles** reune **Pausar (P)**, **Menu**, **Perguntar** e, com o roteiro pausado, **Continuar**. O avatar fica numa coluna mais estreita a esquerda para dar espaco ao slide. Menu abre os blocos e encerra a midia anterior; Perguntar pausa sem retomar automaticamente; Continuar retoma a apresentacao. As perguntas e respostas aparecem no painel **Perguntas da plateia**, ao lado da midia. O botao de **Configuracoes** continua no cabecalho.
 
 Durante videos locais ou do YouTube, **Encerrar video** aparece acima da midia. Ele fecha o reprodutor e mantem o roteiro pausado; use Menu, Perguntar ou Continuar para decidir o proximo passo.
 

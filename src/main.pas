@@ -8,10 +8,10 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
   webcam_vision, vision_types, aikinectsensor, aikinect_types, professor_catalog,
   professor_ui, professor_commands, fpjson, assistant_integration_protocol,
   assistant_integration_server, assistant_integration_jobs, presentation_package,
-  presentation_media, presentation_tags, presentation_joints, presentation_rag, presentation_flow, assistant_documents, presentation_document, movement_catalog, presentation_questions;
+  presentation_media, presentation_tags, presentation_joints, presentation_rag, presentation_flow, assistant_documents, presentation_document, movement_catalog, presentation_questions, presentation_chrome;
 type
   TParkedPresentation = record
-    Job:TReceptionJob;AtTag,YouTubePending:Boolean;
+    Job:TReceptionJob;AtTag,YouTubePending:Boolean;Block:string;
   end;
   Tfrmmain = class(TForm)
     pnlRoot, pnlHeader, pnlConteudo, pnlAvatar, pnlEntrada: TPanel;
@@ -100,6 +100,14 @@ type
     FBlockMenu:TListBox;FQuestionMemo:TMemo;
     FMenuPanel:TPanel;FMenuUp,FMenuDown:TButton;FMenuHint:TLabel;FMenuProgress:TProgressBar;
     FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard:Boolean;
+    FStepBar:TPresentationStepBar;FSpokenCaption:TPresentationCaption;
+    FControlBar:TPanel;FPauseButton:TButton;FProgressLabel,FQuestionTitle:TLabel;
+    FCurrentBlock:string;
+    procedure LayoutControlBar;
+    procedure RefreshStepBar;
+    procedure UpdatePresentationChrome;
+    procedure TogglePresentationPause;
+    procedure PauseButtonClick(Sender:TObject);
     procedure HideBlockMenu;
     procedure UpdateMenuHover;
     procedure ScrollBlockMenu(Sender:TObject);
@@ -330,6 +338,15 @@ begin
   FChatPanel.Parent := pnlConteudo;
   FChatPanel.BevelOuter := bvNone;
   FChatPanel.Color := clWhite;
+  FControlBar:=TPanel.Create(Self);FControlBar.Name:='PresentationControlBar';FControlBar.Caption:='';
+  FControlBar.Parent:=FChatPanel;FControlBar.BevelOuter:=bvNone;FControlBar.Color:=ChromeDarkPanel;
+  FControlBar.ParentBackground:=False;FControlBar.Visible:=False;
+  FProgressLabel:=TLabel.Create(Self);FProgressLabel.Name:='PresentationProgressLabel';
+  FProgressLabel.Parent:=FControlBar;FProgressLabel.AutoSize:=False;FProgressLabel.Layout:=tlCenter;
+  FProgressLabel.Font.Color:=ChromeMuted;FProgressLabel.Caption:='';
+  FPauseButton:=TButton.Create(Self);FPauseButton.Name:='PresentationPauseButton';
+  FPauseButton.Parent:=FControlBar;FPauseButton.Caption:='Pausar (P)';FPauseButton.OnClick:=@PauseButtonClick;
+  FPauseButton.Hint:='Pausar ou retomar a narração (tecla P)';FPauseButton.ShowHint:=True;
   FPresentationPanel := TPanel.Create(Self);
   FPresentationPanel.Name := 'PresentationMediaPanel';
   FPresentationPanel.Parent := FChatPanel;
@@ -347,13 +364,14 @@ begin
   FChat.Font.Height := -13;
   FChat.AddMessage('Olá! Como posso ajudar?', False);
   FAskButton:=TButton.Create(Self);FAskButton.Name:='AskPresentationButton';
-  FAskButton.Parent:=FChatPanel;FAskButton.Caption:='Perguntar';FAskButton.Visible:=False;
+  FAskButton.Parent:=FControlBar;FAskButton.Caption:='Continuar';FAskButton.Visible:=False;
+  FAskButton.Hint:='Retomar a apresentação de onde parou';FAskButton.ShowHint:=True;
   FAskButton.OnClick:=@AskPresentation;
   FHeaderMenu:=TButton.Create(Self);FHeaderMenu.Name:='PresentationMenuButton';
-  FHeaderMenu.Parent:=pnlHeader;FHeaderMenu.Caption:='Menu';FHeaderMenu.OnClick:=@HeaderMenuClick;
+  FHeaderMenu.Parent:=FControlBar;FHeaderMenu.Caption:='Menu';FHeaderMenu.OnClick:=@HeaderMenuClick;
   FHeaderMenu.Hint:='Mostrar os blocos da apresentação';FHeaderMenu.ShowHint:=True;
   FHeaderAsk:=TButton.Create(Self);FHeaderAsk.Name:='PresentationAskButton';
-  FHeaderAsk.Parent:=pnlHeader;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.OnClick:=@HeaderAskClick;
+  FHeaderAsk.Parent:=FControlBar;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.OnClick:=@HeaderAskClick;
   FHeaderAsk.Hint:='Pausar e perguntar sobre o conteúdo apresentado';FHeaderAsk.ShowHint:=True;
   FMenuPanel:=TPanel.Create(Self);FMenuPanel.Parent:=FChatPanel;FMenuPanel.Name:='PresentationMenuPanel';
   FMenuPanel.BevelOuter:=bvNone;FMenuPanel.Color:=clWhite;FMenuPanel.Visible:=False;
@@ -374,6 +392,13 @@ begin
   FStopVideo.OnClick:=@StopVideoClick;
   FQuestionMemo:=TMemo.Create(Self);FQuestionMemo.Name:='PresentationQuestionAnswer';FQuestionMemo.Parent:=FChatPanel;
   FQuestionMemo.ReadOnly:=True;FQuestionMemo.ScrollBars:=ssAutoVertical;FQuestionMemo.Visible:=False;
+  FQuestionTitle:=TLabel.Create(Self);FQuestionTitle.Name:='PresentationQuestionTitle';FQuestionTitle.Parent:=FChatPanel;
+  FQuestionTitle.AutoSize:=False;FQuestionTitle.Layout:=tlCenter;FQuestionTitle.Font.Style:=[fsBold];
+  FQuestionTitle.Font.Color:=$0066C8F5;FQuestionTitle.Caption:='Perguntas da plateia';FQuestionTitle.Visible:=False;
+  FStepBar:=TPresentationStepBar.Create(Self);FStepBar.Name:='PresentationStepBar';FStepBar.Parent:=FChatPanel;
+  FStepBar.Font.Name:='Segoe UI';FStepBar.Font.Height:=-12;FStepBar.Visible:=False;
+  FSpokenCaption:=TPresentationCaption.Create(Self);FSpokenCaption.Name:='PresentationCaption';FSpokenCaption.Parent:=FChatPanel;
+  FSpokenCaption.Font.Name:='Segoe UI';FSpokenCaption.Font.Height:=-15;FSpokenCaption.Visible:=False;
   FInputCard := TRoundedCard.Create(Self);
   FInputCard.Parent := FChatPanel;
   FInputCard.Color := clWhite;FInputCard.Fill:=$00FAF7F5;FInputCard.Border:=$00E8E0D8;
@@ -483,33 +508,62 @@ end;
 
 procedure Tfrmmain.LayoutProfessor(Sender: TObject);
 var W, H, LeftWidth, ComposerWidth, CardWidth, ChatWidth,ChatHeight,MediaWidth,MediaHeight,QuestionHeight: Integer;
+  Presenting: Boolean; MediaTop, BarTop, CaptionTop, QuestionWidth, QuestionLeft, StepWidth: Integer;
 begin
   if FClosing or not Assigned(FRenderStatus) then Exit;
   W := ClientWidth;
   H := pnlConteudo.ClientHeight;
-  LeftWidth := W div 3;
+  Presenting := FPresentationMode;
+  { Presentation mode gives the slide most of the width: the avatar keeps a
+    narrow column and the chat area turns into the dark presentation stage. }
+  if Presenting then LeftWidth := Max(220, W div 5) else LeftWidth := W div 3;
   FAvatarCard.SetBounds(16, 16, LeftWidth-28, H-64);
   FMicButton.SetBounds(16, H-40, LeftWidth-28, 32);
   ChatWidth:=W-LeftWidth-20;ChatHeight:=H-32;
   FChatPanel.SetBounds(LeftWidth+4,16,ChatWidth,ChatHeight);
-  lblAssistente.SetBounds(14, 12, ChatWidth-28, 22);
-  QuestionHeight:=0;if FQuestionMemo.Visible then QuestionHeight:=120;
-  MediaWidth:=Max(1,ChatWidth-28);MediaHeight:=Max(1,ChatHeight-178-QuestionHeight);
-  FChat.SetBounds(18,48,Max(1,MediaWidth-8),MediaHeight);
-  FPresentationPanel.SetBounds(14,40,MediaWidth,MediaHeight);
-  FMenuPanel.SetBounds(14,40,MediaWidth,MediaHeight);
-  FQuestionMemo.SetBounds(14,ChatHeight-250,Max(1,ChatWidth-28),110);
-  FAskButton.SetBounds(18,ChatHeight-126,130,32);
-  FStopVideo.SetBounds(ChatWidth-170,5,156,32);
-  lblAssistente.Width:=Max(1,ChatWidth-198);
+  if Presenting then FChatPanel.Color:=ChromeDark else FChatPanel.Color:=clWhite;
+  FInputCard.Color:=FChatPanel.Color;
+  lblAssistente.Visible:=not Presenting;
+  FStepBar.Visible:=Presenting;FSpokenCaption.Visible:=Presenting;FControlBar.Visible:=Presenting;
+  FQuestionTitle.Visible:=Presenting and FQuestionMemo.Visible;
   ComposerWidth:=ChatWidth-36;
+  if Presenting then begin
+    StepWidth:=ChatWidth-28;
+    if FStopVideo.Visible then Dec(StepWidth,170);
+    FStepBar.SetBounds(14,8,Max(1,StepWidth),40);
+    FStopVideo.SetBounds(ChatWidth-170,12,156,32);
+    BarTop:=ChatHeight-82-62;
+    FControlBar.SetBounds(14,BarTop,Max(1,ChatWidth-28),54);
+    CaptionTop:=BarTop-56;
+    FSpokenCaption.SetBounds(14,CaptionTop,Max(1,ChatWidth-28),48);
+    MediaTop:=56;MediaHeight:=Max(1,CaptionTop-8-MediaTop);
+    QuestionWidth:=0;
+    if FQuestionMemo.Visible then QuestionWidth:=EnsureRange((ChatWidth-28) div 3,220,340);
+    MediaWidth:=Max(1,ChatWidth-28);
+    if QuestionWidth>0 then MediaWidth:=Max(1,MediaWidth-QuestionWidth-12);
+    FPresentationPanel.SetBounds(14,MediaTop,MediaWidth,MediaHeight);
+    FChat.SetBounds(18,MediaTop,Max(1,MediaWidth-8),MediaHeight);
+    FMenuPanel.SetBounds(14,MediaTop,Max(1,ChatWidth-28),MediaHeight);
+    QuestionLeft:=14+MediaWidth+12;
+    FQuestionTitle.SetBounds(QuestionLeft,MediaTop,Max(1,QuestionWidth),26);
+    FQuestionMemo.SetBounds(QuestionLeft,MediaTop+30,Max(1,QuestionWidth),Max(1,MediaHeight-30));
+    LayoutControlBar;
+  end else begin
+    lblAssistente.SetBounds(14, 12, ChatWidth-28, 22);
+    QuestionHeight:=0;if FQuestionMemo.Visible then QuestionHeight:=120;
+    MediaWidth:=Max(1,ChatWidth-28);MediaHeight:=Max(1,ChatHeight-178-QuestionHeight);
+    FChat.SetBounds(18,48,Max(1,MediaWidth-8),MediaHeight);
+    FPresentationPanel.SetBounds(14,40,MediaWidth,MediaHeight);
+    FMenuPanel.SetBounds(14,40,MediaWidth,MediaHeight);
+    FQuestionMemo.SetBounds(14,ChatHeight-250,Max(1,ChatWidth-28),110);
+    FStopVideo.SetBounds(ChatWidth-170,5,156,32);
+    lblAssistente.Width:=Max(1,ChatWidth-198);
+  end;
   FInputCard.SetBounds(18, ChatHeight-82, ComposerWidth, 54);
   edPergunta.SetBounds(14, 15, ComposerWidth-64, 26);
   FSendButton.Parent:=FInputCard;FSendButton.SetBounds(ComposerWidth-40,12,30,30);
-  btConfig.SetBounds(W-268,20,32,32);
-  FHeaderMenu.SetBounds(W-226,20,82,32);
-  FHeaderAsk.SetBounds(W-134,20,106,32);
-  lblTitulo.Width:=Max(100,W-316);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-316);
+  btConfig.SetBounds(W-56,20,32,32);
+  lblTitulo.Width:=Max(100,W-120);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-120);
   CardWidth := FAvatarCard.Width-8;
   FProfileCombo.SetBounds(10, 9, Max(100,CardWidth-112), 28);
   FReloadButton.SetBounds(CardWidth-92, 9, 28, 25);
@@ -521,6 +575,83 @@ begin
   FAvatarStatus.SetBounds(18, 13, LeftWidth-20, 16);
   FAIStatus.SetBounds(W div 3, 13, W div 3, 16);
   FRenderStatus.SetBounds(W-180, 13, 168, 16);
+end;
+
+procedure Tfrmmain.LayoutControlBar;
+const Gap=8; ButtonTop=11; ButtonHeight=32;
+var X: Integer;
+  procedure Place(Button: TButton; AWidth: Integer);
+  begin
+    if not Button.Visible then Exit;
+    Dec(X, AWidth);Button.SetBounds(X, ButtonTop, AWidth, ButtonHeight);Dec(X, Gap);
+  end;
+begin
+  if (FControlBar=nil) or not FControlBar.Visible then Exit;
+  X:=FControlBar.ClientWidth-12;
+  { Right to left: resume is the primary action while the script is parked. }
+  Place(FAskButton, 120);
+  Place(FHeaderAsk, 120);
+  Place(FHeaderMenu, 96);
+  Place(FPauseButton, 120);
+  FProgressLabel.SetBounds(14, 0, Max(1, X-14), FControlBar.ClientHeight);
+end;
+
+procedure Tfrmmain.RefreshStepBar;
+var Steps: TStringList; I, Current: Integer;
+begin
+  Steps:=TStringList.Create;
+  try
+    Steps.Add('Início');Current:=0;
+    if FLoadedFlow<>nil then
+      for I:=0 to FLoadedFlow.BlockCount-1 do begin
+        Steps.Add(FLoadedFlow.BlockName(I));
+        if (FCurrentBlock<>'') and SameText(FLoadedFlow.BlockName(I),FCurrentBlock) then Current:=I+1;
+      end;
+    FStepBar.SetSteps(Steps);FStepBar.Current:=Current;
+    FStepBar.Title:=ChangeFileExt(ExtractFileName(FLoadedFile),'');
+  finally Steps.Free;end;
+end;
+
+procedure Tfrmmain.UpdatePresentationChrome;
+var CaptionText, TagText, Progress: string;
+begin
+  if not FPresentationMode or (FSpokenCaption=nil) then Exit;
+  TagText:='LEGENDA';CaptionText:='';
+  if Assigned(FSpeechJob) then begin
+    if FSpeechJob.Paused then begin TagText:='PAUSA';CaptionText:='Narração pausada. Clique em Retomar ou pressione P.';end
+    else begin CaptionText:=FSpeechJob.SpokenText;if FAnsweringQuestion then TagText:='RESPOSTA';end;
+  end else if WaitingForQuestion then begin
+    TagText:='PAUSA';
+    if FMenuPanel.Visible then CaptionText:='Escolha um bloco para continuar ou clique em Continuar.'
+    else CaptionText:='Faça uma pergunta, abra o Menu de blocos ou clique em Continuar.';
+  end;
+  FSpokenCaption.TagText:=TagText;FSpokenCaption.Text:=CaptionText;
+  FPauseButton.Enabled:=Assigned(FSpeechJob) and not FAnsweringQuestion and not FResumePresentation;
+  if Assigned(FSpeechJob) and FSpeechJob.Paused then FPauseButton.Caption:='Retomar (P)'
+  else FPauseButton.Caption:='Pausar (P)';
+  if FStepBar.StepCount>1 then
+    Progress:=Format('Bloco %d de %d',[FStepBar.Current+1,FStepBar.StepCount])
+  else Progress:='Roteiro principal';
+  if Length(FParkedPresentations)>0 then Progress:=Progress+' · roteiro pausado';
+  FProgressLabel.Caption:=Progress;
+  LayoutControlBar;
+end;
+
+procedure Tfrmmain.TogglePresentationPause;
+var Paused: Boolean;
+begin
+  if not FPresentationMode or not Assigned(FSpeechJob) then Exit;
+  Paused:=not FSpeechJob.Paused;FSpeechJob.SetPaused(Paused);
+  TPresentationScene(FProfessor.Scene).PauseJoints(Paused);
+  FProfessor.SetRenderingActive(not Paused);
+  try if FPresentationMedia<>nil then FPresentationMedia.SetPaused(Paused);
+  except on E: Exception do begin FSpeechJob.Cancel;lblStatus.Caption:=E.Message;end;end;
+  if Paused then lblStatus.Caption:='Apresentacao pausada (P retoma; Esc cancela)';
+end;
+
+procedure Tfrmmain.PauseButtonClick(Sender: TObject);
+begin
+  if FPauseButton.Enabled then TogglePresentationPause;
 end;
 
 procedure Tfrmmain.FormDestroy(Sender: TObject);
@@ -1244,6 +1375,7 @@ begin
   if not AtTag then FSpeechJob.SetPaused(True);
   SetLength(FParkedPresentations,N+1);FParkedPresentations[N].Job:=FSpeechJob;FParkedPresentations[N].AtTag:=AtTag;
   FParkedPresentations[N].YouTubePending:=FYouTubeCommandPending;FYouTubeCommandPending:=False;
+  FParkedPresentations[N].Block:=FCurrentBlock;
   FSpeechJob:=nil;FAnsweringQuestion:=False;
   try QuestionReady;
   except
@@ -1261,14 +1393,20 @@ begin
   N:=High(FParkedPresentations);if N<0 then raise Exception.Create('Nao existe apresentacao pausada.');
   HideBlockMenu;FQuestionMemo.Visible:=False;LayoutProfessor(nil);
   PausarEscuta;AtTag:=FParkedPresentations[N].AtTag;FSpeechJob:=FParkedPresentations[N].Job;
-  FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;SetLength(FParkedPresentations,N);
+  FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;
+  FCurrentBlock:=FParkedPresentations[N].Block;RefreshStepBar;SetLength(FParkedPresentations,N);
   FAnsweringQuestion:=False;FSpeechJob.SetPaused(False);if AtTag then FSpeechJob.ConfirmAvatarCommand;
   if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
   edPergunta.TextHint:='Digite sua pergunta...';SetEstado('Continuando apresentacao...',False);
 end;
 procedure Tfrmmain.UpdateVideoButton;
+var WasVisible: Boolean;
 begin
+  WasVisible:=FStopVideo.Visible;
   FStopVideo.Visible:=(FPresentationMedia<>nil) and FPresentationMedia.IsVideo;
+  if FStopVideo.Visible<>WasVisible then begin
+    LayoutProfessor(nil);if FStopVideo.Visible then FStopVideo.BringToFront;
+  end;
   FStopVideo.Enabled:=not FResumePresentation and not (FAnsweringQuestion and Assigned(FSpeechJob));
 end;
 procedure Tfrmmain.StopVideoClick(Sender:TObject);
@@ -1319,6 +1457,7 @@ begin
     Compiled:=FLoadedFlow.Compile(TargetBlock,False);ValidateRuntimeScript(Compiled);
     HideBlockMenu;LayoutProfessor(nil);
     PausarEscuta;edPergunta.Clear;FChat.AddMessage('Bloco: '+TargetBlock,True);
+    FCurrentBlock:=TargetBlock;RefreshStepBar;
     FAnsweringQuestion:=False;
     if FPresentationMedia<>nil then FPresentationMedia.SetPaused(False);
     if Trim(Compiled)='' then QuestionReady else FalarResposta(Compiled);
@@ -1349,6 +1488,7 @@ begin
     FLoadedSource:=FLoadedPackage.Script;FLoadedEntryBlock:=EntryBlock;
     FLoadedFile:=SourcePath;FLoadedKnowledge:='';FLoadedKind:=Kind;
     FPresentationMode:=True;PausarEscuta;FProfessor.ResetCommands;
+    FCurrentBlock:=EntryBlock;RefreshStepBar;LayoutProfessor(nil);
     FalarResposta(Compiled);
     if FSpeechJob=nil then FinishPresentation;
     except FinishPresentation;raise;end;
@@ -1379,7 +1519,7 @@ begin
   HideBlockMenu;FQuestionMemo.Visible:=False;
   edPergunta.TextHint:='Digite sua pergunta...';
   FYouTubeCommandPending:=False;
-  FreeAndNil(FPresentationMedia);FPresentationMode:=False;
+  FreeAndNil(FPresentationMedia);FPresentationMode:=False;FCurrentBlock:='';
   if FPresentationAvatarChanged then begin
     FPresentationAvatarChanged:=False;
     if not FClosing then AplicarConfiguracao;
@@ -1394,17 +1534,10 @@ begin
   FPresentationRoot:='';LayoutProfessor(nil);
 end;
 procedure Tfrmmain.CancelarApresentacao(Sender: TObject; var Key: Word; Shift: TShiftState);
-var Paused: Boolean;
 begin
   if not Assigned(FSpeechJob) and (Length(FParkedPresentations)=0) then Exit;
   if FPresentationMode and Assigned(FSpeechJob) and (ActiveControl<>edPergunta) and (Key=Ord('P')) and (Shift=[]) then begin
-    Paused:=not FSpeechJob.Paused;FSpeechJob.SetPaused(Paused);
-    TPresentationScene(FProfessor.Scene).PauseJoints(Paused);
-    FProfessor.SetRenderingActive(not Paused);
-    try FPresentationMedia.SetPaused(Paused);
-    except on E: Exception do begin FSpeechJob.Cancel;lblStatus.Caption:=E.Message;end;end;
-    if Paused then lblStatus.Caption:='Apresentacao pausada (P retoma; Esc cancela)';
-    Key:=0;Exit;
+    TogglePresentationPause;Key:=0;Exit;
   end;
   if Key=VK_ESCAPE then begin
     if FAnsweringQuestion and FAguardandoResposta then FAssistantManager.CancelExecution;
@@ -1420,7 +1553,7 @@ var Ok: Boolean; Err: string; Command: TAvatarScriptStep;
 begin
   if FClosing then Exit;
   UpdateDocumentActions;
-  FChromeSpeech.Poll;UpdateMenuHover;UpdateVideoButton;
+  FChromeSpeech.Poll;UpdateMenuHover;UpdateVideoButton;UpdatePresentationChrome;
   if Assigned(FIntegration) then FIntegration.Pump;
   FAvatarStatus.Caption := 'Avatar: ' + FProfessor.ActivityLabel;
   if FProfessor.ModelFile <> '' then FRenderStatus.Caption := 'Renderização 3D'

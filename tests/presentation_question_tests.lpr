@@ -47,8 +47,9 @@ begin
   case Phase of
    0:if frmmain.WaitingForQuestion then begin
     Check(frmmain.ActivePresentationMedia='assets/one.png','PERGUNTAR lost image');CheckLayout;
-    Check(Button.Parent=frmmain.pnlHeader,'Perguntar is not in header');
-    Check(Button.Left>frmmain.btConfig.Left,'Header controls order');
+    Check((Button.Parent<>nil) and (Button.Parent.Name='PresentationControlBar') and Button.Parent.Visible,'Perguntar is not in the presentation control bar');
+    Check(TControl(frmmain.FindComponent('PresentationStepBar')).Visible and TControl(frmmain.FindComponent('PresentationCaption')).Visible,'Presentation chrome hidden');
+    Check(Button.Parent.Top+Button.Parent.Height<=frmmain.edPergunta.Parent.Top,'Control bar covers composer');
     Button.Click;Check(frmmain.WaitingForQuestion,'Perguntar resumed instead of accepting questions');
     Submit('Qual e o codigo da aula?');Phase:=1;
    end;

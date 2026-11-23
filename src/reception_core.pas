@@ -32,6 +32,8 @@ type
     FPaused: LongInt;
     FPauseStarted, FPausedDuration: QWord;
     FCommandPending: Boolean;
+    FSpokenText: string;
+    procedure SetSpokenText(const AText: string);
     function ActiveTick: QWord;
     procedure DeliverCommand(const Command: TAvatarScriptStep);
     procedure ExecuteSpeech;
@@ -54,6 +56,8 @@ type
     procedure SetPaused(Value: Boolean);
     function Paused: Boolean;
     function TakeScriptCommand(out Command: TAvatarScriptStep): Boolean;
+    { Text segment being spoken now, for captions. Thread-safe copy. }
+    function SpokenText: string;
   end;
 
   TReceptionMemory = class
@@ -192,6 +196,18 @@ begin
   while not Terminated and (FCommandAck.WaitFor(20)<>wrSignaled) do ;
 end;
 
+procedure TReceptionJob.SetSpokenText(const AText: string);
+begin
+  FLock.Acquire;
+  try FSpokenText := AText; UniqueString(FSpokenText); finally FLock.Release; end;
+end;
+
+function TReceptionJob.SpokenText: string;
+begin
+  FLock.Acquire;
+  try Result := FSpokenText; UniqueString(Result); finally FLock.Release; end;
+end;
+
 procedure TReceptionJob.ExecuteSpeech;
 var Script: TAvatarScript; I,J: Integer; Synth: TAIVoiceSynthesizer;
   Player: TAIAudioPlayer; Pending: array of TAvatarScriptStep;
@@ -324,6 +340,7 @@ begin
       if FConfig.SilentPresentation then
       begin
         FlushCommands;
+        SetSpokenText(Part);
         WaitUntil(ActiveTick+SilentSegmentDuration(Part));
       end else if Synth.Engine=seOpenAI then
       begin
@@ -336,6 +353,7 @@ begin
           audible segment boundary, not while waiting for the provider. }
         WaitReady;FlushCommands;
         if Terminated then Break;
+        SetSpokenText(Part);
         if not Player.Play(SpeechFile) then begin ErrorText:=Player.LastError;Break;end;
         InterlockedExchange(FPlaybackActive,1);
         { Playing queries the backend, not the WAV size or an estimated timer.
@@ -349,6 +367,7 @@ begin
       begin
         FlushCommands;
         if Terminated then Break;
+        SetSpokenText(Part);
         InterlockedExchange(FPlaybackActive,1);
         try
           Synth.Asynchronous:=True;Synth.Say(Part);
