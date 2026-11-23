@@ -16,7 +16,8 @@ uses
 
   chatgpt, aivoicesynthesizer, jarvis_api, vision_types, webcam_vision, aikinectsensor, aikinect_types,
   Windows, mmsystem, Math, fphttpclient, opensslsockets, ComObj, ActiveX,
-  assistant_integration_protocol, assistant_integration_settings_ui, assistant_rag_settings_ui;
+  assistant_integration_protocol, assistant_integration_settings_ui, assistant_rag_settings_ui,
+  settings_nav;
 
 
 
@@ -32,6 +33,7 @@ type
     IntegrationUI: TIntegrationSettingsUI;
     RAGUI: TRAGSettingsUI;
     ConfigFileButtons: TConfigFileButtons;
+    Nav: TSettingsNavigator;
 
     pcConfig: TPageControl;
 
@@ -280,6 +282,8 @@ type
     FTestCamera: TWebcamVision;
     procedure ExportConfigClick(Sender: TObject);
     procedure ImportConfigClick(Sender: TObject);
+    procedure BuildNavigation;
+    function SettingsPageStatus(Page: TTabSheet; out Detail: string): TSettingsPageStatus;
 
   public
     { Set by the owner: generate / apply a configuration file. }
@@ -938,6 +942,7 @@ begin
   IntegrationUI:=TIntegrationSettingsUI.CreateFor(Self,pcConfig);
   RAGUI:=TRAGSettingsUI.CreateFor(Self,pcConfig);
   ConfigFileButtons:=TConfigFileButtons.CreateFor(Self,pnlButtons,@ExportConfigClick,@ImportConfigClick);
+  BuildNavigation;
 
   FLoading := True;
 
@@ -954,6 +959,60 @@ begin
 end;
 
 
+
+procedure TfrmConfig.BuildNavigation;
+var ContentWidth, ContentHeight: Integer;
+begin
+  { Keep the page area at its designed size; the side list and the section
+    header are added around it. }
+  ContentWidth := Max(pcConfig.Width, 400);
+  ContentHeight := ClientHeight;
+  Nav := TSettingsNavigator.CreateFor(Self, pcConfig, pnlButtons, btSalvar, btCancelar);
+  Nav.OnStatus := @SettingsPageStatus;
+  Nav.AddGroup('Essencial');
+  Nav.AddPage(tsIA, 'Inteligência artificial', 'Provedor e modelo que respondem às perguntas.');
+  Nav.AddPage(tsOutputVoice, 'Voz (fala)', 'Como o avatar fala as respostas.');
+  Nav.AddPage(tsVoz, 'Microfone', 'Captação e reconhecimento da fala do público.');
+  Nav.AddPage(tsAvatar3D, 'Avatar 3D', 'Modelo e animações do professor virtual.');
+  Nav.AddGroup('Apresentações');
+  Nav.AddPage(RAGUI.Page, 'Documentos (RAG)', 'Biblioteca usada para responder perguntas.');
+  Nav.AddGroup('Avançado');
+  Nav.AddPage(tsVisao, 'Câmera e Kinect', 'Dispositivos de vídeo locais.');
+  Nav.AddPage(IntegrationUI.Page, 'Integração externa', 'API por socket e DLL para outros programas.');
+  Nav.AddPage(tsJarvis, 'Jarvis residencial', 'Automação residencial e modo de IA do Jarvis.');
+  Nav.AddPage(tsBanco, 'Banco de dados', 'Conexão MySQL ou PostgreSQL.');
+  Nav.AddRemainingPages;
+  ClientWidth := SettingsNavWidth + 1 + ContentWidth;
+  ClientHeight := ContentHeight + SettingsHeaderHeight + 15;
+  pcConfig.ActivePage := tsIA;
+end;
+
+function TfrmConfig.SettingsPageStatus(Page: TTabSheet; out Detail: string): TSettingsPageStatus;
+  function FromLabel(L: TLabel): TSettingsPageStatus;
+  var S: string;
+  begin
+    Result := spsNone;
+    if L = nil then Exit;
+    Detail := Trim(L.Caption);
+    S := UpperCase(Detail);
+    if (Pos('OK', S) = 1) or (Pos('SUCESSO', S) = 1) then Result := spsOk
+    else if (Pos('FALHA', S) = 1) or (Pos('ERRO', S) = 1) then Result := spsError
+    else Detail := '';
+  end;
+begin
+  Detail := '';
+  Result := spsNone;
+  if Page = tsIA then Result := FromLabel(lblProvedorStatus)
+  else if Page = tsJarvis then Result := FromLabel(lblJarvisStatus)
+  else if Page = tsOutputVoice then Result := FromLabel(lblTestarFalaStatus)
+  else if Page = tsVoz then Result := FromLabel(lblAudioTestStatus)
+  else if Page = tsVisao then begin
+    if not chkEnableKinect.Checked and not chkEnableCamera.Checked then Result := spsOff;
+  end
+  else if (IntegrationUI <> nil) and (Page = IntegrationUI.Page) then begin
+    if not IntegrationUI.Enabled.Checked then Result := spsOff;
+  end;
+end;
 
 procedure TfrmConfig.ExportConfigClick(Sender: TObject);
 begin
@@ -982,6 +1041,7 @@ begin
     EnumerateAudioDevices(-1);
 
   AtualizaEstadoOpenAITTS;
+  Nav.MarkSaved;
 end;
 
 

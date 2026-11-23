@@ -9,7 +9,7 @@ begin
   try
     Menu:=TAssistantMenu.Create(Owner);
     Check(Menu is TMainMenu,'Native menu missing');
-    Check(Menu.Items.Count=3,'File, Search and Help menus missing');
+    Check(Menu.Items.Count=4,'File, Presentation, Search and Help menus missing');
     Check(Menu.OpenFile.ShortCut=Menus.ShortCut(Ord('O'),[ssCtrl]),'Open shortcut');
     Check(Menu.CloseFile.ShortCut=Menus.ShortCut(Ord('W'),[ssCtrl]),'Close shortcut');
     Check(Menu.PrintPDF.ShortCut=Menus.ShortCut(Ord('P'),[ssCtrl]),'Print shortcut');
@@ -17,7 +17,9 @@ begin
     Check(Menu.OpenFile.Parent=Menu.CloseFile.Parent,'Open and close must share File menu');
     Check(Menu.PrintPDF.Parent=Menu.OpenFile.Parent,'Print must be in File menu');
     Check(Menu.About.Parent<>Menu.OpenFile.Parent,'About must be in Help menu');
+    Check((Menu.LoadPresentation.Parent=Menu.PlayPresentation.Parent) and (Menu.Topics.Parent=Menu.LoadPresentation.Parent),'Presentation items must share the Presentation menu');
+    Check(Menu.LoadPresentation.Parent<>Menu.OpenFile.Parent,'Presentation items must not be in File menu');
     Check(Owner.ComponentCount=1,'Menus must not create toolbar buttons');
-    WriteLn('PASS: native dropdown menus, keyboard shortcuts and no extra buttons');
+    WriteLn('PASS: native dropdown menus, presentation menu, keyboard shortcuts and no extra buttons');
   finally Owner.Free;end;
 end.

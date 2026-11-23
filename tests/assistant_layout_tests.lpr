@@ -30,7 +30,7 @@ begin
   Timer:=TTimer.Create(Self);Timer.Interval:=1000;Timer.OnTimer:=@Tick;
 end;
 procedure TRunner.Tick(Sender:TObject);
-var Shot:TRGBImage;Frame:TBitmap;Picture:TPicture;Origin:TPoint;WidthValue,J:Integer;Chat:TConversationView;Card:TControl;
+var Shot:TRGBImage;Frame:TBitmap;Picture:TPicture;Origin:TPoint;WidthValue,J,SidebarWidth,Grip:Integer;Chat:TConversationView;Card:TControl;Divider:TPanel;
 begin
   Timer.Enabled:=False;
   try
@@ -47,6 +47,10 @@ begin
       if Chat.ControlCount>0 then Check(Chat.Controls[0].Left+Chat.Controls[0].Width<=Chat.Width,'Conversation card clipped after resize');
     end;
     Check(Selector.Left>=0,'Movement selector outside avatar');
+    Divider:=TPanel(frmmain.FindComponent('SidebarDivider'));
+    Check(Assigned(Divider) and Divider.Visible,'Sidebar divider missing');
+    SidebarWidth:=frmmain.pnlAvatar.Parent.Width;
+    Check(Abs(SidebarWidth-Max(172,(frmmain.ClientWidth div 3-28) div 2))<=1,'Default sidebar should be half its former width, within the minimum');
     if ParamStr(2)='--hidden-layout' then begin
       Inc(Index);
       if Index=2 then begin WriteLn('PASS: hidden 1180/960 layout, composer inside chat, conversation cards reflowed and JSON selector');Application.Terminate;end
@@ -60,6 +64,17 @@ begin
       Frame.Canvas.Draw(Origin.X,Origin.Y,Picture.Graphic);
       WidthValue:=frmmain.Width;Frame.SaveToFile(OutDir+'assistente-'+IntToStr(WidthValue)+'.bmp');
     finally Picture.Free;Frame.Free;end;
+    if Index=1 then
+    begin
+      Grip:=Divider.Width div 2;
+      Divider.OnMouseDown(Divider,mbLeft,[ssLeft],Grip,20);
+      Divider.OnMouseMove(Divider,[ssLeft],Grip+80,20);
+      Check(frmmain.pnlAvatar.Parent.Width=SidebarWidth+80,'Dragging right did not widen the sidebar');
+      Divider.OnMouseMove(Divider,[ssLeft],Grip-80,20);
+      Divider.OnMouseUp(Divider,mbLeft,[],Grip,20);
+      Check(frmmain.pnlAvatar.Parent.Width=SidebarWidth,'Dragging left did not narrow the sidebar');
+      Check(frmmain.edPergunta.Width>200,'Composer collapsed after drag');
+    end;
     Inc(Index);
     if Index=2 then begin WriteLn('PASS: Assistant at 1180/960, visible settings/composer, native avatar, conversation and shared movement selector');Application.Terminate;end
     else Timer.Enabled:=True;

@@ -6,11 +6,12 @@ type
   TAssistantMenu = class(TMainMenu)
   public
     OpenFile, CloseFile, PrintPDF, FindText, About: TMenuItem;
+    LoadPresentation, PlayPresentation, Topics: TMenuItem;
     constructor Create(AOwner: TComponent); override;
   end;
 implementation
 constructor TAssistantMenu.Create(AOwner: TComponent);
-var FileMenu, SearchMenu, HelpMenu: TMenuItem;
+var FileMenu, PresentationMenu, SearchMenu, HelpMenu: TMenuItem;
   function Item(Parent: TMenuItem; const ID, Title: string; Key: TShortCut): TMenuItem;
   begin
     Result:=TMenuItem.Create(Self);Result.Name:=ID;Result.Caption:=Title;
@@ -23,6 +24,10 @@ begin
   CloseFile:=Item(FileMenu,'CloseFileMenuItem','&Fechar arquivo',Menus.ShortCut(Ord('W'),[ssCtrl]));
   Item(FileMenu,'FileSeparator','-',0);
   PrintPDF:=Item(FileMenu,'PrintPresentationMenuItem','&Imprimir apresentação / Salvar PDF...',Menus.ShortCut(Ord('P'),[ssCtrl]));
+  PresentationMenu:=Item(Items,'PresentationMenu','A&presentação',0);
+  LoadPresentation:=Item(PresentationMenu,'LoadPresentationMenuItem','&Carregar apresentação (.pva)...',0);
+  PlayPresentation:=Item(PresentationMenu,'PlayPresentationMenuItem','&Iniciar do começo',0);
+  Topics:=Item(PresentationMenu,'PresentationTopicsMenu','&Assuntos',0);
   SearchMenu:=Item(Items,'SearchMenu','&Pesquisar',0);
   FindText:=Item(SearchMenu,'FindTextMenuItem','&Localizar no texto...',Menus.ShortCut(Ord('F'),[ssCtrl]));
   HelpMenu:=Item(Items,'HelpMenu','A&juda',0);

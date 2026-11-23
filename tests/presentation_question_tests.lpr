@@ -1,9 +1,9 @@
 program presentation_question_tests;
 {$mode objfpc}{$H+}{$codepage utf8}
 uses Interfaces,Forms,Classes,SysUtils,Windows,ExtCtrls,StdCtrls,Controls,Types,Graphics,main,professor_view,CastleControl,CastleImages,CastleURIUtils,
- presentation_package,presentation_tags,presentation_document,presentation_flow,presentation_questions;
+ presentation_package,presentation_tags,presentation_document,presentation_flow,presentation_questions,presentation_chrome;
 type TRunner=class
- Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button:TButton;
+ Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button:TChromeButton;
  procedure Tick(Sender:TObject);
  procedure Submit(const Text:string;Voice:Boolean=False);
  procedure CheckLayout;
@@ -15,9 +15,14 @@ begin if not B then raise Exception.Create(Msg);end;
 procedure TRunner.Submit(const Text:string;Voice:Boolean);
 begin if Voice then frmmain.VoiceInput.OnText(nil,Text) else begin frmmain.edPergunta.Text:=Text;frmmain.btEnviarClick(nil);end;end;
 procedure TRunner.CheckLayout;
-var Media:TControl;Composer:TControl;
+var Media, Composer, Sidebar, Avatar: TControl;
 begin
  Media:=TControl(frmmain.FindComponent('PresentationMediaPanel'));Composer:=frmmain.edPergunta.Parent;
+ Sidebar:=TControl(frmmain.FindComponent('PresentationTopicsPanel'));Avatar:=frmmain.pnlAvatar.Parent;
+ Check(Assigned(Sidebar) and Sidebar.Visible,'Topics sidebar missing during playback');
+ Check((Sidebar.Parent=Avatar.Parent) and (Sidebar.Top+Sidebar.Height<Avatar.Top),'Topics sidebar overlaps presenter');
+ Check((Sidebar.Width=Avatar.Width) and (Sidebar.Height<Avatar.Height),'Presenter should retain most of the left column');
+ Check(Sidebar.Left+Sidebar.Width<Media.Parent.Left,'Topics sidebar covers the presentation');
  Check(Composer.Visible and frmmain.edPergunta.Enabled,'Input hidden/disabled while waiting');
  Check(Media.Top+Media.Height<Composer.Top,'Media covers composer');
  Check(frmmain.QuestionAnswer.Top+frmmain.QuestionAnswer.Height<Composer.Top,'Answer covers composer');
@@ -39,7 +44,7 @@ begin
  finally Picture.Free;Frame.Free;end;
 end;
 procedure TRunner.Tick(Sender:TObject);
-var K:Word;P:TPoint;UpButton,DownButton:TButton;Character:Char;
+var K:Word;P:TPoint;UpButton,DownButton:TButton;Character:Char;Topics:TListBox;
 begin
  try
   if Phase<>LastTrace then begin LastTrace:=Phase;WriteLn('PHASE ',Phase);Flush(Output);end;
@@ -47,12 +52,15 @@ begin
   case Phase of
    0:if frmmain.WaitingForQuestion then begin
     Check(frmmain.ActivePresentationMedia='assets/one.png','PERGUNTAR lost image');CheckLayout;
-    Check(Button.Parent=frmmain.pnlHeader,'Perguntar is not in header');
-    Check(Button.Left>frmmain.btConfig.Left,'Header controls order');
+    Check((Button.Parent<>nil) and (Button.Parent.Name='PresentationControlBar') and Button.Parent.Visible,'Perguntar is not in the presentation control bar');
+    Check(TControl(frmmain.FindComponent('PresentationStepBar')).Visible,'Presentation chrome hidden');
+    Check(not TControl(frmmain.FindComponent('PresentationCaption')).Visible,'Caption should stay hidden during the presentation');
+    Check(Button.Parent.Top+Button.Parent.Height<=frmmain.edPergunta.Parent.Top,'Control bar covers composer');
     Button.Click;Check(frmmain.WaitingForQuestion,'Perguntar resumed instead of accepting questions');
     Submit('Qual e o codigo da aula?');Phase:=1;
    end;
    1:if frmmain.WaitingForQuestion and (Pos('CODIGO_AULA_927',frmmain.QuestionAnswer.Text)>0) then begin
+    Check(TControl(frmmain.FindComponent('PresentationQuestionCard')).Visible,'Answer is not shown in the audience questions card');
     Check(frmmain.ActivePresentationMedia='assets/one.png','AI answer resumed or changed presentation');
     Submit('IR Detalhes',True);Phase:=2;
    end;
@@ -62,7 +70,7 @@ begin
     Check(not TControl(frmmain.FindComponent('PresentationMediaPanel')).Visible,'MENU still shows media');
     Check(frmmain.BlockMenu.Items.Count=43,'MENU missing blocks');
     Button.Click;Check(not frmmain.BlockMenu.Visible and frmmain.WaitingForQuestion,'Header Perguntar should accept questions');
-    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    (frmmain.FindComponent('PresentationMenuButton') as TChromeButton).Click;
     Check(frmmain.BlockMenu.Visible,'Header Menu should reopen block list');CheckLayout;Capture;
     DownButton:=TButton(frmmain.FindComponent('MenuScrollDown'));UpButton:=TButton(frmmain.FindComponent('MenuScrollUp'));
     DownButton.Click;Check(frmmain.BlockMenu.TopIndex>0,'Bottom button does not scroll');
@@ -79,12 +87,15 @@ begin
     Submit('[CONTINUAR]');Phase:=4;
    end;
    4:if frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia='assets/three.png') then begin
-    Submit('IR {Referencia}');Phase:=20;
+    Topics:=TListBox(frmmain.FindComponent('PresentationTopicsList'));
+    Check(Assigned(Topics) and Topics.Visible and (Topics.Items.Count=43),'Persistent topic list is unavailable');
+    Check(TControl(frmmain.FindComponent('PresentationMediaPanel')).Visible,'Topic list hid the current slide');
+    Topics.ItemIndex:=2;K:=VK_RETURN;Topics.OnKeyDown(Topics,K,[]);Phase:=20;
    end;
    20:if frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia='assets/three.png') then begin
     Submit('IR {Nao existe}');Check(frmmain.WaitingForQuestion,'Invalid block left question mode');
     Check(Pos('Bloco nao encontrado',frmmain.lblStatus.Caption)>0,'Missing invalid block error');
-    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    (frmmain.FindComponent('PresentationMenuButton') as TChromeButton).Click;
     K:=VK_HOME;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
     K:=VK_DOWN;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
     K:=VK_DOWN;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
@@ -162,7 +173,7 @@ begin
   Windows.GetCursorPos(OldCursor);Windows.SetCursorPos(0,0);
   Runner:=TRunner.Create;
   try
-   Runner.Root:=Root;Runner.Button:=TButton(frmmain.FindComponent('PresentationAskButton'));Check(Runner.Button<>nil,'Question button missing');
+   Runner.Root:=Root;Runner.Button:=frmmain.FindComponent('PresentationAskButton') as TChromeButton;Check(Runner.Button<>nil,'Question button missing');
    Runner.Started:=GetTickCount64;Runner.Timer:=TTimer.Create(nil);Runner.Timer.Interval:=30;Runner.Timer.OnTimer:=@Runner.Tick;
    frmmain.StartPresentation(Root+PathDelim+'questions.pva');Application.Run;
   finally Windows.SetCursorPos(OldCursor.X,OldCursor.Y);Runner.Timer.Free;Runner.Free;frmmain.Free;end;

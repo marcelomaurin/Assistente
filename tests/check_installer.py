@@ -17,8 +17,8 @@ import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--build-code',default='0217')
-parser.add_argument('--version',default='0.217')
+parser.add_argument('--build-code',default='0218')
+parser.add_argument('--version',default='0.218')
 parser.add_argument('--no-ui',action='store_true',help='Validate extraction, binaries, configuration preservation and uninstall without opening application windows')
 OPTIONS=parser.parse_args()
 assert len(OPTIONS.build_code)==4 and OPTIONS.build_code.isdigit()
@@ -236,9 +236,9 @@ def main():
                     deadline=time.monotonic()+10
                     while time.monotonic()<deadline:
                         children.clear();user32.EnumChildWindows(windows[0],inspect_question_control,0)
-                        if any('Rolar para baixo' in t for _,_,t in children):break
+                        if any('para baixo' in t.lower() for _,_,t in children):break
                         time.sleep(.1)
-                    assert any('Rolar para cima' in t for _,_,t in children) and any('Rolar para baixo' in t for _,_,t in children),'Installed MENU did not show scrolling controls'
+                    assert any('para cima' in t.lower() for _,_,t in children) and any('para baixo' in t.lower() for _,_,t in children),'Installed MENU did not show scrolling controls'
                     lists=[hwnd for hwnd,kind,_ in children if kind.lower().endswith('listbox')]
                     assert any(user32.SendMessageW(hwnd,0x018B,0,0)>=2 for hwnd in lists),'Installed MENU has no selectable blocks'
                     REPORT.append('PASS: actual installed Assistant opened example, paused at PERGUNTAR and displayed MENU blocks with both scroll controls from typed input')

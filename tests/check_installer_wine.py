@@ -4,15 +4,15 @@ Fresh install, upgrade from the real 0.214 installer (default and customised
 movement catalogs), preservation of a user-created avatar and the installed
 avatar generator. Writes bin/setup_assistente_<code>.validacao.json.
 
-    python tests/check_installer_wine.py --build-code 0217 --previous bin/setup_assistente_0216.exe
+    python tests/check_installer_wine.py --build-code 0218 --previous bin/setup_assistente_0217.exe
 """
 import argparse, hashlib, json, os, shutil, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 p = argparse.ArgumentParser()
-p.add_argument('--build-code', default='0217'); p.add_argument('--version', default='0.217')
-p.add_argument('--previous', type=Path, default=ROOT / 'bin/setup_assistente_0216.exe')
+p.add_argument('--build-code', default='0218'); p.add_argument('--version', default='0.218')
+p.add_argument('--previous', type=Path, default=ROOT / 'bin/setup_assistente_0217.exe')
 A = p.parse_args()
 WINE = os.name != 'nt'
 PREFIX = Path(os.environ.get('WINEPREFIX', Path.home() / '.wine'))
