@@ -7,7 +7,8 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
 | [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
-| [Instalador 0.218](INSTALACAO_0218.md) | Novo modo apresentação (blocos, legenda, controles), lista de Assuntos e Configurações com lista lateral |
+| [Instalador 0.218](INSTALACAO_0218.md) | Novo visual escuro, modo apresentação (barra de blocos, controles, perguntas na área principal), lista de Assuntos e Configurações com lista lateral |
+| [Perguntas durante a apresentação](perguntas-apresentacao.md) | Perguntar, Menu, Continuar, tags `[PERGUNTAR]`, `[MENU]` e `[CONTINUAR]` e o cartão Perguntas da plateia |
 | [Instalador 0.217](INSTALACAO_0217.md) | Arquivo de configuração (exportar/importar) e documentos do RAG em Configurações |
 | [Arquivo de configuração e RAG](configuracao-arquivo-e-rag.md) | Gerar e aplicar a configuração; adicionar documentos que a IA consulta |
 | [Instalador 0.216](INSTALACAO_0216.md) | Perguntar, Menu, Continuar e Encerrar vídeo nas apresentações |
@@ -15,14 +16,14 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Criador Avatar](criador-avatar.md) | Criar, importar e gerar avatares para o Assistente |
 | [Instalador 0.214](INSTALACAO_0214.md) | Assistente, apresentações e prévia do Editor de Movimentos |
 | [Guia de comandos](guia-comandos-assistente.md) | Blocos, eventos futuros, avatar, voz, mídias e comandos de entrada |
-| [Manual do usuário](ManualUsuario/README.md) | Instalação, menus de arquivos, PDF, pesquisa, conversa, voz, avatar, vídeo e integração |
+| [Manual do usuário](ManualUsuario/README.md) | Instalação, tela, modo apresentação, configurações, menus de arquivos, PDF, pesquisa, conversa, voz, avatar, vídeo e integração |
 | [Menus e PDF — 26/10/2026](MENUS_PDF_2026-10-26.md) | Implementação, validação e limites da exportação |
 
 Comece pelo manual se deseja usar o programa. Para desenvolver uma integração, configure o acesso no manual, leia o protocolo e escolha o cliente socket ou DLL. Os dois caminhos exigem o aplicativo em execução e usam a mesma autorização.
 
 ## Versões e documentação anterior
 
-Esta documentação descreve as fontes atuais, incluindo a integração externa v1. O instalador histórico **0.120**, publicado antes dessa integração, contém os avatares v4 e as correções de voz/anatomia; **não contém a nova API DLL/socket**. Para a integração, compile as fontes atuais conforme o [guia do projeto](Projeto/README.md#compilação). Não basta copiar uma DLL para uma instalação antiga.
+Esta documentação descreve as fontes atuais, incluindo a integração externa v1, que também estão no instalador **0.218**. O instalador histórico **0.120**, publicado antes dessa integração, contém os avatares v4 e as correções de voz/anatomia; **não contém a nova API DLL/socket**. Para a integração, instale a 0.218 ou compile as fontes atuais conforme o [guia do projeto](Projeto/README.md#compilação). Não basta copiar uma DLL para uma instalação antiga.
 
 | Referência | Finalidade |
 | --- | --- |

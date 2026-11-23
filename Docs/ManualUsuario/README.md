@@ -10,42 +10,81 @@ O programa precisa de um provedor de IA para produzir respostas. Alguns recursos
 
 ## 2. Instalação e versão correta
 
-Para o pacote publicado anteriormente, use `bin/setup_assistente_0120.exe`. A instalação padrão fica em `%LOCALAPPDATA%\Programs\Assistente`. O [guia da versão 0.120](../INSTALACAO_0120.md) informa o conteúdo, os hashes e os testes daquele instalador.
+Use `bin/setup_assistente_0218.exe`. A instalação é por usuário, em `%LOCALAPPDATA%\Programs\Assistente`, e atualiza versões anteriores mantendo configurações, histórico, avatares pessoais e documentos do RAG. O [guia da versão 0.218](../INSTALACAO_0218.md) traz as novidades, os hashes e os testes do instalador. O arquivo fica no Git LFS; se baixar com poucos bytes, rode `git lfs pull`.
 
-**A integração DLL/socket deste manual pertence às fontes atuais e não está no instalador 0.120.** Até existir um instalador posterior contendo essa API, compile conforme o [guia do projeto](../Projeto/README.md#compilação) e abra `build/professor/assistente.exe`, com a pasta `AVATARES` ao lado. Copiar a DLL para um programa antigo não adiciona a aba Integração externa.
+A 0.218 inclui a integração DLL/socket, os menus de arquivos, PDF e pesquisa, o modo apresentação e as Configurações com lista lateral. O instalador histórico 0.120 é anterior a esses recursos. Para desenvolver, compile conforme o [guia do projeto](../Projeto/README.md#compilação). Copiar a DLL para um programa antigo não adiciona a seção Integração externa.
 
 Feche a versão anterior antes de abrir a nova. Não execute por engano um `assistente.exe` antigo de outra pasta. Preserve `AVATARES`, texturas e dependências distribuídas junto ao executável. A renderização exige driver gráfico/OpenGL funcional; a comunicação HTTPS usa as bibliotecas SSL da arquitetura do aplicativo.
 
 ## 3. Primeiro uso
 
 1. Abra o Assistente e aguarde carregar o personagem.
-2. Clique no botão de configurações.
-3. Na aba **IA / ChatGPT**, selecione provedor e modelo e informe a credencial daquele serviço. Para um endpoint próprio compatível, informe a URL correspondente.
+2. Clique no botão de configurações (engrenagem no canto superior direito).
+3. Na seção **Inteligência artificial**, selecione provedor e modelo e informe a credencial daquele serviço. Para um endpoint próprio compatível, informe a URL correspondente.
 4. Use **Testar Provedor** para conferir a comunicação. Esse teste pode chamar o serviço configurado.
-5. Se desejar ouvir respostas, configure **Output Voice**, teste a voz e marque **Falar respostas recebidas automaticamente**.
-6. Se desejar falar com o programa, configure **Entrada de Voz / Microfone** e teste a captação.
-7. Clique em **Salvar**. **Cancelar** descarta os ajustes não salvos.
+5. Se desejar ouvir respostas, configure **Voz (fala)**, teste a voz e marque **Falar respostas recebidas automaticamente**.
+6. Se desejar falar com o programa, configure **Microfone** e teste a captação.
+7. Clique em **Salvar**. **Cancelar** descarta os ajustes não salvos. O aviso **Alterações não salvas** lembra que há mudanças pendentes.
 8. Digite uma pergunta curta e envie.
 
 Credenciais de IA, Jarvis, transcrição e integração externa têm finalidades diferentes. Não reutilize o token da integração como chave de um provedor. Não compartilhe seu arquivo completo de configuração.
 
 ## 4. Entenda a tela
 
+![Assistente 0.218 em modo apresentação](../images/tela-apresentacao-0218.png)
+
+A janela usa um tema escuro azul, com o ícone e o nome do Assistente no cabeçalho e o estado atual logo abaixo (por exemplo, "Falando...").
+
 | Elemento | Uso |
 | --- | --- |
 | Menu Arquivo | Abrir, fechar e imprimir a apresentação em PDF |
+| Menu Apresentação | Carregar apresentação (.pva), Iniciar do começo e Assuntos |
 | Menu Pesquisar | Localizar palavras no documento e na conversa |
 | Ajuda → Sobre o Assistente | Informações sobre o programa e o desenvolvedor |
+| Engrenagem no cabeçalho | Abre as Configurações |
+| Assuntos, no alto à esquerda | Blocos da apresentação carregada; clique ou Enter abre o bloco |
 | Personagem à esquerda | Apresenta estados e gestos da conversa |
 | Seletor de perfil | Troca a aparência do assistente |
 | Atualizar `↻` | Relê os modelos da pasta `AVATARES` |
 | Botões de aceno/caminhada | Demonstram gestos quando o estado atual permite |
+| Movimento, **Executar** e **Recarregar** | Escolhem e executam um movimento do catálogo |
 | Microfone | Controla a escuta; confira também a configuração de entrada |
-| Conversa à direita | Exibe suas mensagens e respostas |
+| Área à direita | Conversa num cartão branco ou, durante a apresentação, o palco escuro com a mídia |
 | Campo inferior e enviar | Recebe a pergunta por texto |
-| Indicadores/rodapé | Mostram atividade e disponibilidade dos recursos |
+| Rodapé | Mostra o estado do avatar, da IA e da renderização |
 
-Use a roda do mouse sobre o avatar para aproximar/afastar. Dê duplo clique para reenquadrar. Trocar o personagem também restaura o enquadramento. O zoom altera a visualização, não o arquivo do modelo.
+Arraste a divisória entre a coluna da esquerda e a área da direita para ajustar a largura. Use a roda do mouse sobre o avatar para aproximar/afastar. Dê duplo clique para reenquadrar. Trocar o personagem também restaura o enquadramento. O zoom altera a visualização, não o arquivo do modelo.
+
+### Modo apresentação
+
+Abra uma apresentação por **Apresentação → Carregar apresentação (.pva)** ou **Arquivo → Abrir arquivo...** e inicie por **Apresentação → Iniciar do começo**. A área da direita vira um palco escuro:
+
+| Elemento | Uso |
+| --- | --- |
+| Barra de blocos, no topo | Nome da apresentação e blocos em sequência; o atual fica em azul e os já apresentados recebem ✓ |
+| Setas ‹ › e roda do mouse na barra | Rolam a barra quando os blocos não cabem; o bloco atual volta sozinho para a área visível |
+| Cronômetro | Tempo decorrido da apresentação |
+| Lembrete **Encerrar (Esc)** | A tecla Esc encerra a apresentação |
+| Mídia, no centro | Slide, imagem ou vídeo do bloco atual; não há legenda |
+| Barra de progresso | "Bloco N de M" e o estado do roteiro |
+| **Pausar (P)** / **Retomar** | Congela a narração e a mídia; o mesmo botão (ou P) retoma |
+| **Continuar** | Aparece depois de Perguntar ou Menu e retoma o roteiro do ponto em que parou |
+| **Menu** | Mostra os blocos para escolher o próximo |
+| **Perguntar** | Pausa o roteiro e abre a caixa de pergunta |
+
+A caixa de pergunta só aparece no modo de pergunta. Depois da primeira pergunta, o cartão **Perguntas da plateia** ocupa a área principal com as perguntas e as respostas. Ao continuar, o cartão é limpo e a mídia volta. As regras completas, as tags e os exemplos estão em [Perguntas durante a apresentação](../perguntas-apresentacao.md).
+
+### Configurações
+
+As Configurações têm uma lista lateral agrupada:
+
+| Grupo | Seções |
+| --- | --- |
+| Essencial | Inteligência artificial, Voz (fala), Microfone, Avatar 3D |
+| Apresentações | Documentos (RAG) |
+| Avançado | Câmera e Kinect, Integração externa, Jarvis residencial, Banco de dados |
+
+O ponto ao lado de cada seção indica o último teste: verde aprovado, vermelho com falha, cinza para recurso desligado. O topo da seção mostra o título, a descrição e o resultado do último teste. **Salvar** e **Cancelar** ficam no rodapé.
 
 ### Menus suspensos: arquivos, pesquisa e PDF
 
@@ -71,7 +110,7 @@ Slides de um PPTX são convertidos em imagens seguindo as tags de navegação do
 
 Enquanto um seletor ou uma janela de pesquisa está aberto, a escuta fica pausada e a integração informa que o Assistente está ocupado. Ao fechar a janela, a escuta retorna conforme a configuração. Abrir outro documento e exportar PDF ficam indisponíveis durante IA, transcrição ou reprodução. **Fechar arquivo** permanece disponível para interromper uma apresentação carregada.
 
-Esses menus pertencem aos fontes atualizados em **26/10/2026**. É necessário recompilar; o instalador 0.214 anteriormente publicado não recebe essas funções automaticamente.
+Esses menus foram criados em **26/10/2026** e estão no instalador 0.218. O instalador 0.214 não os tem.
 
 ## 5. Conversar por texto
 
@@ -79,21 +118,21 @@ Digite no campo inferior e clique em enviar ou pressione Enter. Aguarde a respos
 
 Evite enviar várias perguntas simultâneas. Se estiver ocupado com IA, transcrição ou fala, termine/cancele a apresentação antes de iniciar outra ação. A conclusão do texto e o final da reprodução da voz podem ocorrer em momentos diferentes.
 
-O chat mantém memória local. A configuração usa o diretório de dados do aplicativo; o histórico legado é salvo junto ao executável. Quando iniciado com `ASSISTENTE_CONFIG_DIR`, configuração e histórico são isolados nesse diretório. Faça backup antes de trocar de computador ou remover dados. A reinstalação do pacote 0.120 foi verificada preservando configuração/histórico; isso não substitui um backup próprio.
+O chat mantém memória local. A configuração usa o diretório de dados do aplicativo; o histórico legado é salvo junto ao executável. Quando iniciado com `ASSISTENTE_CONFIG_DIR`, configuração e histórico são isolados nesse diretório. Faça backup antes de trocar de computador ou remover dados. A atualização pelo instalador preserva configuração e histórico; isso não substitui um backup próprio.
 
 ## 6. Ouvir as respostas
 
-Em **Output Voice**, escolha o mecanismo de síntese, voz e, quando aplicável, modelo. Ajuste volume e velocidade e use o teste de voz. Marque fala automática para que respostas também sejam narradas.
+Em **Voz (fala)**, escolha o mecanismo de síntese, voz e, quando aplicável, modelo. Ajuste volume e velocidade e use o teste de voz. Marque fala automática para que respostas também sejam narradas.
 
 Serviços remotos precisam de endpoint/credencial válidos; vozes locais dependem das vozes instaladas no Windows. Se não houver áudio, confirme primeiro o dispositivo e o volume do Windows, depois execute o teste de síntese. Uma falha de voz não comprova falha da IA: confira se o texto apareceu no chat.
 
-Durante preparação do áudio o avatar pode pensar; durante reprodução, fala. A mandíbula, lábios e face acompanham o estado de fala por animação. A versão atual **não sincroniza fonemas individuais** com o conteúdo narrado. O ajuste de piscar/fala por fonemas pode aparecer desabilitado na aba Avatar 3D: os clipes do modelo controlam essas animações.
+Durante preparação do áudio o avatar pode pensar; durante reprodução, fala. A mandíbula, lábios e face acompanham o estado de fala por animação. A versão atual **não sincroniza fonemas individuais** com o conteúdo narrado. O ajuste de piscar/fala por fonemas pode aparecer desabilitado na seção Avatar 3D: os clipes do modelo controlam essas animações.
 
 Pressione **Esc** para cancelar a apresentação em andamento. Esse atalho trata a apresentação; para cancelamento do trabalho de agente por uma ferramenta externa, use a ação `cancel` da API.
 
 ## 7. Usar o microfone
 
-Em **Entrada de Voz / Microfone**:
+Em **Microfone**:
 
 1. Escolha o mecanismo de reconhecimento e o idioma.
 2. Atualize a lista e selecione o microfone desejado.
@@ -117,9 +156,9 @@ A IA também pode produzir tags como `[sorriso]`, `[aplausos]` e `[levantar mao 
 
 ## 9. Câmera e Kinect
 
-Em **Vídeo**, habilite câmera, Kinect ou ambos. As seleções são independentes. Atualize dispositivos, escolha cada equipamento e use **Testar dispositivo** antes de salvar.
+Em **Câmera e Kinect**, habilite câmera, Kinect ou ambos. As seleções são independentes. Atualize dispositivos, escolha cada equipamento e use **Testar dispositivo** antes de salvar.
 
-A câmera fornece imagem RGB local usando drivers VFW; nem toda câmera disponível em outros programas aparece nessa interface. Kinect v1/Xbox 360 exige SDK local e hardware compatível para profundidade/esqueleto/gestos. Não há servidor de vídeo por IP nessa aba.
+A câmera fornece imagem RGB local usando drivers VFW; nem toda câmera disponível em outros programas aparece nessa interface. Kinect v1/Xbox 360 exige SDK local e hardware compatível para profundidade/esqueleto/gestos. Não há servidor de vídeo por IP nessa seção.
 
 Com vários equipamentos, selecione explicitamente o desejado. Nomes/índices podem mudar após trocar portas ou drivers. Desmarcar Kinect preserva seus ajustes e desliga os recursos dele, mesmo com câmera habilitada. Uma falha em um equipamento não impede a tentativa de iniciar o outro.
 
@@ -127,9 +166,9 @@ O teste de software sem Kinect físico não comprova captura simultânea real. C
 
 ## 10. Jarvis e banco de dados
 
-**JARVIS Residencial** configura URL, chave e modo do servidor Jarvis existente. Use o teste próprio antes de solicitar ações no ambiente. Autorize somente um servidor conhecido; ações do agente podem interagir com os dispositivos configurados.
+**Jarvis residencial** configura URL, chave e modo do servidor Jarvis existente. Use o teste próprio antes de solicitar ações no ambiente. Autorize somente um servidor conhecido; ações do agente podem interagir com os dispositivos configurados.
 
-**Banco de Dados** preserva campos MySQL/PostgreSQL. Preencher esses campos não cria um banco nem implica que todas as respostas estejam consultando esses dados. A utilização depende dos componentes e serviços associados ao projeto.
+**Banco de dados** preserva campos MySQL/PostgreSQL. Preencher esses campos não cria um banco nem implica que todas as respostas estejam consultando esses dados. A utilização depende dos componentes e serviços associados ao projeto.
 
 ## Integração com outros programas
 
@@ -144,7 +183,7 @@ Use a versão atual compilada com a nova API:
 7. Salve. Reabra a configuração e confira o estado exibido: ativo, desativado ou motivo de falha ao iniciar.
 8. Configure na ferramenta cliente endereço, porta e token. Mantenha o Assistente aberto.
 
-Na janela estreita de configurações, use as setas da barra de abas para chegar a **Integração externa**. Role o conteúdo dessa aba para ver todos os campos e o estado do serviço.
+Na lista lateral das Configurações, **Integração externa** fica no grupo **Avançado**. Role o conteúdo da seção para ver todos os campos e o estado do serviço.
 
 Para outro computador, o endereço de escuta precisa corresponder à interface de rede do Assistente ou ser `0.0.0.0`. Inclua o IP real da ferramenta na lista, confira o firewall e use rede privada/VPN confiável. O token autentica, mas este socket **não cifra o tráfego**. Não exponha a porta diretamente na Internet.
 
@@ -160,14 +199,14 @@ O protótipo antigo de texto bruto na porta 18765 não é iniciado nessa versão
 
 | Sintoma | O que conferir |
 | --- | --- |
-| Não aparece a aba Integração externa | Abra o executável compilado das fontes atuais; o setup 0.120 é anterior à API |
+| Não aparece a seção Integração externa | Instale a 0.218 ou abra o executável compilado das fontes atuais; o setup 0.120 é anterior à API |
 | O avatar aparece, mas não responde | Provedor, modelo, URL e credencial; teste o provedor e a conexão |
 | Texto funciona, mas não há voz | Fala automática, volume/dispositivo de saída e teste de síntese |
 | Boca não se move | Use modelos v4 correspondentes ao programa e confira se há reprodução real de áudio; espera/preparação usa outro estado |
 | Dedos/olhos não se movem em modelo próprio | Confirme esqueleto e clipes; não basta o nome do arquivo ser igual ao modelo incluído |
 | Microfone não transcreve | Permissão do Windows, mute, dispositivo correto, teste de captação e serviço de reconhecimento |
 | Câmera não aparece | Atualize dispositivos e confira compatibilidade VFW; confirme após trocar portas/drivers |
-| Integração não inicia | Token com 64 hexadecimais, lista de IPs válida, endereço local e porta livre; reabra a aba para ler o estado |
+| Integração não inicia | Token com 64 hexadecimais, lista de IPs válida, endereço local e porta livre; reabra a seção para ler o estado |
 | Cliente recebe `unauthorized` | Token atual exato; em socket envie em cada pedido, em DLL no argumento próprio |
 | Cliente é desconectado imediatamente | IP real pode estar fora da lista; token correto não dispensa IP permitido |
 | Cliente recebe `busy` | Aguarde IA/fala/transcrição ou feche a configuração; consulte o trabalho em andamento |
