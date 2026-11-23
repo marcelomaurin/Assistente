@@ -1,6 +1,6 @@
 {
   "version": "0.218",
-  "installer_sha256": "ea1c354a3ed097fc8dc254292b184ce2ca54a0831403e8b8becc98f086aba697",
+  "installer_sha256": "39c8f8104c121991882cb3ac9126734c44c5c4f6c6bc2377b50573d6d721b848",
   "result": "PASS",
   "environment": "Windows native; isolated verification installation",
   "limitations": [
