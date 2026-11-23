@@ -663,7 +663,9 @@ begin
   lblAssistente.Visible:=not Presenting;
   FStepBar.Visible:=Presenting;FSpokenCaption.Visible:=False;FControlBar.Visible:=Presenting;
   QuestionMode:=PresentationQuestionMode;
-  QuestionShown:=Presenting and FQuestionMemo.Visible;
+  { The card covers the slide only once there is a question or answer to read;
+    while the pause is still empty the current slide stays on screen. }
+  QuestionShown:=Presenting and FQuestionMemo.Visible and (Trim(FQuestionMemo.Text)<>'');
   FQuestionCard.Visible:=QuestionShown;
   FInputCard.Visible:=not Presenting or QuestionMode;
   ComposerWidth:=ChatWidth-36;
@@ -1394,7 +1396,7 @@ begin
   if P = '' then begin RetomarEscuta; Exit; end;
   if Length(FParkedPresentations)>0 then begin
     if PresentationInput(P) then Exit;
-    FAnsweringQuestion:=True;FQuestionMemo.Visible:=True;LayoutProfessor(nil);FQuestionMemo.Lines.Add('Você: '+P);
+    FAnsweringQuestion:=True;FQuestionMemo.Visible:=True;FQuestionMemo.Lines.Add('Você: '+P);LayoutProfessor(nil);
   end else if ExecuteDocumentCommand(P) then Exit;
   Script:=ParseAvatarScript(P);
   if (Script.CommandCount>0) and (Trim(Script.PlainText)='') and
@@ -1706,7 +1708,9 @@ procedure Tfrmmain.ResumePresentation;
 var N:Integer;AtTag:Boolean;
 begin
   N:=High(FParkedPresentations);if N<0 then raise Exception.Create('Nao existe apresentacao pausada.');
-  HideBlockMenu;FQuestionMemo.Visible:=False;LayoutProfessor(nil);
+  { Each pause starts with the slide on screen; the questions of the
+    previous pause are not carried over. }
+  HideBlockMenu;FQuestionMemo.Visible:=False;FQuestionMemo.Clear;LayoutProfessor(nil);
   PausarEscuta;AtTag:=FParkedPresentations[N].AtTag;FSpeechJob:=FParkedPresentations[N].Job;
   FYouTubeCommandPending:=FParkedPresentations[N].YouTubePending;
   FCurrentBlock:=FParkedPresentations[N].Block;RefreshStepBar;SetLength(FParkedPresentations,N);LayoutProfessor(nil);

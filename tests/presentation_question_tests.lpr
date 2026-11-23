@@ -55,12 +55,12 @@ begin
     Check((Button.Parent<>nil) and (Button.Parent.Name='PresentationControlBar') and Button.Parent.Visible,'Perguntar is not in the presentation control bar');
     Check(TControl(frmmain.FindComponent('PresentationStepBar')).Visible,'Presentation chrome hidden');
     Check(not TControl(frmmain.FindComponent('PresentationCaption')).Visible,'Caption should stay hidden during the presentation');
-    Check(TControl(frmmain.FindComponent('PresentationQuestionCard')).Visible,'Audience questions card missing while paused');
     Check(Button.Parent.Top+Button.Parent.Height<=frmmain.edPergunta.Parent.Top,'Control bar covers composer');
     Button.Click;Check(frmmain.WaitingForQuestion,'Perguntar resumed instead of accepting questions');
     Submit('Qual e o codigo da aula?');Phase:=1;
    end;
    1:if frmmain.WaitingForQuestion and (Pos('CODIGO_AULA_927',frmmain.QuestionAnswer.Text)>0) then begin
+    Check(TControl(frmmain.FindComponent('PresentationQuestionCard')).Visible,'Answer is not shown in the audience questions card');
     Check(frmmain.ActivePresentationMedia='assets/one.png','AI answer resumed or changed presentation');
     Submit('IR Detalhes',True);Phase:=2;
    end;
