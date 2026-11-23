@@ -3,7 +3,7 @@ unit presentation_chrome;
   Both controls only paint state given by the form; they own no flow logic. }
 {$mode objfpc}{$H+}
 interface
-uses Classes, SysUtils, Controls, Graphics, Math, LCLType;
+uses Classes, SysUtils, Types, Controls, Graphics, Math, LCLType;
 
 const
   ChromeDark = $00261610;      // RGB 16,22,38
@@ -37,16 +37,26 @@ type
     FSteps: TStringList;
     FCurrent: Integer;
     FTitle, FSubtitle, FChips: string;
+    { Horizontal scroll of the step strip, in pixels. }
+    FScroll, FContentWidth, FAreaLeft, FAreaRight: Integer;
+    FFollowCurrent: Boolean;
+    FLeftArrow, FRightArrow: TRect;
     procedure SetCurrent(Value: Integer);
+    procedure ScrollSteps(Delta: Integer);
+    function StepWidth(I: Integer): Integer;
     procedure SetTitle(const Value: string);
     procedure SetSubtitle(const Value: string);
     procedure SetChips(const Value: string);
   protected
     procedure Paint; override;
+    function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean; override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure SetSteps(Values: TStrings);
+    { Scroll position of the steps (0 = first block at the left). }
+    property ScrollPos: Integer read FScroll;
     function StepCount: Integer;
     property Current: Integer read FCurrent write SetCurrent;
     property Title: string read FTitle write SetTitle;
@@ -174,6 +184,7 @@ begin
   FSteps.Clear;
   if Values <> nil then FSteps.AddStrings(Values);
   if FCurrent >= FSteps.Count then FCurrent := FSteps.Count - 1;
+  FFollowCurrent := True;
   Invalidate;
 end;
 
@@ -186,7 +197,38 @@ procedure TPresentationStepBar.SetCurrent(Value: Integer);
 begin
   if Value = FCurrent then Exit;
   FCurrent := Value;
+  FFollowCurrent := True; // bring the new current block into view on next paint
   Invalidate;
+end;
+
+procedure TPresentationStepBar.ScrollSteps(Delta: Integer);
+begin
+  FFollowCurrent := False;
+  FScroll := EnsureRange(FScroll + Delta, 0, Max(0, FContentWidth - (FAreaRight - FAreaLeft)));
+  Invalidate;
+end;
+
+function TPresentationStepBar.DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean;
+begin
+  Result := True;
+  ScrollSteps(-WheelDelta div 2);
+end;
+
+procedure TPresentationStepBar.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  inherited MouseDown(Button, Shift, X, Y);
+  if Button <> mbLeft then Exit;
+  if PtInRect(FLeftArrow, Point(X, Y)) then ScrollSteps(-Max(120, (FAreaRight - FAreaLeft) div 2))
+  else if PtInRect(FRightArrow, Point(X, Y)) then ScrollSteps(Max(120, (FAreaRight - FAreaLeft) div 2));
+end;
+
+function TPresentationStepBar.StepWidth(I: Integer): Integer;
+var S: string;
+begin
+  S := FSteps[I];
+  if I < FCurrent then S := '✓ ' + S else if I = FCurrent then S := '● ' + S;
+  if I = FCurrent then Canvas.Font.Style := [fsBold] else Canvas.Font.Style := [];
+  Result := Canvas.TextWidth(FitText(Canvas, S, 220)) + 24;
 end;
 
 procedure TPresentationStepBar.SetTitle(const Value: string);
@@ -212,7 +254,7 @@ end;
 
 procedure TPresentationStepBar.Paint;
 const PadX = 12; Gap = 18; PillH = 28;
-var X, Y, I, First, W, TitleW, Right, TH: Integer; R: TRect; S: string; Parts: TStringList;
+var X, Y, I, W, TitleW, Right, TH: Integer; R: TRect; S: string; Parts: TStringList; Bmp: TBitmap;
 begin
   Canvas.Brush.Color := Color;
   Canvas.FillRect(ClientRect);
@@ -258,47 +300,77 @@ begin
     Inc(X, TitleW + 24);
   end;
   Canvas.Font.Style := [];
+  FLeftArrow := Rect(0, 0, 0, 0); FRightArrow := Rect(0, 0, 0, 0);
   if FSteps.Count = 0 then Exit;
-  { Keep the current block and the previous one in view; later blocks are
-    drawn while space remains and the rest is summarized as "+N". }
-  First := Max(0, FCurrent - 1);
-  if First > 0 then begin
-    Canvas.Brush.Style := bsClear;
-    Canvas.Font.Color := ChromeMuted;
-    S := '… ';
-    Canvas.TextOut(X, (Height - Canvas.TextHeight(S)) div 2, S);
-    Inc(X, Canvas.TextWidth(S));
+  { All blocks sit on one strip that scrolls horizontally (mouse wheel or
+    the arrows); the current block is scrolled into view when it changes. }
+  FAreaLeft := X; FAreaRight := Right;
+  FContentWidth := 0;
+  for I := 0 to FSteps.Count - 1 do Inc(FContentWidth, StepWidth(I) + Gap);
+  Dec(FContentWidth, Gap);
+  if FContentWidth > FAreaRight - FAreaLeft then begin
+    FLeftArrow := Rect(FAreaLeft, Y, FAreaLeft + 26, Y + PillH);
+    FRightArrow := Rect(FAreaRight - 26, Y, FAreaRight, Y + PillH);
+    FAreaLeft := FLeftArrow.Right + 6; FAreaRight := FRightArrow.Left - 6;
   end;
-  for I := First to FSteps.Count - 1 do begin
-    S := FSteps[I];
-    if I < FCurrent then S := '✓ ' + S else if I = FCurrent then S := '● ' + S;
-    if I = FCurrent then Canvas.Font.Style := [fsBold] else Canvas.Font.Style := [];
-    S := FitText(Canvas, S, 220);
-    W := Canvas.TextWidth(S) + 2 * PadX;
-    if (I > FCurrent) and (X + W + 40 > Right) then begin
+  if FFollowCurrent and (FCurrent >= 0) and (FCurrent < FSteps.Count) then begin
+    W := 0;
+    for I := 0 to FCurrent - 1 do Inc(W, StepWidth(I) + Gap);
+    { Show the previous block too, so the strip reads as a path. }
+    if FCurrent > 0 then Dec(W, StepWidth(FCurrent - 1) + Gap);
+    FScroll := W;
+    FFollowCurrent := False;
+  end;
+  FScroll := EnsureRange(FScroll, 0, Max(0, FContentWidth - (FAreaRight - FAreaLeft)));
+  Bmp := TBitmap.Create;
+  try
+    Bmp.SetSize(Max(1, FAreaRight - FAreaLeft), Height);
+    Bmp.Canvas.Brush.Color := Color;
+    Bmp.Canvas.FillRect(0, 0, Bmp.Width, Bmp.Height);
+    Bmp.Canvas.Font.Assign(Canvas.Font);
+    X := -FScroll;
+    for I := 0 to FSteps.Count - 1 do begin
+      S := FSteps[I];
+      if I < FCurrent then S := '✓ ' + S else if I = FCurrent then S := '● ' + S;
+      if I = FCurrent then Bmp.Canvas.Font.Style := [fsBold] else Bmp.Canvas.Font.Style := [];
+      S := FitText(Bmp.Canvas, S, 220);
+      W := Bmp.Canvas.TextWidth(S) + 2 * PadX;
+      if (X + W >= 0) and (X <= Bmp.Width) then begin
+        R := Rect(X, Y, X + W, Y + PillH);
+        Bmp.Canvas.Brush.Style := bsSolid;
+        if I = FCurrent then begin
+          Bmp.Canvas.Brush.Color := ChromeAccent; Bmp.Canvas.Pen.Color := ChromeAccent; Bmp.Canvas.Font.Color := clWhite;
+        end else begin
+          Bmp.Canvas.Brush.Color := ChromeDarkPanel; Bmp.Canvas.Pen.Color := ChromeDarkPanel;
+          if I < FCurrent then Bmp.Canvas.Font.Color := ChromeDone else Bmp.Canvas.Font.Color := ChromeMuted;
+        end;
+        Bmp.Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, PillH, PillH);
+        Bmp.Canvas.Brush.Style := bsClear;
+        Bmp.Canvas.TextOut(R.Left + PadX, R.Top + (PillH - Bmp.Canvas.TextHeight(S)) div 2, S);
+      end;
+      Inc(X, W + Gap);
+      if (I < FSteps.Count - 1) and (X - Gap + 5 < Bmp.Width) then begin
+        Bmp.Canvas.Brush.Style := bsClear;
+        Bmp.Canvas.Font.Style := [];
+        Bmp.Canvas.Font.Color := ChromeMuted;
+        Bmp.Canvas.TextOut(X - Gap + 5, (Height - Bmp.Canvas.TextHeight('›')) div 2, '›');
+      end;
+    end;
+    Canvas.Draw(FAreaLeft, 0, Bmp);
+  finally Bmp.Free; end;
+  { Scroll arrows, dimmed at either end. }
+  if not IsRectEmpty(FLeftArrow) then begin
+    Canvas.Font.Style := [fsBold];
+    for I := 0 to 1 do begin
+      if I = 0 then R := FLeftArrow else R := FRightArrow;
+      Canvas.Brush.Style := bsSolid; Canvas.Brush.Color := ChromeDarkPanel; Canvas.Pen.Color := ChromeBorderDark;
+      Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, PillH, PillH);
+      if ((I = 0) and (FScroll > 0)) or ((I = 1) and (FScroll < FContentWidth - (FAreaRight - FAreaLeft))) then
+        Canvas.Font.Color := clWhite else Canvas.Font.Color := ChromeBorderDark;
+      if I = 0 then S := '‹' else S := '›';
       Canvas.Brush.Style := bsClear;
-      Canvas.Font.Style := [];
-      Canvas.Font.Color := ChromeMuted;
-      S := '+' + IntToStr(FSteps.Count - I);
-      Canvas.TextOut(X, (Height - Canvas.TextHeight(S)) div 2, S);
-      Break;
-    end;
-    R := Rect(X, Y, X + W, Y + PillH);
-    Canvas.Brush.Style := bsSolid;
-    if I = FCurrent then begin
-      Canvas.Brush.Color := ChromeAccent; Canvas.Pen.Color := ChromeAccent; Canvas.Font.Color := clWhite;
-    end else begin
-      Canvas.Brush.Color := ChromeDarkPanel; Canvas.Pen.Color := ChromeDarkPanel;
-      if I < FCurrent then Canvas.Font.Color := ChromeDone else Canvas.Font.Color := ChromeMuted;
-    end;
-    Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, PillH, PillH);
-    Canvas.Brush.Style := bsClear;
-    Canvas.TextOut(R.Left + PadX, R.Top + (PillH - Canvas.TextHeight(S)) div 2, S);
-    Inc(X, W + Gap);
-    if I < FSteps.Count - 1 then begin
-      Canvas.Font.Style := [];
-      Canvas.Font.Color := ChromeMuted;
-      Canvas.TextOut(X - Gap + 5, (Height - Canvas.TextHeight('›')) div 2, '›');
+      Canvas.TextOut(R.Left + (R.Right - R.Left - Canvas.TextWidth(S)) div 2,
+        R.Top + (PillH - Canvas.TextHeight(S)) div 2, S);
     end;
   end;
 end;
