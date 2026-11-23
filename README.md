@@ -1,5 +1,7 @@
 # Assistente
-Assistente de IA , criado para responder perguntas da FATEC
+Assistente de IA, criado para responder perguntas da FATEC e conduzir apresentações com um professor virtual 3D.
+
+![Assistente 0.218 em modo apresentação: lista de Assuntos e avatar à esquerda, barra de blocos, slide, progresso e botões Pausar, Menu e Perguntar à direita](Docs/images/tela-apresentacao-0218.png)
 
 ## Documentação e integração
 
@@ -11,8 +13,8 @@ Consulte o [índice de documentação](Docs/README.md), o
 
 As fontes atuais oferecem API JSON v1 com token e lista de IPs permitidos,
 além de DLLs cliente Win32/Win64 em `bin/integration`. Requerem o aplicativo
-compilado dessas fontes e a opção Integração externa habilitada.
-O instalador histórico 0.120 abaixo é anterior à API e não inclui esse servidor.
+compilado dessas fontes, como o instalador 0.218, e a opção Integração externa habilitada.
+O instalador histórico 0.120 é anterior à API e não inclui esse servidor.
 
 ### Menus de arquivos, pesquisa e PDF
 
@@ -21,13 +23,21 @@ abrir (`Ctrl+O`), fechar (`Ctrl+W`), imprimir apresentação em PDF (`Ctrl+P`),
 localizar texto (`Ctrl+F`, `F3` para avançar) e Sobre. O PDF segue o roteiro executado,
 incluindo textos, imagens e chamadas de blocos. Veja os detalhes e os requisitos
 para PPTX no [manual](Docs/ManualUsuario/README.md#menus-suspensos-arquivos-pesquisa-e-pdf).
-Essas funções exigem recompilar; não foram acrescentadas ao instalador 0.214 existente.
+Essas funções estão no instalador 0.218; o instalador 0.214 não as tem.
 
 ## Instalação Windows
 
-Execute [setup_assistente_0218.exe](bin/setup_assistente_0218.exe). A 0.218 traz o novo modo apresentação (barra de blocos, legenda, barra de controles e painel de perguntas), a lista de Assuntos com a divisória ajustável, o menu Apresentação e as Configurações com lista lateral. Veja o [guia da 0.218](Docs/INSTALACAO_0218.md).
+Execute [setup_assistente_0218.exe](bin/setup_assistente_0218.exe). Ele atualiza a 0.217 mantendo configurações, histórico, avatares e documentos do RAG. O arquivo fica no Git LFS; se baixar com poucos bytes, rode `git lfs pull`.
 
-Os guias e manifestos das versões anteriores continuam em `Docs/` e `bin/`. Para compilar a partir das fontes, siga o [guia do projeto](Docs/Projeto/README.md#compilação).
+Novidades da 0.218:
+
+- **Novo visual**: tema escuro azul em toda a janela, inclusive na tela inicial, ícone do Assistente no cabeçalho e na barra de tarefas, e botões coloridos.
+- **Modo apresentação**: barra de blocos com rolagem horizontal, cronômetro e lembrete de Encerrar (Esc); mídia sem legenda; barra de progresso com Pausar (P), Menu e Perguntar.
+- **Perguntas**: a caixa de pergunta aparece só no modo de pergunta. Depois da primeira pergunta, o cartão **Perguntas da plateia** ocupa a área principal com as respostas.
+- **Assuntos**: lista dos blocos acima do avatar, divisória ajustável e menu Apresentação.
+- **Configurações**: lista lateral agrupada em Essencial, Apresentações e Avançado, com status de cada seção.
+
+Veja o [guia da 0.218](Docs/INSTALACAO_0218.md) e o [manual do usuário](Docs/ManualUsuario/README.md). Os guias e manifestos das versões anteriores continuam em `Docs/` e `bin/`. Para compilar a partir das fontes, siga o [guia do projeto](Docs/Projeto/README.md#compilação).
 
 ## Professor Virtual 3D
 
