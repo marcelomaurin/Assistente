@@ -115,6 +115,7 @@ type
     FControlBar:TPanel;FPauseButton:TChromeButton;FProgressLabel:TPresentationProgress;
     FQuestionCard,FQuestionHead:TPanel;FQuestionTitle,FQuestionSub:TLabel;
     FCurrentBlock:string;FPresentationStarted:QWord;FPresentationThemed:Boolean;
+    FAppLogo:TImage;
     procedure ApplyPresentationTheme(Presenting: Boolean);
     procedure LayoutControlBar;
     procedure RefreshStepBar;
@@ -323,7 +324,24 @@ begin
   pnlEntrada.Color := ChromeDark;
   pnlHeader.Visible:=True;pnlHeader.Height:=72;pnlHeader.Color:=ChromeDark;
   lblTitulo.Caption:='Assistente';lblTitulo.Font.Size:=20;lblTitulo.Font.Color:=clWhite;
-  lblTitulo.SetBounds(24,10,280,32);lblStatus.SetBounds(26,46,600,20);lblStatus.Font.Color:=ChromeMuted;
+  { Application icon (MAINICON from assistente.ico) beside the title, and
+    on the window title bar and taskbar. }
+  FAppLogo:=TImage.Create(Self);FAppLogo.Name:='AppLogo';FAppLogo.Parent:=pnlHeader;
+  FAppLogo.SetBounds(22,12,48,48);FAppLogo.Stretch:=True;FAppLogo.Proportional:=True;FAppLogo.Center:=True;
+  try
+    FAppLogo.Picture.Icon.LoadFromResourceName(HInstance,'MAINICON');
+    FAppLogo.Picture.Icon.Current:=FAppLogo.Picture.Icon.GetBestIndexForSize(Size(48,48));
+    Icon.LoadFromResourceName(HInstance,'MAINICON');
+    if Application.Icon.Empty then Application.Icon.Assign(Icon);
+  except
+    FAppLogo.Visible:=False; // no icon resource in test builds
+  end;
+  if FAppLogo.Visible then begin
+    lblTitulo.SetBounds(82,10,280,32);lblStatus.SetBounds(84,46,600,20);
+  end else begin
+    lblTitulo.SetBounds(24,10,280,32);lblStatus.SetBounds(26,46,600,20);
+  end;
+  lblStatus.Font.Color:=ChromeMuted;
   memResposta.Visible := False;
   btEnviar.Visible := False;
   FAvatarCard := TRoundedCard.Create(Self);
@@ -681,7 +699,7 @@ begin
   edPergunta.SetBounds(14, 15, ComposerWidth-64, 26);
   FSendButton.Parent:=FInputCard;FSendButton.SetBounds(ComposerWidth-40,12,30,30);
   btConfig.SetBounds(W-56,20,32,32);
-  lblTitulo.Width:=Max(100,W-120);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-120);
+  lblTitulo.Width:=Max(100,W-lblTitulo.Left-96);lblStatus.AutoSize:=False;lblStatus.Width:=Max(100,W-lblStatus.Left-96);
   CardWidth := FAvatarCard.Width-8;
   FProfileCombo.SetBounds(10,9,CardWidth-88,28);
   FReloadButton.SetBounds(CardWidth-76,9,20,25);
