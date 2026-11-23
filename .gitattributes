@@ -25,3 +25,4 @@ bin/setup_assistente_0214.exe filter=lfs diff=lfs merge=lfs -text
 bin/setup_assistente_0215.exe filter=lfs diff=lfs merge=lfs -text
 bin/setup_assistente_0216.exe filter=lfs diff=lfs merge=lfs -text
 bin/setup_assistente_0217.exe filter=lfs diff=lfs merge=lfs -text
+bin/setup_assistente_0218.exe filter=lfs diff=lfs merge=lfs -text
