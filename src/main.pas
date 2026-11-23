@@ -103,8 +103,8 @@ type
     FYouTubeCommandPending:Boolean;
     FParkedPresentations:array of TParkedPresentation;
     FAnsweringQuestion,FResumePresentation:Boolean;
-    FAskButton:TButton;
-    FHeaderMenu,FHeaderAsk,FStopVideo:TButton;
+    FAskButton:TChromeButton;
+    FHeaderMenu,FHeaderAsk:TChromeButton;FStopVideo:TButton;
     FBlockMenu:TListBox;FQuestionMemo:TMemo;
     FTopicsCard, FTopicsBody, FMenuPanel, FMenuScrollBar: TPanel;
     FTopicsList: TListBox;
@@ -112,8 +112,10 @@ type
     FMenuUp,FMenuDown:TButton;FMenuProgress:TProgressBar;
     FMenuHoverIndex:Integer;FMenuHoverSince:QWord;FMenuKeyboard:Boolean;
     FStepBar:TPresentationStepBar;FSpokenCaption:TPresentationCaption;
-    FControlBar:TPanel;FPauseButton:TButton;FProgressLabel,FQuestionTitle:TLabel;
-    FCurrentBlock:string;
+    FControlBar:TPanel;FPauseButton:TChromeButton;FProgressLabel:TPresentationProgress;
+    FQuestionCard,FQuestionHead:TPanel;FQuestionTitle,FQuestionSub:TLabel;
+    FCurrentBlock:string;FPresentationStarted:QWord;FPresentationThemed:Boolean;
+    procedure ApplyPresentationTheme(Presenting: Boolean);
     procedure LayoutControlBar;
     procedure RefreshStepBar;
     procedure UpdatePresentationChrome;
@@ -372,11 +374,12 @@ begin
   FControlBar:=TPanel.Create(Self);FControlBar.Name:='PresentationControlBar';FControlBar.Caption:='';
   FControlBar.Parent:=FChatPanel;FControlBar.BevelOuter:=bvNone;FControlBar.Color:=ChromeDarkPanel;
   FControlBar.ParentBackground:=False;FControlBar.Visible:=False;
-  FProgressLabel:=TLabel.Create(Self);FProgressLabel.Name:='PresentationProgressLabel';
-  FProgressLabel.Parent:=FControlBar;FProgressLabel.AutoSize:=False;FProgressLabel.Layout:=tlCenter;
-  FProgressLabel.Font.Color:=ChromeMuted;FProgressLabel.Caption:='';
-  FPauseButton:=TButton.Create(Self);FPauseButton.Name:='PresentationPauseButton';
-  FPauseButton.Parent:=FControlBar;FPauseButton.Caption:='Pausar (P)';FPauseButton.OnClick:=@PauseButtonClick;
+  FProgressLabel:=TPresentationProgress.Create(Self);FProgressLabel.Name:='PresentationProgressLabel';
+  FProgressLabel.Parent:=FControlBar;FProgressLabel.Color:=ChromeDarkPanel;
+  FProgressLabel.Font.Name:='Segoe UI';FProgressLabel.Font.Height:=-12;
+  FPauseButton:=TChromeButton.Create(Self);FPauseButton.Name:='PresentationPauseButton';
+  FPauseButton.Parent:=FControlBar;FPauseButton.Caption:='Pausar';FPauseButton.Icon:='❚❚';FPauseButton.KeyHint:='P';
+  FPauseButton.Font.Name:='Segoe UI';FPauseButton.Font.Height:=-14;FPauseButton.OnClick:=@PauseButtonClick;
   FPauseButton.Hint:='Pausar ou retomar a narração (tecla P)';FPauseButton.ShowHint:=True;
   FPresentationPanel := TPanel.Create(Self);
   FPresentationPanel.Name := 'PresentationMediaPanel';
@@ -394,15 +397,19 @@ begin
   FChat.Font.Name := 'Segoe UI';
   FChat.Font.Height := -13;
   FChat.AddMessage('Olá! Como posso ajudar?', False);
-  FAskButton:=TButton.Create(Self);FAskButton.Name:='AskPresentationButton';
-  FAskButton.Parent:=FControlBar;FAskButton.Caption:='Continuar';FAskButton.Visible:=False;
+  FAskButton:=TChromeButton.Create(Self);FAskButton.Name:='AskPresentationButton';
+  FAskButton.Parent:=FControlBar;FAskButton.Caption:='Continuar';FAskButton.Icon:='▶';FAskButton.Visible:=False;
+  FAskButton.SetStyle(ChromeAccent,clWhite,ChromeAccent);FAskButton.Font.Name:='Segoe UI';FAskButton.Font.Height:=-14;
   FAskButton.Hint:='Retomar a apresentação de onde parou';FAskButton.ShowHint:=True;
   FAskButton.OnClick:=@AskPresentation;
-  FHeaderMenu:=TButton.Create(Self);FHeaderMenu.Name:='PresentationMenuButton';
-  FHeaderMenu.Parent:=FControlBar;FHeaderMenu.Caption:='Menu';FHeaderMenu.OnClick:=@HeaderMenuClick;
+  FHeaderMenu:=TChromeButton.Create(Self);FHeaderMenu.Name:='PresentationMenuButton';
+  FHeaderMenu.Parent:=FControlBar;FHeaderMenu.Caption:='Menu';FHeaderMenu.Icon:='☰';
+  FHeaderMenu.Font.Name:='Segoe UI';FHeaderMenu.Font.Height:=-14;FHeaderMenu.OnClick:=@HeaderMenuClick;
   FHeaderMenu.Hint:='Mostrar os blocos da apresentação';FHeaderMenu.ShowHint:=True;
-  FHeaderAsk:=TButton.Create(Self);FHeaderAsk.Name:='PresentationAskButton';
-  FHeaderAsk.Parent:=FControlBar;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.OnClick:=@HeaderAskClick;
+  FHeaderAsk:=TChromeButton.Create(Self);FHeaderAsk.Name:='PresentationAskButton';
+  FHeaderAsk.Parent:=FControlBar;FHeaderAsk.Caption:='Perguntar';FHeaderAsk.Icon:='✋';
+  FHeaderAsk.SetStyle(ChromeAmber,ChromeAmberText,ChromeAmber);FHeaderAsk.Font.Name:='Segoe UI';FHeaderAsk.Font.Height:=-14;
+  FHeaderAsk.OnClick:=@HeaderAskClick;
   FHeaderAsk.Hint:='Pausar e perguntar sobre o conteúdo apresentado';FHeaderAsk.ShowHint:=True;
   FTopicsCard:=TPanel.Create(Self);
   FTopicsCard.Name:='PresentationTopicsPanel';
@@ -462,11 +469,24 @@ begin
   FStopVideo:=TButton.Create(Self);FStopVideo.Name:='StopPresentationVideoButton';
   FStopVideo.Parent:=FChatPanel;FStopVideo.Caption:='Encerrar vídeo';FStopVideo.Visible:=False;
   FStopVideo.OnClick:=@StopVideoClick;
+  { Audience questions: white card with an amber header, as in the layout
+    proposal. The memo keeps its parent so existing code and tests find it. }
+  FQuestionCard:=TPanel.Create(Self);FQuestionCard.Name:='PresentationQuestionCard';FQuestionCard.Caption:='';
+  FQuestionCard.Parent:=FChatPanel;FQuestionCard.BevelOuter:=bvNone;FQuestionCard.ParentBackground:=False;
+  FQuestionCard.Color:=clWhite;FQuestionCard.Visible:=False;
+  FQuestionHead:=TPanel.Create(Self);FQuestionHead.Caption:='';FQuestionHead.Parent:=FQuestionCard;
+  FQuestionHead.Align:=alTop;FQuestionHead.Height:=62;FQuestionHead.BevelOuter:=bvNone;
+  FQuestionHead.ParentBackground:=False;FQuestionHead.Color:=ChromeQuestionHead;
+  FQuestionTitle:=TLabel.Create(Self);FQuestionTitle.Name:='PresentationQuestionTitle';FQuestionTitle.Parent:=FQuestionHead;
+  FQuestionTitle.SetBounds(16,10,300,22);FQuestionTitle.Font.Name:='Segoe UI';FQuestionTitle.Font.Height:=-15;
+  FQuestionTitle.Font.Style:=[fsBold];FQuestionTitle.Font.Color:=ChromeQuestionTitle;FQuestionTitle.Caption:='✋ Perguntas da plateia';
+  FQuestionSub:=TLabel.Create(Self);FQuestionSub.Parent:=FQuestionHead;FQuestionSub.AutoSize:=False;
+  FQuestionSub.SetBounds(16,34,300,20);FQuestionSub.Font.Name:='Segoe UI';FQuestionSub.Font.Height:=-12;
+  FQuestionSub.Font.Color:=ChromeQuestionSub;FQuestionSub.Caption:='Roteiro pausado · a resposta usa o roteiro e a biblioteca';
   FQuestionMemo:=TMemo.Create(Self);FQuestionMemo.Name:='PresentationQuestionAnswer';FQuestionMemo.Parent:=FChatPanel;
   FQuestionMemo.ReadOnly:=True;FQuestionMemo.ScrollBars:=ssAutoVertical;FQuestionMemo.Visible:=False;
-  FQuestionTitle:=TLabel.Create(Self);FQuestionTitle.Name:='PresentationQuestionTitle';FQuestionTitle.Parent:=FChatPanel;
-  FQuestionTitle.AutoSize:=False;FQuestionTitle.Layout:=tlCenter;FQuestionTitle.Font.Style:=[fsBold];
-  FQuestionTitle.Font.Color:=$0066C8F5;FQuestionTitle.Caption:='Perguntas da plateia';FQuestionTitle.Visible:=False;
+  FQuestionMemo.Font.Name:='Segoe UI';FQuestionMemo.Font.Height:=-14;FQuestionMemo.Font.Color:=ChromeInk;
+  FQuestionMemo.BorderStyle:=bsNone;FQuestionMemo.Color:=clWhite;
   FStepBar:=TPresentationStepBar.Create(Self);FStepBar.Name:='PresentationStepBar';FStepBar.Parent:=FChatPanel;
   FStepBar.Font.Name:='Segoe UI';FStepBar.Font.Height:=-12;FStepBar.Visible:=False;
   FSpokenCaption:=TPresentationCaption.Create(Self);FSpokenCaption.Name:='PresentationCaption';FSpokenCaption.Parent:=FChatPanel;
@@ -615,31 +635,36 @@ begin
   FChatPanel.SetBounds(LeftWidth+4,16,ChatWidth,ChatHeight);
   { During a presentation the chat area becomes the dark stage: block bar,
     media, spoken caption, control bar and the audience questions panel. }
-  if Presenting then FChatPanel.Color:=ChromeDark else FChatPanel.Color:=clWhite;
-  FInputCard.Color:=FChatPanel.Color;
+  ApplyPresentationTheme(Presenting);
   lblAssistente.Visible:=not Presenting;
   FStepBar.Visible:=Presenting;FSpokenCaption.Visible:=Presenting;FControlBar.Visible:=Presenting;
-  FQuestionTitle.Visible:=Presenting and FQuestionMemo.Visible;
+  FQuestionCard.Visible:=Presenting and FQuestionMemo.Visible;
   ComposerWidth:=ChatWidth-36;
   if Presenting then begin
     StepWidth:=ChatWidth-28;
     if FStopVideo.Visible then Dec(StepWidth,170);
-    FStepBar.SetBounds(14,8,Max(1,StepWidth),40);
-    FStopVideo.SetBounds(ChatWidth-170,12,156,32);
-    BarTop:=ChatHeight-82-62;
-    FControlBar.SetBounds(14,BarTop,Max(1,ChatWidth-28),54);
-    CaptionTop:=BarTop-56;
-    FSpokenCaption.SetBounds(14,CaptionTop,Max(1,ChatWidth-28),48);
-    MediaTop:=56;MediaHeight:=Max(1,CaptionTop-8-MediaTop);
+    FStepBar.SetBounds(14,6,Max(1,StepWidth),48);
+    FStopVideo.SetBounds(ChatWidth-170,14,156,32);
+    BarTop:=ChatHeight-82-70;
+    FControlBar.SetBounds(14,BarTop,Max(1,ChatWidth-28),62);
+    CaptionTop:=BarTop-60;
+    MediaTop:=62;
     QuestionWidth:=0;
     if FQuestionMemo.Visible then QuestionWidth:=EnsureRange((ChatWidth-28) div 3,220,340);
     MediaWidth:=Max(1,ChatWidth-28);
     if QuestionWidth>0 then MediaWidth:=Max(1,MediaWidth-QuestionWidth-12);
+    FSpokenCaption.SetBounds(14,CaptionTop,MediaWidth,50);
+    MediaHeight:=Max(1,CaptionTop-10-MediaTop);
     FPresentationPanel.SetBounds(14,MediaTop,MediaWidth,MediaHeight);
     FChat.SetBounds(18,MediaTop,Max(1,MediaWidth-8),MediaHeight);
     QuestionLeft:=14+MediaWidth+12;
-    FQuestionTitle.SetBounds(QuestionLeft,MediaTop,Max(1,QuestionWidth),26);
-    FQuestionMemo.SetBounds(QuestionLeft,MediaTop+30,Max(1,QuestionWidth),Max(1,MediaHeight-30));
+    { The card runs from the media top to the caption bottom; the memo sits
+      inside it below the amber header. }
+    FQuestionCard.SetBounds(QuestionLeft,MediaTop,Max(1,QuestionWidth),Max(1,CaptionTop+50-MediaTop));
+    FQuestionSub.Width:=Max(1,QuestionWidth-28);FQuestionTitle.Width:=Max(1,QuestionWidth-28);
+    FQuestionMemo.SetBounds(QuestionLeft+12,MediaTop+FQuestionHead.Height+10,Max(1,QuestionWidth-20),
+      Max(1,CaptionTop+50-MediaTop-FQuestionHead.Height-20));
+    FQuestionMemo.BringToFront;
     LayoutControlBar;
   end else begin
     lblAssistente.SetBounds(14, 12, ChatWidth-28, 22);
@@ -672,10 +697,33 @@ begin
   FRenderStatus.SetBounds(W-180, 13, 168, 16);
 end;
 
+procedure Tfrmmain.ApplyPresentationTheme(Presenting: Boolean);
+{ The whole window turns into the dark stage of the layout proposal while a
+  presentation runs, and returns to the light theme afterwards. }
+begin
+  if Presenting=FPresentationThemed then Exit;
+  FPresentationThemed:=Presenting;
+  if Presenting then begin
+    pnlConteudo.Color:=ChromeDark;pnlHeader.Color:=ChromeDark;
+    lblTitulo.Font.Color:=clWhite;lblStatus.Font.Color:=ChromeMuted;
+    FChatPanel.Color:=ChromeDark;FAvatarCard.Color:=ChromeDark;FSidebarDivider.Color:=ChromeDarkPanel;
+    FMicButton.Font.Color:=ChromeLight;
+    FAvatarStatus.Font.Color:=ChromeMuted;FAIStatus.Font.Color:=ChromeMuted;FRenderStatus.Font.Color:=ChromeMuted;
+  end else begin
+    pnlConteudo.Color:=$00F8F5F3;pnlHeader.Color:=clWhite;
+    lblTitulo.Font.Color:=$0035251D;lblStatus.Font.Color:=$00746558;
+    FChatPanel.Color:=clWhite;FAvatarCard.Color:=pnlConteudo.Color;FSidebarDivider.Color:=$00DFD7D1;
+    FMicButton.Font.Color:=clDefault;
+    FAvatarStatus.Font.Color:=clDefault;FAIStatus.Font.Color:=clDefault;FRenderStatus.Font.Color:=clDefault;
+  end;
+  FInputCard.Color:=FChatPanel.Color;
+  pnlEntrada.Color:=pnlConteudo.Color;
+end;
+
 procedure Tfrmmain.LayoutControlBar;
-const Gap=8; ButtonTop=11; ButtonHeight=32;
+const Gap=10; ButtonTop=10; ButtonHeight=42;
 var X: Integer;
-  procedure Place(Button: TButton; AWidth: Integer);
+  procedure Place(Button: TChromeButton; AWidth: Integer);
   begin
     if not Button.Visible then Exit;
     Dec(X, AWidth);Button.SetBounds(X, ButtonTop, AWidth, ButtonHeight);Dec(X, Gap);
@@ -684,11 +732,11 @@ begin
   if (FControlBar=nil) or not FControlBar.Visible then Exit;
   X:=FControlBar.ClientWidth-12;
   { Right to left: resume is the primary action while the script is parked. }
-  Place(FAskButton, 120);
-  Place(FHeaderAsk, 120);
-  Place(FHeaderMenu, 96);
-  Place(FPauseButton, 120);
-  FProgressLabel.SetBounds(14, 0, Max(1, X-14), FControlBar.ClientHeight);
+  Place(FAskButton, 150);
+  Place(FHeaderAsk, 150);
+  Place(FHeaderMenu, 118);
+  Place(FPauseButton, 130);
+  FProgressLabel.SetBounds(16, 4, Max(1, X-24), FControlBar.ClientHeight-8);
 end;
 
 procedure Tfrmmain.RefreshStepBar;
@@ -706,11 +754,12 @@ begin
     if (FTopicsList<>nil) and (Current>0) and (Current-1<FTopicsList.Items.Count) then
       FTopicsList.ItemIndex:=Current-1;
     FStepBar.Title:=ChangeFileExt(ExtractFileName(FLoadedFile),'');
+    FStepBar.Subtitle:='Apresentação';
   finally Steps.Free;end;
 end;
 
 procedure Tfrmmain.UpdatePresentationChrome;
-var CaptionText, TagText, Progress: string;
+var CaptionText, TagText, Progress: string; Elapsed: QWord;
 begin
   if not FPresentationMode or (FSpokenCaption=nil) then Exit;
   TagText:='LEGENDA';CaptionText:='';
@@ -724,13 +773,18 @@ begin
   end;
   FSpokenCaption.TagText:=TagText;FSpokenCaption.Text:=CaptionText;
   FPauseButton.Enabled:=Assigned(FSpeechJob) and not FAnsweringQuestion and not FResumePresentation;
-  if Assigned(FSpeechJob) and FSpeechJob.Paused then FPauseButton.Caption:='Retomar (P)'
-  else FPauseButton.Caption:='Pausar (P)';
-  if FStepBar.StepCount>1 then
-    Progress:=Format('Bloco %d de %d',[FStepBar.Current+1,FStepBar.StepCount])
-  else Progress:='Roteiro principal';
-  if Length(FParkedPresentations)>0 then Progress:=Progress+' · roteiro pausado';
-  FProgressLabel.Caption:=Progress;
+  if Assigned(FSpeechJob) and FSpeechJob.Paused then begin FPauseButton.Caption:='Retomar';FPauseButton.Icon:='▶';end
+  else begin FPauseButton.Caption:='Pausar';FPauseButton.Icon:='❚❚';end;
+  if FStepBar.StepCount>1 then begin
+    Progress:=Format('Bloco %d de %d',[FStepBar.Current+1,FStepBar.StepCount]);
+    FProgressLabel.Position:=(FStepBar.Current+1)/FStepBar.StepCount;
+  end else begin Progress:='Roteiro principal';FProgressLabel.Position:=0;end;
+  FProgressLabel.Text:=Progress;
+  if Length(FParkedPresentations)>0 then FProgressLabel.RightText:='roteiro pausado'
+  else if Assigned(FSpeechJob) and FSpeechJob.Paused then FProgressLabel.RightText:='narração pausada'
+  else FProgressLabel.RightText:='';
+  Elapsed:=(GetTickCount64-FPresentationStarted) div 1000;
+  FStepBar.Chips:=Format('⏱ %.2d:%.2d',[Elapsed div 60,Elapsed mod 60])+'|✕ Encerrar  Esc';
   LayoutControlBar;
 end;
 
@@ -1730,7 +1784,7 @@ end;
 
 procedure Tfrmmain.BeginPresentation(const Compiled: string);
 begin
-  FPresentationMode:=True;
+  FPresentationMode:=True;FPresentationStarted:=GetTickCount64;
   FCurrentBlock:=FLoadedEntryBlock;RefreshStepBar;LayoutProfessor(nil);
   PausarEscuta;
   FProfessor.ResetCommands;

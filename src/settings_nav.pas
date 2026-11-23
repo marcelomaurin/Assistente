@@ -6,7 +6,7 @@ unit settings_nav;
 {$mode objfpc}{$H+}
 interface
 uses Classes, SysUtils, Controls, Forms, Graphics, StdCtrls, ExtCtrls, ComCtrls,
-  LCLType, Math, Spin, LazUTF8;
+  LCLType, Math, Spin, LazUTF8, presentation_chrome;
 
 type
   TSettingsPageStatus = (spsNone, spsOk, spsError, spsOff);
@@ -16,7 +16,8 @@ type
   private
     FPages: TPageControl;
     FForm: TCustomForm;
-    FNavPanel, FContentPanel, FHeaderPanel: TPanel;
+    FNavPanel, FContentPanel, FHeaderPanel, FNavHeader: TPanel;
+    FSaveChrome, FCancelChrome: TChromeButton;
     FList: TListBox;
     FTitle, FDescription, FDirty: TLabel;
     FTimer: TTimer;
@@ -31,6 +32,7 @@ type
     procedure ListMeasure(Control: TWinControl; Index: Integer; var AHeight: Integer);
     procedure Tick(Sender: TObject);
     procedure ButtonsResize(Sender: TObject);
+    procedure ChromeClick(Sender: TObject);
     function Fingerprint: string;
     function PageStatus(Page: TTabSheet; out Detail: string): TSettingsPageStatus;
     procedure SyncFromPages;
@@ -47,12 +49,14 @@ type
     procedure MarkSaved;
     function Dirty: Boolean;
     property List: TListBox read FList;
+    property SaveButton: TChromeButton read FSaveChrome;
+    property CancelButton: TChromeButton read FCancelChrome;
     property OnStatus: TSettingsStatusEvent read FOnStatus write FOnStatus;
   end;
 
 const
   SettingsNavWidth = 220;
-  SettingsHeaderHeight = 58;
+  SettingsHeaderHeight = 72;
 
 implementation
 
@@ -79,6 +83,23 @@ begin
   FNavPanel.Parent := AForm; FNavPanel.Align := alLeft; FNavPanel.Width := SettingsNavWidth;
   FNavPanel.BevelOuter := bvNone; FNavPanel.Color := NavBack;
   FNavPanel.BorderSpacing.Right := 1;
+  FNavPanel.ParentBackground := False;
+  AForm.Color := ChromeLine; // shows as the 1 px line between list and content
+
+  FNavHeader := TPanel.Create(Self);
+  FNavHeader.Caption := ''; FNavHeader.Parent := FNavPanel; FNavHeader.Align := alTop;
+  FNavHeader.Height := 64; FNavHeader.BevelOuter := bvNone;
+  FNavHeader.ParentBackground := False; FNavHeader.Color := NavBack;
+  with TLabel.Create(Self) do begin
+    Parent := FNavHeader; SetBounds(16, 12, SettingsNavWidth - 24, 26);
+    Font.Height := -20; Font.Style := [fsBold]; Font.Color := ChromeInk;
+    Caption := 'Configurações';
+  end;
+  with TLabel.Create(Self) do begin
+    Parent := FNavHeader; SetBounds(16, 40, SettingsNavWidth - 24, 18);
+    Font.Height := -12; Font.Color := NavMuted;
+    Caption := 'Assistente';
+  end;
 
   FList := TListBox.Create(Self);
   FList.Name := 'SettingsSections';
@@ -87,7 +108,7 @@ begin
   FList.BorderStyle := bsNone;
   FList.Style := lbOwnerDrawVariable;
   FList.Color := NavBack;
-  FList.Font.Height := -13;
+  FList.Font.Height := -14;
   FList.OnDrawItem := @ListDrawItem;
   FList.OnMeasureItem := @ListMeasure;
   FList.OnSelectionChange := @ListSelectionChange;
@@ -96,25 +117,49 @@ begin
   FContentPanel.Name := 'SettingsContent'; FContentPanel.Caption := '';
   FContentPanel.Parent := AForm; FContentPanel.Align := alClient;
   FContentPanel.BevelOuter := bvNone;
+  FContentPanel.ParentBackground := False; FContentPanel.Color := ChromePage;
 
   FHeaderPanel := TPanel.Create(Self);
   FHeaderPanel.Name := 'SettingsSectionHeader'; FHeaderPanel.Caption := '';
   FHeaderPanel.Parent := FContentPanel; FHeaderPanel.Align := alTop;
   FHeaderPanel.Height := SettingsHeaderHeight; FHeaderPanel.BevelOuter := bvNone;
+  FHeaderPanel.ParentBackground := False; FHeaderPanel.Color := ChromePage;
 
   FTitle := TLabel.Create(Self);
-  FTitle.Parent := FHeaderPanel; FTitle.SetBounds(14, 8, 360, 26);
-  FTitle.Font.Height := -18; FTitle.Font.Style := [fsBold];
+  FTitle.Parent := FHeaderPanel; FTitle.SetBounds(18, 12, 420, 32);
+  FTitle.Font.Height := -24; FTitle.Font.Style := [fsBold]; FTitle.Font.Color := ChromeInk;
 
   FDescription := TLabel.Create(Self);
   FDescription.Parent := FHeaderPanel; FDescription.AutoSize := False;
-  FDescription.SetBounds(14, 34, 380, 20); FDescription.Font.Color := NavText;
+  FDescription.SetBounds(18, 46, 420, 20); FDescription.Font.Height := -13; FDescription.Font.Color := NavText;
 
   APages.Parent := FContentPanel;
   APages.Align := alClient;
   APages.ShowTabs := False;
 
   if AButtons <> nil then begin
+    AButtons.Height := 60;
+    AButtons.ParentBackground := False; AButtons.Color := ChromePage;
+    { Colored Salvar / Cancelar. The original buttons stay as the actions'
+      owners (handlers, Default/Cancel keys, tests) but are not shown. }
+    if ASave <> nil then begin
+      FSaveChrome := TChromeButton.Create(Self);
+      FSaveChrome.Name := 'SettingsSaveButton';
+      FSaveChrome.Parent := AButtons; FSaveChrome.Caption := TButton(ASave).Caption;
+      FSaveChrome.SetStyle(ChromeBlue, clWhite, ChromeBlue);
+      FSaveChrome.Font.Height := -14; FSaveChrome.SetBounds(0, 10, 110, 40);
+      FSaveChrome.OnClick := @ChromeClick;
+      ASave.Visible := False;
+    end;
+    if ACancel <> nil then begin
+      FCancelChrome := TChromeButton.Create(Self);
+      FCancelChrome.Name := 'SettingsCancelButton';
+      FCancelChrome.Parent := AButtons; FCancelChrome.Caption := TButton(ACancel).Caption;
+      FCancelChrome.SetStyle(clWhite, ChromeInk, ChromeLine);
+      FCancelChrome.Font.Height := -14; FCancelChrome.SetBounds(0, 10, 110, 40);
+      FCancelChrome.OnClick := @ChromeClick;
+      ACancel.Visible := False;
+    end;
     FDirty := TLabel.Create(Self);
     FDirty.Name := 'SettingsUnsavedLabel';
     FDirty.Parent := AButtons; FDirty.AutoSize := False; FDirty.Layout := tlCenter;
@@ -159,7 +204,7 @@ end;
 
 procedure TSettingsNavigator.ListMeasure(Control: TWinControl; Index: Integer; var AHeight: Integer);
 begin
-  if FList.Items.Objects[Index] = nil then AHeight := 30 else AHeight := 34;
+  if FList.Items.Objects[Index] = nil then AHeight := 34 else AHeight := 40;
 end;
 
 function TSettingsNavigator.PageStatus(Page: TTabSheet; out Detail: string): TSettingsPageStatus;
@@ -282,16 +327,25 @@ begin
   Result := (FBaseline <> '') and (Fingerprint <> FBaseline);
 end;
 
+procedure TSettingsNavigator.ChromeClick(Sender: TObject);
+begin
+  { Run the original button so ModalResult, handlers and validation stay the same. }
+  if (Sender = FSaveChrome) and (FSaveButton is TButton) then TButton(FSaveButton).Click
+  else if (Sender = FCancelChrome) and (FCancelButton is TButton) then TButton(FCancelButton).Click;
+end;
+
 procedure TSettingsNavigator.ButtonsResize(Sender: TObject);
-var W, X: Integer;
+var W, X: Integer; Save, Cancel: TControl;
 begin
   if FButtonsPanel = nil then Exit;
   W := FButtonsPanel.ClientWidth;
-  if FCancelButton <> nil then FCancelButton.Left := W - FCancelButton.Width - 10;
-  if FSaveButton <> nil then begin
-    if FCancelButton <> nil then FSaveButton.Left := FCancelButton.Left - FSaveButton.Width - 8
-    else FSaveButton.Left := W - FSaveButton.Width - 10;
-    X := FSaveButton.Left - 12;
+  if FSaveChrome <> nil then Save := FSaveChrome else Save := FSaveButton;
+  if FCancelChrome <> nil then Cancel := FCancelChrome else Cancel := FCancelButton;
+  if Cancel <> nil then Cancel.Left := W - Cancel.Width - 16;
+  if Save <> nil then begin
+    if Cancel <> nil then Save.Left := Cancel.Left - Save.Width - 10
+    else Save.Left := W - Save.Width - 16;
+    X := Save.Left - 12;
   end else X := W - 12;
   if FDirty <> nil then FDirty.SetBounds(212, 0, Max(1, X - 212), FButtonsPanel.ClientHeight);
 end;

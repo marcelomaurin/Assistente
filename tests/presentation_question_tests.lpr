@@ -1,9 +1,9 @@
 program presentation_question_tests;
 {$mode objfpc}{$H+}{$codepage utf8}
 uses Interfaces,Forms,Classes,SysUtils,Windows,ExtCtrls,StdCtrls,Controls,Types,Graphics,main,professor_view,CastleControl,CastleImages,CastleURIUtils,
- presentation_package,presentation_tags,presentation_document,presentation_flow,presentation_questions;
+ presentation_package,presentation_tags,presentation_document,presentation_flow,presentation_questions,presentation_chrome;
 type TRunner=class
- Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button:TButton;
+ Timer:TTimer;Phase,LastTrace:Integer;Started,HoverStarted,OffAt:QWord;HoverReset,HoverReentered:Boolean;Root:string;Button:TChromeButton;
  procedure Tick(Sender:TObject);
  procedure Submit(const Text:string;Voice:Boolean=False);
  procedure CheckLayout;
@@ -68,7 +68,7 @@ begin
     Check(not TControl(frmmain.FindComponent('PresentationMediaPanel')).Visible,'MENU still shows media');
     Check(frmmain.BlockMenu.Items.Count=43,'MENU missing blocks');
     Button.Click;Check(not frmmain.BlockMenu.Visible and frmmain.WaitingForQuestion,'Header Perguntar should accept questions');
-    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    (frmmain.FindComponent('PresentationMenuButton') as TChromeButton).Click;
     Check(frmmain.BlockMenu.Visible,'Header Menu should reopen block list');CheckLayout;Capture;
     DownButton:=TButton(frmmain.FindComponent('MenuScrollDown'));UpButton:=TButton(frmmain.FindComponent('MenuScrollUp'));
     DownButton.Click;Check(frmmain.BlockMenu.TopIndex>0,'Bottom button does not scroll');
@@ -93,7 +93,7 @@ begin
    20:if frmmain.WaitingForQuestion and (frmmain.ActivePresentationMedia='assets/three.png') then begin
     Submit('IR {Nao existe}');Check(frmmain.WaitingForQuestion,'Invalid block left question mode');
     Check(Pos('Bloco nao encontrado',frmmain.lblStatus.Caption)>0,'Missing invalid block error');
-    TButton(frmmain.FindComponent('PresentationMenuButton')).Click;
+    (frmmain.FindComponent('PresentationMenuButton') as TChromeButton).Click;
     K:=VK_HOME;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
     K:=VK_DOWN;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
     K:=VK_DOWN;frmmain.BlockMenu.OnKeyDown(frmmain.BlockMenu,K,[]);
@@ -171,7 +171,7 @@ begin
   Windows.GetCursorPos(OldCursor);Windows.SetCursorPos(0,0);
   Runner:=TRunner.Create;
   try
-   Runner.Root:=Root;Runner.Button:=TButton(frmmain.FindComponent('PresentationAskButton'));Check(Runner.Button<>nil,'Question button missing');
+   Runner.Root:=Root;Runner.Button:=frmmain.FindComponent('PresentationAskButton') as TChromeButton;Check(Runner.Button<>nil,'Question button missing');
    Runner.Started:=GetTickCount64;Runner.Timer:=TTimer.Create(nil);Runner.Timer.Interval:=30;Runner.Timer.OnTimer:=@Runner.Tick;
    frmmain.StartPresentation(Root+PathDelim+'questions.pva');Application.Run;
   finally Windows.SetCursorPos(OldCursor.X,OldCursor.Y);Runner.Timer.Free;Runner.Free;frmmain.Free;end;

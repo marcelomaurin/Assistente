@@ -983,7 +983,7 @@ begin
   Nav.AddPage(tsBanco, 'Banco de dados', 'Conexão MySQL ou PostgreSQL.');
   Nav.AddRemainingPages;
   ClientWidth := SettingsNavWidth + 1 + ContentWidth;
-  ClientHeight := ContentHeight + SettingsHeaderHeight;
+  ClientHeight := ContentHeight + SettingsHeaderHeight + 15;
   pcConfig.ActivePage := tsIA;
 end;
 
