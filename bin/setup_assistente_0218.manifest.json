@@ -1,18 +1,18 @@
 {
   "schema": 1,
   "version": "0.218",
-  "source_commit": "4832ecc00416c51dadae829ce99f23818531ee55",
+  "source_commit": "dd003f84432fe3c511487218ca4c5ebab2224fc6",
   "platform": "i386-win32",
   "installer": {
     "file": "setup_assistente_0218.exe",
-    "size": 316883226,
-    "sha256": "d91a07755cfca9afe1de85e0634c61446e24fde8079e67cce398713260d238e9"
+    "size": 316890115,
+    "sha256": "ea1c354a3ed097fc8dc254292b184ce2ca54a0831403e8b8becc98f086aba697"
   },
   "files": [
     {
       "path": "assistente.exe",
-      "size": 14223360,
-      "sha256": "e961f530740eede38b7190d8a061cc7b532c30453fa7dd78dbe1174195327e31"
+      "size": 14239232,
+      "sha256": "b3f733e97f881f4c6efd98c09a8406ad686adf98b78ef9677b8ea69749c7bb8f"
     },
     {
       "path": "AVATARES/bebe/avatar.json",
@@ -1812,7 +1812,7 @@
     {
       "path": "examples/perguntas-menu.pva",
       "size": 641,
-      "sha256": "f9b682da90f7e87fcd34e180ead8c76b2bde7a0fd2a47fe9c420d957513c4ec4"
+      "sha256": "100bc21186abf332ac3139eb7b3386e5c5d73101207427c50c19b8109e749720"
     },
     {
       "path": "examples/perguntas-menu.script",
@@ -1896,8 +1896,8 @@
     },
     {
       "path": "package-info.json",
-      "size": 2388,
-      "sha256": "13ecbb978abd1c2029b4169ad155facac6eda6419f9f1862e0cb7d4f84c24b7d"
+      "size": 2387,
+      "sha256": "d9018643a3cd27a2a2aa5f852fe0c3c8f63dbec97d066f6632f1317b0a92fa4d"
     },
     {
       "path": "presentation_editor.exe",
