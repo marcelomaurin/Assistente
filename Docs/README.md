@@ -7,6 +7,7 @@ O Assistente é uma aplicação Windows em Lazarus/Free Pascal para conversar co
 | [Projeto e funcionalidades](Projeto/README.md) | Arquitetura, mapa das fontes, recursos, versões, dependências, compilação e testes |
 | [Integração por DLL](DLL/README.md) | DLL Win32/Win64, funções exportadas, buffers, exemplos e erros |
 | [Protocolo de comunicação socket](Socket/README.md) | Autenticação, lista de IPs, JSON, ações, respostas e limites |
+| [Instalador 0.218](INSTALACAO_0218.md) | Novo modo apresentação (blocos, legenda, controles), lista de Assuntos e Configurações com lista lateral |
 | [Instalador 0.217](INSTALACAO_0217.md) | Arquivo de configuração (exportar/importar) e documentos do RAG em Configurações |
 | [Arquivo de configuração e RAG](configuracao-arquivo-e-rag.md) | Gerar e aplicar a configuração; adicionar documentos que a IA consulta |
 | [Instalador 0.216](INSTALACAO_0216.md) | Perguntar, Menu, Continuar e Encerrar vídeo nas apresentações |

@@ -17,8 +17,8 @@ import winreg
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--build-code',default='0217')
-parser.add_argument('--version',default='0.217')
+parser.add_argument('--build-code',default='0218')
+parser.add_argument('--version',default='0.218')
 parser.add_argument('--no-ui',action='store_true',help='Validate extraction, binaries, configuration preservation and uninstall without opening application windows')
 OPTIONS=parser.parse_args()
 assert len(OPTIONS.build_code)==4 and OPTIONS.build_code.isdigit()

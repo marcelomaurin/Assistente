@@ -4,7 +4,7 @@ Same steps as build_installer.ps1, plus the Criador Avatar, the avatar tools
 and the embedded Python runtime. Runs on Windows or on Linux with ISCC under
 Wine:
 
-    python scripts/build_installer.py --version 0.217 --build-code 0217 --python-runtime <dir> \
+    python scripts/build_installer.py --version 0.218 --build-code 0218 --python-runtime <dir> \
         [--programs build/presentation-questions] [--iscc "wine C:\\InnoSetup\\ISCC.exe"]
 """
 import argparse, hashlib, json, os, shlex, shutil, subprocess, sys, uuid
@@ -33,7 +33,7 @@ def winpath(p):
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument('--version', default='0.217'); a.add_argument('--build-code', default='0217')
+    a.add_argument('--version', default='0.218'); a.add_argument('--build-code', default='0218')
     a.add_argument('--programs', type=Path); a.add_argument('--python-runtime', type=Path, required=True)
     a.add_argument('--chatgpt', type=Path); a.add_argument('--castle', type=Path)
     a.add_argument('--iscc', default=r'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')

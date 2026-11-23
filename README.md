@@ -25,16 +25,9 @@ Essas funções exigem recompilar; não foram acrescentadas ao instalador 0.214 
 
 ## Instalação Windows
 
-As fontes atuais integram os recursos da **0.217**, os menus de abrir/fechar,
-pesquisa e PDF e as correções de estabilidade de voz. Consulte o
-[relatório da integração](Docs/INTEGRACAO_BRANCHES_2026-10-26.md).
+Execute [setup_assistente_0218.exe](bin/setup_assistente_0218.exe). A 0.218 traz o novo modo apresentação (barra de blocos, legenda, barra de controles e painel de perguntas), a lista de Assuntos com a divisória ajustável, o menu Apresentação e as Configurações com lista lateral. Veja o [guia da 0.218](Docs/INSTALACAO_0218.md).
 
-O instalador executável disponível neste repositório é
-[setup_assistente_0214.exe](bin/setup_assistente_0214.exe), anterior à integração.
-Para usar todos os recursos novos, compile os fontes atuais pelo
-[guia do projeto](Docs/Projeto/README.md#compilação).
-Os manifestos e os guias históricos de 0.215, 0.216 e 0.217 foram preservados;
-esta integração não gera novos instaladores.
+Os guias e manifestos das versões anteriores continuam em `Docs/` e `bin/`. Para compilar a partir das fontes, siga o [guia do projeto](Docs/Projeto/README.md#compilação).
 
 ## Professor Virtual 3D
 
